@@ -1,0 +1,112 @@
+{
+    "commands": {
+
+    },
+    "port" : 8081,
+    "redis_port" : 6380,
+    "index_page":"/static/SATReg/theme/index.html",
+    "origins" : "https://*:*/ http://localhost:*/",
+    "restify_http_options":{
+	"certificate":"",
+	"key":"",
+	"ca": ""
+    },
+    
+    "socket_plugins": [
+         {
+            "clazz": "saturn.server.plugins.socket.core.RemoteProviderPlugin",
+            "namespaces": [{"name": "_remote_provider_"}],
+            "authentication": {
+                "_data_delete_request": {"role": ["ANY"]},
+                "_data_insert_request": {"role": ["ANY"]},
+                "_data_update_request": {"role": ["ANY"]},
+                "_data_commit_request": {"role": ["ANY"]},
+		"_data_request_objects_namedquery": {
+                  "role": ["ANY"],
+                  "queries": {
+                    "saturn.server.plugins.core.ConfigurationPlugin:clientConfiguration":{
+                      "role": "PUBLIC"
+                    },
+		    "saturn.db.provider.hooks.ExternalJsonHook:Register":{
+                      "role": "PUBLIC"
+                    }
+
+                  }
+                }
+            },
+            "connect_as_user": true
+        }
+    ],
+    "plugins":[
+        {
+            "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
+            "connections" : [{
+        	    "driver": "saturn.db.DefaultProvider",
+		    "model_mapping": "saturn.db.mapping.templates.DefaultMapping",
+                    "named_queries": {
+
+                    },
+                    "use_pool": false,
+                    "default_provider": true,
+                    "name": "python",
+                    "named_query_hooks": [
+                      {
+                        "name": "saturn.db.provider.hooks.ExternalJsonHook:SDFRegister",
+                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
+                        "method": "run",
+                        "program": "python",
+                        "arguments": ["bin/hooks/sdf_register.py"]
+                      },
+		      {
+                        "name": "saturn.db.provider.hooks.ExternalJsonHook:Fetch",
+                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
+                        "method": "run",
+                        "program": "python",
+                        "arguments": ["bin/hooks/fetch.py"]
+                      },
+		      {
+                        "name": "saturn.db.provider.hooks.ExternalJsonHook:Register",
+                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
+                        "method": "run",
+                        "program": "python",
+                        "arguments": ["bin/hooks/authenticate.py"]
+                      },
+			{
+                        "name": "saturn.server.plugins.ConfigurationPlugin:clientConfiguration",
+                        "class": "saturn.server.plugins.ConfigurationPlugin",
+                        "method": "getConfiguration",
+                        "config":{
+                          "connections":[
+                            {
+                              "driver" : "saturn.db.provider.NodeProvider",
+                              "name" : "DEFAULT",
+                              "named_query_hooks": [
+                              
+			      ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+            }]
+        },
+        {
+                    "clazz": "saturn.server.plugins.core.SocketPlugin"
+        },
+        {
+                    "clazz": "saturn.server.plugins.core.AuthenticationPlugin",
+                    "authentication_manager": {
+                        "clazz": "saturn.server.plugins.core.ExternalAuthenticationPlugin",
+                    	"external_hook":{
+                            "program": "python",
+                            "arguments": ["bin/hooks/authenticate.py"]
+                        }
+
+		    },
+                    "jwt_timeout": "300",
+                    "jwt_secret": "&&Wkasdasd9d7oM68$adaE#$@uakqom^t$g&wj35wdj!6hjasdasdasdasdasdasc1wUMPy%IyCesNdedL@qvoq",
+                    "password_in_token": false 
+        }
+
+    ]
+}
