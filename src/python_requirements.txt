@@ -1,0 +1,6 @@
+psycopg2
+xlrd
+python-rapidjson
+xlsxwriter
+pymysql
+passlib
