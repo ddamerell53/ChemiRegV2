@@ -1,0 +1,318 @@
+<!DOCTYPE HTML>
+<!-- 
+ ChemiReg - web-based compound registration platform
+ Written in 2017 by David Damerell <david.damerell@sgc.ox.ac.uk>, Brian Marsden <brian.marsden@sgc.ox.ac.uk>
+ 
+ To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+ You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+-->
+<html>
+	<head>
+		<title>ChemiReg</title>
+		<meta charset="utf-8" />
+
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+		
+		<!-- MIT -->
+        <script src="jquery/jquery-1.10.1.min.js"></script>
+		
+		<!-- MIT 2011-2014 Dave Gamache -->
+	    <link rel="stylesheet" href="skeleton/normalize.css">
+	    <link rel="stylesheet" href="skeleton/skeleton.css">
+	    
+	    <!-- Apache 2.0  -->
+	    <link rel="stylesheet" href="selectize/selectize.default.css">
+	    <script type="text/javascript" src="selectize/selectize.min.js"></script>
+	    
+		<!-- MIT 2014 TJ Holowaychuk -->
+        <script type="text/javascript" src="debug/debug.js"></script>
+        
+        <!-- MIT -->
+        <script src="/socket.io/socket.io.js"></script>
+        
+        <!-- MIT -->
+        <script type="text/javascript" src="js.cookie/js.cookie.js"></script>
+        
+        <!-- Apache 2.0 -->
+        <script type="text/javascript" src="saturn/ClientCore.js"></script>
+        
+        <!-- MIT 2014 Eli Grey -->
+        <script type="text/javascript" src="filesaver/FileSaver.js"></script>
+		
+		<!-- MIT 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso -->
+		<script type="text/javascript" src="jszip/jszip.js"></script>
+		<script type="text/javascript" src="jszip/jszip-inflate.js"></script>
+		<script type="text/javascript" src="jszip/jszip-load.js"></script>
+        
+        <!-- MIT 2009-2013 Jeff Mott,2013-2016 Evan Vosberg   -->
+		<script type="text/javascript" src="cryptojs/md5.js"></script>
+		<script type="text/javascript" src="cryptojs/enc-base64-min.js"></script>
+		
+		<!-- MIT 2014 Tristan Edwards & Limon Monte -->
+		<script type="text/javascript" src="sweetalert2/sweetalert2.min.js"></script>
+		<script type="text/javascript" src="sweetalert2/core.js"></script>
+		<link rel="stylesheet" type="text/css" href="sweetalert2/sweetalert2.min.css">
+		
+		<!-- MIT -->
+		<script type="text/javascript" src="moment/moment.min.js"></script>
+		<script type="text/javascript" src="moment/moment-with-locales.min.js"></script>
+		<script type="text/javascript" src="moment/moment-timezone.min.js"></script>
+		<script type="text/javascript" src="moment/moment-timezone-with-data.min.js"></script>
+		
+		<!-- MIT 2015 Anton Purin -->
+		<script type="text/javascript" src="line_navigator/file-wrapper.min.js"></script>
+		<script type="text/javascript" src="line_navigator/line-navigator.min.js"></script>
+		
+		<!-- Apache 2.0 2012 SheetJS LLC -->
+		<script type="text/javascript" src="js-xlsx/xlsx.full.min.js"></script>
+		
+		<!-- MIT 2015 Jordan Thomas -->
+		<script type="text/javascript" src="jaro-winkler/index.js"></script>
+		
+		<link rel="stylesheet" href="index.css">
+		<script src="index.js"></script>
+		
+		<!-- Free for academic and personal use -->
+        <!-- <script src="molsoft/moledit.js" type="text/javascript"></script> -->
+	</head>
+	<body onload="start()" style="display:flex;flex-direction:column;height:100vh;overflow:hidden">
+		<!-- Header -->
+		<div style=''>
+			<div style="display:none">
+				<div  >
+					<h2 id="title" style="margin-bottom: 1rem;margin-top:0px;display:inline-block">ChemiReg<span class="subtitle">, registration made simple</span></h2>
+					
+					
+				</div>
+				
+			</div>
+			<div >
+				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:#33C3F0;padding:5px; margin-bottom:10px" class="screen_button_container">
+					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
+					
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="switch_screen('results')">Results</button>
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Search</button>
+					<button    class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload')">Upload</button>
+					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="switch_screen('home')">Activity</button>
+					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
+					
+					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
+					
+					<div id="project_selection_div" style="display:inline-block;margin:initial">
+					<select  id="project_selection" style="display:none;height:initial;margin:initial;margin-right:10px;width:100%;max-width:300px">
+						<option>
+							Projects
+						</option>
+					</select>
+					</div>
+				</div>
+				<div style="display:flex;flex-direction:row">
+					<!--  <button id="all_button" style='display:none;margin-top:5px;border-radius:initial;background-color:#33C3F0;padding-left:10px;padding-right:5px; border:none;color:white;margin-bottom:0px' onclick="fetch_all(false)">All</button>-->
+					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
+					
+				</div>
+			</div>
+			<div  style="margin-button:4em">
+				<div id="caption" class="twelve columns designed_by_section" style="display:none">
+					Powered by RDKit designed in Oxford by the SGC
+				</div>
+			</div>
+			
+		</div>
+		
+		<div id="home" style="display:flex;flex-direction:column;overflow:hidden;flex-grow:1">
+			<div style="overflow:hidden;display:flex;flex-direction:column;flex-grow:1">
+				<div id="progress" style="flex-grow:1;overflow:auto;padding-left:10px;padding-right:10px;">
+	
+				</div>
+			</div>
+		</div>
+		
+		<div id="login" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
+			<h2 class="title">ChemiReg, Registration made simple</h2>
+			<img class="title_image" src="images/ChemiReg.png" width="600" style="margin-left:auto;margin-right:auto"/>
+			<h3 class="sub_title">Designed in Oxford at the SGC, powered by RDkit</h3>
+			<div >
+				<label class="login_field_username_label" style="display:inline-block" for="username">Username</label>
+				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block">
+				
+				<label class="login_field_password_label" style="display:inline-block" for="password">Password</label>
+				<input class="login_field" style="display:inline-block" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
+				
+			</div>
+			<div>
+				<button class="login_field" style="display:inline-block; padding-left:20px;padding-right:20px"  tabindex="3" class="button-primary" onclick="login()">Login</button>
+			</div>
+			<div>
+				<a tabindex="5" onclick="request_password_reset()" style="margin-right:10px;cursor:pointer">Reset Password</a>
+				<a  tabindex="4" style="display:none;cursor:pointer"  id="registration_button" onclick="switch_screen('registration')">Register for an account</a>
+			</div>
+		</div>
+		
+		<div id="password_reset" class="row" style="display:none;margin-left:10px">
+			<div class="twelve columns">
+				<label for="password_current" id="password_current_label">Current Password</label>
+				<input type="password" id="password_current">
+				<label for="password_reset1">Password</label>
+				<input type="password" id="password_reset1">
+				<label for="password">Confirm Password</label>
+				<input type="password" id="password_reset2">
+			</div>
+			<div class="twelve columns">
+				<button  class="button" onclick="login()">Reset</button>
+			</div>
+		</div>
+		
+		<div id="password_reset_link" class="row" style="display:none;margin-left:10px">
+			<div class="six columns">
+				<h3 >Password Reset</h3>
+				Note that we don't have any password length or character rules but your password will be rejected if it's automatically determined to be too easy to guess.
+			</div>
+			<div class="twelve columns">
+				<label for="password_token_reset1">New Password</label>
+				<input type="password" id="password_token_reset1">
+				<label for="password_token_reset2">Confirm New Password</label>
+				<input type="password" id="password_token_reset2">
+			</div>
+			<div class="twelve columns">
+				<button  class="button button-primary" onclick="reset_password_link()">Reset</button>
+			</div>
+		</div>
+			
+		<div id="results" style="display:flex;flex-direction:column;overflow:hidden;flex-grow:1" >
+			<div  style="overflow:hidden;display:flex;flex-direction:column;flex-grow:1">
+				<div id="compound_table_container" style="flex-grow:1;overflow:auto;padding-left:10px;padding-right:10px;">
+					<table id="compound_table_results" style="min-width:100%;clear:both;padding-bottom:50px" class="search_results">
+						<thead style="background-color:white">
+							
+						</thead>
+						<tbody id="compounds_results" style="font-size: small;">
+
+						</tbody>
+					</table>
+				</div>
+				<div  id="compound_table_paging" style="width:100%;display:inline-block;background-color:#33C3F0;">
+
+				</div>
+			</div>
+		</div>
+
+		<div id="registration" class="row" style="display:none;position:absolute;padding-left:10px;padding-right:10px;">
+			<div class="twelve columns">
+				<h3>Register</h3>
+				<form id="registration">
+					<div class="row">
+						<div class="six columns">
+							<label for="reg_first_name">First Name</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="text" id="reg_first_name"/>
+						</div>
+						<div class="six columns">
+							<label for="reg_last_name">Last Name</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="text" id="reg_last_name"/>
+						</div>
+					</div>
+					<div class="row">
+						<div class="six columns">
+							<label for="reg_email">Email</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="text" id="reg_email"/>
+						</div>
+						<div class="six columns">
+							<label for="reg_username">Username</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="text" id="reg_username"/>
+						</div>
+					</div>
+					<div class="row">
+						<div class="six columns">
+							<label for="reg_password">Password</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="password" id="reg_password"/>
+						</div>
+						<div class="six columns">
+							<label for="reg_password_confirm">Confirm password</label>
+							<input class="u-full-width" onKeyUp="check_reg_form()" type="password" id="reg_password_confirm"/>
+						</div>
+					</div>
+					<input class="button button-primary" type="submit"  value="Submit"  onclick="register()"  id="reg_submit" disabled/>
+			    </form>
+				<label for="login_redirect">Login with existing account</label>
+				<button  id="login_redirect" class="button" onclick="switch_screen('login')">Login</button>
+			</div>
+		</div>
+			
+		<div id="help" class="row" style="display:none;padding-left:10px;padding-right:10px;overflow:auto;flex:1">
+			<div class="twelve columns" style="display:flex;flex:1;width:100%">
+				<div class="row" style="overflow:auto;display:flex;flex:1;width:100%">
+					<iframe src="manual/index.html" style="width:100%;border:none"></iframe>
+				</div>
+			</div>
+		</div>
+			
+		<div id="upload" class="row" style="display:none;padding-left:10px;padding-right:10px;overflow:auto">
+			<div id="sdf_upload" class="twelve columns" style="display:none">
+				<h3 id="upload_section_heading" style="margin-top:0px;display:none">Upload (SDF, Excel, CSV, Txt)</h3>
+				<div >
+					<button href="#structure_results" class="button u-full-width" onclick="register_sdf_ui()">Register</button>
+					<input type="file" id="input" style="display:none" onchange="handle_files(this.files)" 
+						accept=".xlsx,.csv,.txt,.sdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple/>
+					<button class="button u-full-width" onclick="document.getElementById('input').click()" id="file_select">Select (SDF, Excel, CSV, Txt)</button>
+				</div>
+				<div class="row" id="advanced_register_options" style="overflow:auto">
+					<table id="advanced_register_options_table" class="upload_fields" style="width:100%">
+						<thead>
+							<tr>
+								<th style="text-align:center">
+									Field Name
+								</th>
+								<th style="text-align:center">
+									Map to field
+								</th>
+								<th style="text-align:center">
+									Set value
+								</th>
+							</tr>
+						</thead>
+						<tbody id="advanced_register_options_table_body">
+						
+						</tbody>
+					</table>
+				</div>
+				<div class="row">
+					<div class="twelve columns">
+						
+					</div>
+				</div>
+			</div>
+	    </div>
+	    
+		<div id="search"  style="display:flex;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;position:fixed;top='-2000px';">
+			<div id="search_button_container">
+				<div>
+					<button id="search_button_search" class="button u-full-width" style="display:none" onclick="search()">Search</button>
+				</div>
+			</div>
+			<div id="search_input_container"  class="row">
+				<div class="nine columns">
+					<select style="display:none" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
+					
+				</div>
+				<div class="three columns">			
+					<label id="search_wildcard_label" class="button" style="border:none;display:none">
+					    <input id="wildcard_search" type="checkbox"    style="display:none" checked/>
+					    <span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span>
+					  </label>							
+					</div>	
+			</div>
+			<div style="display:none" id="save_structure">
+				<div >
+					<button class="button u-full-width" onclick="update_structure()">Update Structure</button>
+				</div>
+			</div>
+			<div style="display:flex;flex-direction:column;flex-grow:1">
+				<div id="structure_editor" style="flex-grow:1;position:relative">
+					
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

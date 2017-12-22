@@ -1,0 +1,474 @@
+/** 
+ ChemiReg - web-based compound registration platform
+ Written in 2017 by David Damerell <david.damerell@sgc.ox.ac.uk>, Brian Marsden <brian.marsden@sgc.ox.ac.uk>
+ 
+ To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+ You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+**/
+
+.structure_btn {
+	min-width:300px;
+}
+
+.upload_td_wide {
+	min-width:200px;
+}
+
+@media
+only screen and (max-width: 1000px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+	body{
+		display:flex !important;
+		overflow: initial !important;
+	}
+	
+	.selectize-dropdown {
+		position: initial !important;
+	}
+	
+	.search_results {
+		display: block;
+	}
+
+	/* Force table to not be like tables anymore */
+	.search_results thead {
+		display: block;
+	}
+
+	.search_results tbody {
+		display: block;
+	}
+
+	.search_results th {
+		display: block;
+	}
+
+	.search_results tr {
+		display: block;
+	}
+
+	.search_results td {
+		display: block;
+	}
+
+	/* Hide table headers (but not display: none;, for accessibility) */
+	.search_results thead {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+
+	.search_results tr { border: 1px solid #ccc; }
+
+	.search_results_td_narrow {
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee;
+		position: relative;
+		padding-left: 50% !important;
+		overflow:hidden;
+	}
+
+	.search_td_wide {
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee;
+		position: relative;
+
+		/*padding-left: 50% !important;*/
+		overflow:hidden;
+		min-width:30px;
+	}
+
+	.search_results td:before {
+		/* Now like a table header */
+		position: absolute;
+		/* Top/left values mimic padding */
+		top: 6px;
+		left: 6px;
+		width: 45%;
+		padding-right: 10px;
+		/*white-space: nowrap;*/
+		max-width:100px;
+		font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	}
+	
+	.compound_table_field{
+		min-width:initial!important;
+	}
+
+	/*
+	Label the data
+	*/
+	/*.search_results td:nth-of-type(1):before { content: "Compound ID"; }
+	.search_results td:nth-of-type(2):before { content: "Structure"; }
+	.search_results td:nth-of-type(3):before { content: "Attachments"; }
+	.search_results td:nth-of-type(4):before { content: "Supplier Name"; }
+	.search_results td:nth-of-type(5):before { content: "Supplier ID"; }
+	.search_results td:nth-of-type(6):before { content: "User"; }
+	.search_results td:nth-of-type(7):before { content: "Actions"; }*/
+	
+	.search_results td:before { content: attr(column_name); }
+	
+	.progress_td {
+		width: initial !important;
+	}
+	
+	.progress_td >button {
+		min-width: initial !important;
+	}
+	
+	/* Upload fields */
+	.upload_fields {
+		display: block;
+	}
+
+	/* Force table to not be like tables anymore */
+	.upload_fields thead {
+		display: block;
+	}
+
+	.upload_fields tbody {
+		display: block;
+	}
+
+	.upload_fields th {
+		display: block;
+	}
+
+	.upload_fields tr {
+		display: block;
+	}
+
+	.upload_fields td {
+		display: block;
+	}
+
+	/* Hide table headers (but not display: none;, for accessibility) */
+	.upload_fields thead {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+
+	.upload_fields tr { 
+		border-top: 1px solid #ccc;
+		border-left: 1px solid #ccc;
+		border-right: 1px solid #ccc; 
+		margin-bottom:4px;
+	}
+
+	.upload_fields_td_narrow {
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee;
+		position: relative;
+		padding-left: 50% !important;
+		overflow:hidden;
+	}
+
+	.upload_td_wide {
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee;
+		position: relative;
+
+		padding-left: 50% !important;
+		overflow:hidden;
+		width:100px;
+		min-width: 110px;
+		text-align:initial !important;
+		margin-left: 1px!important;
+	}
+
+	.upload_fields td:before {
+		/* Now like a table header */
+		position: absolute;
+		/* Top/left values mimic padding */
+		top: 6px;
+		left: 6px;
+		width: 45%;
+		padding-right: 10px;
+		/*white-space: nowrap;*/
+		max-width:100px;
+	}
+	
+	.upload_fields td:before { content: attr(column_name); font-weight:200;}
+
+	.subtitle {
+		display:none !important;
+	}
+
+	.button {
+		font-size: 10px;
+		padding: 1px 4px 1px 4px;
+	}
+
+	button {
+		font-size: 10px;
+		padding: 1px 4px 1px 4px;
+	}
+
+	.designed_by_section {
+		font-size: 10px;
+	}
+
+	.compound_count {
+		 -webkit-margin-before: 0px;
+		margin-before: 0px;
+		display:block !important;
+	}
+
+	.export_btn {
+
+	}
+
+	.compound_table_field {
+		text-align:left !important;
+	}
+
+	#search_selection {
+		width:120px;
+	}
+	
+	#compounds_results > tr > td > div > div.selectize-dropdown.single.u-full-width {
+		position: initial !important;
+	}
+	
+	#project_selection {
+		float: initial !important;
+		right: initial !important;
+	}
+	
+
+	#caption {
+		display:none !important;
+	}
+	
+	.compound_count {
+		font-size:small;
+	}
+	
+	.structure_btn {
+		min-width:initial;
+	}
+	
+	#title {
+		display: none !important;
+	}
+	
+	#project_selection {
+		margin-right: initial;
+		text-overflow: ellipsis;
+	    overflow: hidden !important;
+	    max-width:initial!important;
+		width:100%;
+	}
+	
+	#main_buttons{
+		/*text-align:justify;*/
+		text-overflow: ellipsis;
+	    overflow: hidden;
+		
+	}
+	
+	#main_buttons > button{
+		/*padding: 1px 10px 1px 10px;*/
+		max-width: 90px;
+	    text-overflow: ellipsis;
+	    overflow: hidden;
+	}
+	
+	#project_selection :before {
+		content: '';
+		display:block;
+	}
+	
+	#project_selection_container {
+		display:block !important;
+		
+	}
+	
+	#compound_table_paging {
+		position:fixed;
+		bottom:0px;
+		left:0px;
+	}
+	
+	.login_field {
+		display:initial !important;
+	}
+	
+	.login_field_password_label {
+		display: block !important;
+	}
+	
+	.login_field_username_label {
+		display: block !important;
+	}
+	
+	.login_container {
+		text-align:left !important;
+    	margin: auto;
+	}
+	
+	.title_image {
+		width:300px;
+		margin-left:initial;
+		margin-right:initial;
+	}
+	
+	.title{
+		font-size:large;
+		margin-top:10px;
+		margin-bottom:10px;
+		font-weight:bold;
+	}
+	
+	.sub_title{
+		font-size:medium;
+		margin-top:10px;
+		margin-bottom:10px;
+	}
+	
+	#upload_section_heading {
+		font-size: x-large;
+	}
+	
+	#project_selection_div {
+		display:block !important;
+	}
+	
+	#main_buttons {
+		display: block !important;
+	}
+	
+	#search_results_table {
+		width:initial!important;
+	}
+}
+
+.designed_by_section{
+	text-decoration:underline;
+}
+
+.export_btn {
+	float:right;
+	margin-right:4px;
+}
+
+.compound_count {
+	display: inline-block;
+	margin-right:10px;
+}
+
+.compound_table_field {
+	text-align:center;
+}
+
+.cell_modified {
+	border: 1px dashed red;
+}
+
+.confirm_button {
+	background-color: #33C3F0 !important;
+	border: 1px solid #bbb !important;
+	padding: 0 30px !important;
+}
+
+.cancel_button {
+	color:#555 !important;
+	border: 1px solid #bbb !important;
+	background-color: transparent !important;
+	padding: 0 30px !important;
+}
+
+.calculated_field {
+	background-color: #e6e6d9;
+}
+
+.required_field {
+	background-color: #e8ffe6;
+}
+
+.selectize-control input{
+	height:initial!important;
+}
+
+#structure_editor td>div  {
+   // background:white !important;
+	//border:none !important;
+	color:white;
+}
+
+#structure_editor td>img{
+	filter: invert(100%);
+}
+
+#structure_editor td, #structure_editor th  {
+	//background:white !important;
+	border:none !important;
+	padding: 0px 0px;
+	text-align:center;
+	
+}
+
+#structure_editor > table > tbody > tr:nth-child(3) > td > div{
+	height:40px !important;
+}
+
+#compound_table_results > thead > tr > th  {
+	white-space: nowrap;
+	padding: 5px, 5px;
+}
+
+
+
+#structure_editor td {
+	vertical-align:top;
+	border:none !important;
+	background-color: #33C3F0;
+	color:white;
+}
+
+#structure_editor img {
+	border:initial !important;
+}
+
+#structure_editor table  {
+   // background:#152E33;
+  // margin:auto !important;
+  border-collapse: initial;
+  border-spacing:2px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.main_menu_followed:after { content: "/"; display: inline-block;  }
+.main_menu_followed:hover:after { color:white}
+.main_menu {
+	color:white;
+	padding: 0 0;
+	border: none;
+	margin-bottom:0px;
+}
+
+.main_menu:hover {
+	color: grey;
+}
+
+.main_menu:active {
+	color:black;
+}
+
+.screen_selected {
+	color:black;
+}
+
+.changes {
+	background-color:red;
+}
+
+.sweet-alert button {
+	color:white !important;
+}
