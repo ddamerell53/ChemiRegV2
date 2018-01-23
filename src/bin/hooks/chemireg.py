@@ -179,6 +179,18 @@ class ChemiReg(object):
         self.provider.get_by_named_query(command_name, arguments, self._process_response)
 
         return self.block_call()
+    
+    def fetch_updates(self, since_transaction_id, no_records, project):
+        arguments = {
+            'action':'update_instructions',
+            'task':'generate_update_instruction_file',
+            '_username':None,
+            'project': project,
+            'since_transaction_id':since_transaction_id,
+            'no_records':no_records
+        }
+        
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
 
     def fetch(self, ids, project, from_row, to_row):
         arguments = {
@@ -300,5 +312,7 @@ class ChemiRegTests(object):
 if __name__ == '__main__':
     tests = ChemiRegTests('http://localhost', 80, 'username', 'password')
     tests.run_tests()
+    
+    
 
     
