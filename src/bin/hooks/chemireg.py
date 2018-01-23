@@ -189,7 +189,7 @@ class ChemiReg(object):
             'action':'update_instructions',
             'task':'generate_update_instruction_file',
             '_username':None,
-            'project': [project],
+            'project': project,
             'since_transaction_id':since_transaction_id,
             'no_records':no_records,
             'out_file': None

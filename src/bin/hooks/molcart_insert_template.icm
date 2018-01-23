@@ -1,0 +1,83 @@
+# Connect to Molcart
+
+s_p2='password'
+connect molcart "fides" "root" s_p2 "GlobalCompounds" name='fides'
+
+# Open SDF
+
+sdf_file = Getarg('sdf')
+
+
+read table mol sdf_file name='INPUT_TABLE'
+
+colCount = 2
+
+# Append columns
+
+add column INPUT_TABLE function="MolLogP(mol)" index = colCount + 1 name="molLogP" append format="%.2f"
+add column INPUT_TABLE function="MolLogS(mol)" index = colCount + 1 name="molLogS" append format="%.2f"
+add column INPUT_TABLE function="MolPSA(mol)" index = colCount + 1 name="molPSA" append format="%.2f"
+add column INPUT_TABLE function="MolVolume(mol)" index = colCount + 1 name="molVolume" append format="%.2f"
+add column INPUT_TABLE function="Smiles(mol,'unique')" index = colCount + 1 name="SMILES" append
+add column INPUT_TABLE function="Nof_Chirals(mol,'any')" index = colCount + 1 name="NumOfChirals" append
+add column INPUT_TABLE function="Nof_RotB(mol)" index = colCount + 1 name="NumOfRotBonds" append
+add column INPUT_TABLE function="Nof_HBA(mol)" index = colCount + 1 name="NumOfHbondAccs" append
+add column INPUT_TABLE function="Nof_HBD(mol)" index = colCount + 1 name="NumOfHbondDonors" append
+add column INPUT_TABLE function="MolWeight(mol)" index = colCount + 1 name="MolWeight" append format="%.3f"
+
+# Build column index, type, size, map
+cols = Name(INPUT_TABLE)
+col_defs = Collection()
+for i=1, Nof(cols)
+        col = cols[i]
+        colName = Split(col, '.')[2]
+
+        print colName
+
+        if(Type($col) == 'sarray') then
+                maxLen = -1
+                for j=1, Nof($col) then
+                        colSize = Length($col[j])
+                        if(colSize > maxLen) then
+                                maxLen = colSize
+                        endif
+                endfor
+                col_defs[colName]= Collection('type', 'string', 'col_size', maxLen)
+        elseif(Type($col) == 'iarray') then
+                col_defs[colName] = Collection('type', 'int')
+        elseif(Type($col) == 'rarray') then
+                col_defs[colName] = Collection('type', 'real')
+        else
+                col_defs[colName] = Collection('type', 'unknown')
+        endif
+        col_defs[colName, 'position'] = i
+endfor
+
+# Determine column sizes
+
+col_args = Sarray(13)
+
+required_cols = {'mol', 'SGCGLOBALID','MolWeight', 'NumOfHbondDonors', 'NumOfHbondAccs', 'NumOfRotBonds', 'NumOfChirals', 'SMILES', 'molVolume','molPSA', 'molLogS', 'molLogP','ChemiRegPKEY'}
+
+for i=1, Nof(required_cols) then
+    col_name = required_cols[i]
+
+    if(Exist(col_defs, col_name)) then
+            def = col_defs[col_name]
+
+            if(def['type'] == 'string') then
+                    col_args[i] = String(def['position']) + ' string(' + String(def['col_size']) + ') ' + col_name
+            elseif(def['type'] == 'int') then
+                    col_args[i] = String(def['position']) + ' int ' + col_name
+            elseif(def['type'] == 'real') then
+                    col_args[i] = String(def['position']) + ' real ' + col_name
+            elseif(col_name == 'mol') then
+                    col_args[i] = String(def['position'])  + ' chemical ' + col_name
+            endif
+    endif
+endfor
+
+# Insert into Molcart
+make molcart table INPUT_TABLE name="GlobalCompounds.allOxford" append column = col_args connect="fides"
+
+quit()
