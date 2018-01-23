@@ -1,0 +1,10 @@
+Alpha quality project!
+
+Whilst we are refining and documentating you can play with the docker images as follows
+
+* run docker/install_from_store.ps1 (commands are valid in Linux as well)
+* Navigate to http://localhost:8888 to access the ChemiReg Jupyter notebook (password = password)
+* Run Setup.ipynb (set the administrator password and run all code blocks)
+* Login to ChemiReg (http://localhost) as the administrator with the password you just entered
+
+More documentation to follow
