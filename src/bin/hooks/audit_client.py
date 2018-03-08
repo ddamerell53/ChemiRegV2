@@ -26,6 +26,10 @@ class AuditClient(ABC):
  
     def process_log(self):    
         with open(self.transaction_log, 'r') as f:
+            items = ijson.items(f, 'archived.item')
+            self.archive_items(items)
+            
+        with open(self.transaction_log, 'r') as f:
             items = ijson.items(f, 'inserts.item')
             self.insert_items(items)
                 
