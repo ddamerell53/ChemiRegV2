@@ -14,6 +14,8 @@ import os
 import pprint
 import uuid
 from time import sleep
+import tempfile
+import urllib
 
 class ChemiReg(object):
     def __init__(self, hostname, port, username, password):
@@ -76,13 +78,15 @@ class ChemiReg(object):
                 sleep(0.05)
 
     def _process_response(self, error, json):
-        print('Got results')
-        if 'objects' in json and json['objects'] is not None and 'upload_set' in json['objects'][0]:
-            objs = json['objects'][0]['upload_set']
-        elif 'objects' in json and 'refreshed_objects' in json['objects'][0]:
-            objs = json['objects'][0]['refreshed_objects']
+        if 'objects' in json and json['objects'] is not None:
+            if 'upload_set' in json['objects'][0]:
+                objs = json['objects'][0]['upload_set']
+            elif 'refreshed_objects' in json['objects'][0]: 
+                objs = json['objects'][0]['refreshed_objects']
+            else:
+                objs = json['objects'][0]
         else:
-            objs = json['objects'][0]
+                objs = json
 
         self.set_state(error, objs, True)
 
@@ -187,10 +191,17 @@ class ChemiReg(object):
             '_username':None,
             'project': project,
             'since_transaction_id':since_transaction_id,
-            'no_records':no_records
+            'no_records':no_records,
+            'out_file': None
         }
         
-        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+        response = self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+        update_path = self.hostname + '/' + response['objects']['out_file'].replace('public/','')
+
+        f = tempfile.NamedTemporaryFile(delete=False)
+        urllib.request.urlretrieve(update_path, f.name)
+
+        return f.name
 
     def fetch(self, ids, project, from_row, to_row):
         arguments = {
@@ -312,7 +323,3 @@ class ChemiRegTests(object):
 if __name__ == '__main__':
     tests = ChemiRegTests('http://localhost', 80, 'username', 'password')
     tests.run_tests()
-    
-    
-
-    
