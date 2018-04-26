@@ -284,7 +284,7 @@ class CompoundManager(object):
 			prepare delete_upload_set as
 			update compounds
 			set
-				compound_id = compound_id || '_archived_' || $3,
+				compound_id = compound_id || '_archived_' || $4,
 				archived_transaction_id = CAST($3 as BIGINT)
 			where upload_id = $1 and
 			compounds.project_id = (select id from projects where project_name=$2)
@@ -506,8 +506,9 @@ class CompoundManager(object):
 							elif field['type_name'] == 'varchar':
 								if len(str(field_value)) > 4000:
 									raise ValueToLongException({'compound_id': compound_id, 'field_name': field['field_name'], 'human_name': field['human_name'], 'value': field_value})
-							
-						
+						elif field['type_name'] == 'varchar' and type(field_value) is float:	
+							field_value = str(field_value)
+							field_value = re.sub('\.0$','', field_value)						
 							
 						cur.execute("execute custom_field_" + field_type + " (%s,%s,%s,%s)", (changes[entity_pkey][field_name], entity_pkey, field_id, self.transaction_id))
 					
@@ -710,8 +711,22 @@ class CompoundManager(object):
 				try:
 	
 					obj = {}
-					
-					obj = self.process_mol(salted_mol, obj, salts)
+
+					try:
+						obj = self.process_mol(salted_mol, obj, salts)
+					except UnicodeDecodeError as err:
+						with open(ctab_path.encode('ascii', 'ignore'), 'r', encoding='utf-8', errors='replace') as f:
+							bad_line = ''
+							line_no = 0
+							for line in f:
+								line_no += 1
+								if '\ufffd' in line:
+									bad_line = line
+									break
+
+						raise InvalidCharacterException(
+							'Invalid character detected for compound ' + str(row_i + 1) + ' on line ' + str(
+								line_no) + ' =>' + bad_line)
 						
 					compound_id = None
 					manual_id = 'no'
@@ -1124,6 +1139,9 @@ class CompoundManager(object):
 						elif field['type_name'] == 'varchar':
 							if len(field_value) > 4000:
 								raise ValueToLongException({'compound_id': obj['compound_id'], 'field_name': field['field_name'], 'human_name': field['human_name'], 'value': field_value})
+					elif field['type_name'] == 'varchar' and type(field_value) is float:	
+						field_value = str(field_value)
+						field_value = re.sub('\.0$','', field_value)
 							
 					value_map += [entity_id, field_id, field_value, self.transaction_id]
 				
@@ -1593,7 +1611,7 @@ class CompoundManager(object):
 		if not self.auth_manager.has_project(username, project_name):
 			raise authenticate.UnauthorisedException('User ' + username + ' not authorised for ' + project_name)
 		
-		self.delete_upload_set_cur.execute("execute delete_upload_set (%s,%s,%s)", (upload_id, project_name, self.transaction_id))
+		self.delete_upload_set_cur.execute("execute delete_upload_set (%s,%s,%s,%s)", (upload_id, project_name, self.transaction_id,str(uuid.uuid4()) ))
 		
 	def convert_value(self, project_name, field_name, original_value, new_value):
 		cur = self.conn.cursor()
@@ -1722,6 +1740,13 @@ class InvalidFieldNameException(Exception):
 		return repr(self.value)
 
 class ConcurrentIDGenerationCollision(Exception):
+	def __init__(self, value):
+		self.value = value
+
+	def __str__(self):
+		return repr(self.value)
+
+class InvalidCharacterException(Exception):
 	def __init__(self, value):
 		self.value = value
 
@@ -1952,6 +1977,9 @@ if __name__ == '__main__':
 				output_json['invalid_exception'] = e.value
 			except ValueToLongException as e:
 				error = 'Field ' + e.value['human_name'] + ' has value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id'] + ' larger than 4,000 characters'
+				output_json['invalid_exception'] = e.value
+			except InvalidCharacterException as e:
+				error = e.value
 				output_json['invalid_exception'] = e.value
 				
 			output_json['upload_id'] = upload_id
