@@ -30,6 +30,7 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem import Descriptors
 from rdkit.Chem.rdmolfiles import SDWriter
 from salt_remove import StripMol
+from rdkit.Chem import AllChem
 
 # ChemiReg modules - CC0
 import authenticate
