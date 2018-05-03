@@ -37,6 +37,7 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.Draw import MolDrawing
 from rdkit.Chem import Draw
 from rdkit.Chem.rdmolfiles import SDWriter
+from rdkit.Chem import AllChem
 
 # ChemiReg - CC0
 from connection_manager import ConnectionManager
@@ -1929,6 +1930,16 @@ class CompoundFetchManager(object):
 		for obj in self.user_settings:
 			if obj['compound_id'] == 'Hide_Salt_Suffixes_' + self.project and obj['project'] == self.project and obj['option'] == 'Yes':
 				self.strip_salts = True
+				
+	def convert_smiles_to_ctab(self, smiles):
+		mol = Chem.MolFromSmiles(smiles)
+		
+		try:
+			AllChem.Compute2DCoords(mol, clearConfs = True, canonOrient  = True)
+		except:
+			pass
+		
+		return Chem.MolToMolBlock(mol)
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
@@ -2096,7 +2107,9 @@ if __name__ == '__main__':
 					if input_json['task'] == 'generate_update_instruction_file':
 						log_file  = manager.generate_update_instructions(input_json['_username'], input_json['project'], input_json['since_transaction_id'],input_json['out_file'], input_json['no_records'])
 						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(log_file)
-						
+				elif input_json['action'] == 'convert_smiles_to_ctab':
+					output_json['ctab_content'] = manager.convert_smiles_to_ctab(input_json['smiles'])
+					
 		if (('forget_search' in input_json and not input_json['forget_search']) or 'forget_search' not in input_json ) and 'task' in input_json and input_json['task'] == 'count':
 			obj = {
 				'terms': None,

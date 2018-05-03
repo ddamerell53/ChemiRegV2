@@ -32,6 +32,7 @@ var last_search_term = null;
 var ignore_reset = false;
 
 var custom_fields = null;
+var custom_fields_human_index = null;
 var search_control = null;
 var project_defs = null;
 
@@ -47,6 +48,9 @@ var mapping_fields = new haxe.ds.StringMap();
 
 var login_load = false;
 var user_settings;
+
+var cols_ordered = []; //leo
+var row_index = -1;
 
 function reset_paging_panel(){
 	query_page = 0;
@@ -820,6 +824,8 @@ function update_upload_field_table(){
 }
 
 function on_project_change(cb){
+	row_index = 0;
+	
 	if(get_project() == 'Logout'){
 		logout();
 		return;
@@ -974,6 +980,8 @@ function add_new_row(){
 		insert_mode = true;
 		current_fetch = null;
 		query_size = 0;
+		
+		row_index = 0;
 	}
 
 	query_size += 1;
@@ -1021,6 +1029,9 @@ function add_new_row(){
 }
 
 function add_row(compound_table_body, compound, replace_row){
+	row_index++;
+	var g_row_index = row_index;
+	
 	var compound_row = document.createElement('tr');
 	compound_row.setAttribute('id', 'compound_row_' + compound.id);
 	compound_row.style.verticalAlign = 'top';
@@ -1040,7 +1051,13 @@ function add_row(compound_table_body, compound, replace_row){
 	compound_id_span.addEventListener('click', function(event){
 		make_editable(event.target);
 	});
-
+	
+	var field_item = null;
+	compound_id_span.addEventListener('paste', function(event){ //leo
+		event.preventDefault();
+		paste_data(compound, field_item, g_row_index, event);
+	});
+    
 	compound_id_span.addEventListener('input', function(event){
 		on_field_change_ui(event.target, 'compound_id',  Reflect.field(compound, 'compound_id'), compound.id);
 	});
@@ -1058,12 +1075,13 @@ function add_row(compound_table_body, compound, replace_row){
 				structure_html = structure_html.replace("width=\"200pt\"","width='100%'");
 				structure_html = structure_html.replace("height=\"200pt\"",'viewBox="0 0 200 200"');
 			}
-	
 			var structure_cell = document.createElement('td');
 			structure_cell.setAttribute('column_name','Structure');
 			structure_cell.classList.add('compound_table_field');
 			structure_cell.classList.add('search_results_td_narrow');
 	
+			i += 1;
+			
 			var structure_btn = document.createElement('button');
 			structure_btn.classList.add("button");
 			structure_btn.classList.add("structure_btn");
@@ -1135,6 +1153,8 @@ function add_row(compound_table_body, compound, replace_row){
 		attachment_row.classList.add('compound_table_field');
 		attachment_row.style.minWidth = '200px';
 
+		i += 1;
+		
 		var attachments = compound.attachments;
 		if(attachments != null){
 			for(var j=0;j<attachments.length;j++){
@@ -1196,6 +1216,8 @@ function add_row(compound_table_body, compound, replace_row){
 		(function() {
 			var field = cols[l];
 			
+			var k = j;
+			
 			var field_item = Reflect.field(project_fields, field_map.get(field));
 			
 			if(!field_item.visible){
@@ -1204,6 +1226,12 @@ function add_row(compound_table_body, compound, replace_row){
 			
 			var field_cell = document.createElement('td');
 			field_cell.setAttribute('column_name',field_item.human_name);
+
+			
+			field_cell.addEventListener('paste', function(event){
+				event.preventDefault();
+				paste_data(compound, field_item, g_row_index, event);
+			});
 			
 			var field_value = Reflect.field(compound, field_item.field_name);
 			if(field_value == null){
@@ -1456,6 +1484,225 @@ function add_row(compound_table_body, compound, replace_row){
 			selectize_cmp.setValue(original_value, true);
 		})();
 	}
+}
+
+function paste_data(compound, field_item, g_row_index, event){
+	var pasted_data = event.clipboardData.getData('text');
+	var rows = pasted_data.split('\n');
+    rows.pop();
+    
+    if (field_item == null) {
+    	field_name = 'compound_id';
+    } else {
+    	var field_name = field_item.field_name;
+    }
+    
+    var total_rows = compounds.length;
+    var diff = total_rows - g_row_index + 1;
+    var to_add = rows.length - diff;
+   
+    if(insert_mode){
+	    if(to_add > 0){
+	    	for (i=0; i<to_add; i++) {
+	        	add_new_row();
+	        }
+	    }
+    }
+    
+    // Create a copy of cols_ordered which includes the first special column for ID
+    var table_column_defs = [];
+    for(var i=0;i<cols_ordered.length;i++){
+    	table_column_defs.push(cols_ordered[i]);
+    }
+    
+    // Column of table pasted into - an integer
+    var starting_col = null;
+    
+    if(field_item != null){
+    	// We get here for all custom fields (i.e. not the first field which includes the entity ID)
+    	
+    	// Iterate custom field columns to work out which one was pasted into
+    	for(var k=0;k<cols_ordered.length;k++){
+    		// K'th column definition
+            var col_definition = cols_ordered[k];
+            
+            if(col_definition == field_item.human_name){
+            	// We get here if, this was the column pasted into 
+            	starting_col = k;
+            }
+        }
+    }else{
+    	// We get here when the column pasted into was for the first special ID field
+    	starting_col = 0;
+    }
+    
+    // Iterate rows of pasted content
+    for(row in rows) {
+    	// Split row into cells
+    	var row_cells = rows[row].split("\t");
+    	console.log('row cells', row_cells);
+    	
+    	// Get compound at this row in the table
+    	var compound_for_row = compounds[g_row_index-1];	
+    	
+    	if (compound_for_row === undefined)  {
+    		// When the pasted rows are more than the available ones
+    		show_message('Error pasting data', 'You have pasted too many rows.');
+    		break;
+    	}
+    	
+    	// Get the TR element for this row
+    	var target_elem = document.getElementById('compound_row_' + compound_for_row.id);
+    	
+    	// Get a list of all TD elements for this row, so we can find the matching 
+        var children = target_elem.getElementsByTagName('td');
+    	
+    	// Increment row counter for the next loop
+    	g_row_index += 1;
+    	
+    	// Store the column position for which the next value should be pasted
+    	var row_cell_col = starting_col;
+    	
+    	// Iterate cells for this row
+    	for(var u=0;u<row_cells.length;u++){
+    		// Value associated with this cell 
+    		var row_cell_value = row_cells[u];
+    		
+    		// Get the definition for the column we are going to paste a value for
+    		var col_field_human_name = table_column_defs[row_cell_col];
+    		var col_field_item = null;
+    		if(custom_fields_human_index.exists(col_field_human_name)){
+    			col_field_item = custom_fields_human_index.get(col_field_human_name);
+    		}
+    		
+    		// Get the TD corresponding to this cell
+    		var child = children[row_cell_col];
+    		
+    		// We need to treat the first column and all the custom fields differently
+    		var appendToElem = null;
+    		var custom_field_name = null;
+    		if(col_field_item == null){
+    			// We get here if the column is the first special ID one
+    			appendToElem = child.getElementsByTagName('div')[0];
+    			custom_field_name = 'compound_id';
+    		}else{
+    			// We get here for the custom fields
+    			appendToElem = child;
+    			custom_field_name = col_field_item.field_name;
+    		}
+    		
+    		if (col_field_item != null && Reflect.hasField(col_field_item, 'foreign_key_project_name') && col_field_item.foreign_key_project_name != null){
+    			var child_id = child.firstChild.id;
+    			
+    			//$('#' + child_id).siblings('.selectize-control').find('.item').attr('data-value', row_cell_value);
+    			//$('#' + child_id).siblings('.selectize-control').find('.item').text(row_cell_value);
+    			//$('#' + child_id).siblings('.selectize-control').find('.selectize-dropdown-content').append('<div class="option selected" data-selectable data-value=' + row_cell_value + '><span class="highlight">'+ row_cell_value +'</span></div>');
+    			//$('#' + child_id).siblings('.selectize-control').find('.selectize-dropdown-content').addClass('222222');
+    			
+    			var search_term = row_cell_value;
+    			
+    			var $select = $('#' + child_id).selectize({
+    				create: true,
+    			}); /**
+    				load: function(search_term, callback){
+    					saturn.core.Util.getProvider().getByNamedQuery(
+    							'saturn.db.provider.hooks.ExternalJsonHook:FastFetch',
+    							[{'find_terms': search_term, '_username': null, 'project': foreign_key_project_name}],
+    							null,
+    							false,
+    							function(objs, err){
+    								if(err != null){
+    									show_message('Error fetching terms',err);
+    									callback();
+    								}else{
+    									var entities = objs[0].entities;
+    									callback(entities);
+    								}
+    							}
+    					);
+    				}
+    				
+    			}); */
+    			
+    			
+    			var selectize = $select[0].selectize;
+
+    			var list = [
+    			    {
+    			        text: 'GB',
+    			        value: 1
+    			    },
+    			    {
+    			        text: 'ZZ',
+    			        value: 2
+    			    }
+    			];
+    			    			
+    			
+                selectize.clear();
+                selectize.clearOptions();
+                selectize.renderCache['option'] = {};
+                selectize.renderCache['item'] = {};
+                
+                selectize.addOption(list);
+                selectize.setValue(list[0].value);
+                
+                
+    			//selectize.clear();
+
+    			/**
+    			selectize.load(function(callback) {
+    			    callback(list);
+    			}); */
+    		
+
+    			
+    			
+    			selectize.addOption({value:'GB', text:'GB'});
+
+    			//selectize.addItem('GB');
+    		    			
+    			//selectize.setValue('GB', false);
+    			
+    			
+    			selectize.on('change', function() {
+    			      var test = selectize.getValue();
+    			      alert(test);
+    			});
+    			
+    			
+    			
+    		} else if (enable_structure_field() && col_field_human_name == 'Structure'){
+    			(function(){
+    				var g_custom_field_name = custom_field_name;
+    				var g_compound_for_row = compound_for_row;
+    				var g_child = child;
+	    			convert_smiles_to_ctab(row_cell_value, function(ctab_content, error){	    				
+	    				update_structure(ctab_content, g_compound_for_row.id, g_child.getElementsByTagName('button')[0]);
+	    				
+	    				// Saves the change in the unsaved_changes object and highlight the cells with unsaved changes to the user
+	            		// on_field_change(g_custom_field_name, Reflect.field(g_compound_for_row,g_custom_field_name), g_compound_for_row.id, ctab_content, g_child);
+	    			})
+    			})();
+    		} else if (col_field_human_name == 'Attachments') {
+    			// Ignore
+    		} else {
+    			// Remove all text nodes from the parent
+        		while(appendToElem.firstChild){
+        			appendToElem.removeChild(appendToElem.firstChild);
+        		}
+    			
+    			// Append a new text node with the new value to be pasted
+        		appendToElem.appendChild(document.createTextNode(row_cell_value));
+        		
+        		// Saves the change in the unsaved_changes object and highlight the cells with unsaved changes to the user
+        		on_field_change(custom_field_name, Reflect.field(compound_for_row,custom_field_name), compound_for_row.id, row_cell_value, child);
+    		}
+    		
+            // Increment the column number we are going to paste into on the next loop
+    		row_cell_col += 1;
+    	}
+    }
 }
 
 function delete_upload_set_ui(entity_id, entity_pkey){
@@ -2611,7 +2858,9 @@ function clear_results_table(){
 }
 
 function add_results_table_headings(){
-	var cols = []
+	var cols = [];
+    
+    custom_fields_human_index = new haxe.ds.StringMap();
 	
 	var project_fields = custom_fields[get_project()];
 	var fields = Reflect.fields(project_fields);
@@ -2625,10 +2874,13 @@ function add_results_table_headings(){
 		}
 		
 		cols.push(field_item.human_name);
+        
+        custom_fields_human_index.set(field_item.human_name, field_item);
 	}
 	
 	cols.sort();
-	
+    
+    cols_ordered = cols;
 	
 	if(enable_attachment_field()){
 		cols.unshift('Attachments');
@@ -3663,8 +3915,28 @@ function update_structure_ui(entity_id, structure_btn){
 	entity_structure_to_update_btn = structure_btn;
 }
 
-function update_structure(){
-	var ctab_content = get_mol_file();
+function convert_smiles_to_ctab(smiles, cb){
+	saturn.core.Util.getProvider().getByNamedQuery(
+			'saturn.db.provider.hooks.ExternalJsonHook:Fetch',
+			[{'action': 'convert_smiles_to_ctab', 'smiles': smiles}],
+			null,
+			false,
+			function(objs, err){
+				var ctab_content = null;
+				
+				if(err == null && objs != null && objs.length > 0){
+					ctab_content = objs[0].ctab_content;
+				}
+				
+				cb(ctab_content, err);
+			}
+	);
+}
+
+function update_structure(ctab_content, compound_id, compound_button){
+	if(ctab_content == null){
+		ctab_content = get_mol_file();
+	}
 	
 	if(ctab_has_structure(ctab_content)){
 		current_fetch = {'ctab_content':ctab_content, '_username': null};
@@ -3678,6 +3950,9 @@ function update_structure(){
 				if(err != null){
 					show_message('Error fetching compounds',err);
 				}else{
+					entity_structure_to_update_btn = compound_button;
+					entity_structure_to_update = compound_id;
+					
 					var ctab_key = CryptoJS.MD5(ctab_content).toString(CryptoJS.enc.Base64);
 
 					var mol_image = objs[0].svg_content;
