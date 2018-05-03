@@ -2479,8 +2479,12 @@ function login(){
 }
 
 function _login(username, password){
-	clientCore.login(username, password, function(err){
+	switch_screen('login_progress');
+
+        clientCore.login(username, password, function(err){
 		if(err != null){
+                        switch_screen('login');
+
 			show_message('Login Failed', 'Please try again with valid credentials ' + err);
 		}
 	});
@@ -3850,7 +3854,7 @@ function switch_screen(screen_id){
 		document.body.onresize=null;
 	}
 	
-	var screens = ['home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help'];
+	var screens = ['login_progress','home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help'];
 	for(var i=0;i<screens.length;i++){
 		var screen = screens[i];
 		if(screen == screen_id){
