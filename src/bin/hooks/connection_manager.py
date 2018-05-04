@@ -16,9 +16,15 @@ class ConnectionManager(object):
     
     @staticmethod
     def get_new_connection():
-        return psycopg2.connect(
-            database=ChemiRegConfig.get_db_name(), 
-            port=ChemiRegConfig.get_db_port(), 
-            host=ChemiRegConfig.get_db_hostname(), 
-            password=ChemiRegConfig.get_db_password()
-        )
+        if ChemiRegConfig.get_db_password() is not None:
+            return psycopg2.connect(
+                database=ChemiRegConfig.get_db_name(), 
+                port=ChemiRegConfig.get_db_port(), 
+                host=ChemiRegConfig.get_db_hostname(), 
+                password=ChemiRegConfig.get_db_password()
+            )
+        else:
+             return psycopg2.connect(
+                database=ChemiRegConfig.get_db_name(), 
+                port=ChemiRegConfig.get_db_port(), 
+            )

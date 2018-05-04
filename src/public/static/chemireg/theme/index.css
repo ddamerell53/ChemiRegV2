@@ -14,9 +14,8 @@
 	min-width:200px;
 }
 
-@media
-only screen and (max-width: 1000px),
-(min-device-width: 768px) and (max-device-width: 1024px)  {
+@media (max-width: 1024px) {
+
 	body{
 		display:flex !important;
 		overflow: initial !important;
@@ -156,6 +155,11 @@ only screen and (max-width: 1000px),
 		border-left: 1px solid #ccc;
 		border-right: 1px solid #ccc; 
 		margin-bottom:4px;
+	}
+	
+	.upload_fields #_mol_upload_row {
+		/* Override JavaScript style */
+		display: block !important;
 	}
 
 	.upload_fields_td_narrow {

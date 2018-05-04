@@ -41,9 +41,3 @@ rm /home/chemireg/src/jupyter.tar.gz
 ENV PYTHONPATH=/home/chemireg/src/bin/hooks
 RUN chmod u+x /home/chemireg/src/start.sh
 CMD /home/chemireg/src/start.sh
-
-
-
-
-
-
