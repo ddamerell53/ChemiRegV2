@@ -34,30 +34,68 @@ class SGCAuditClient(AuditClient):
         self.update_count = 0
         self.structure_updates = 0
 
-
         super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, projects, no_records)
 
-        self.insert_statement = self.bh.cursor()
-        self.insert_statement.prepare('''
+        compound_insert_statement = self.bh.cursor()
+        compound_insert_statement.prepare('''
             INSERT INTO SGC.SGCCOMPOUND (
                 SGCGLOBALID, OLD_SGCGLOBAL_ID, COMPOUND_ID, DESCRIPTION, CONCENTRATION, SUPPLIER, SUPPLIER_ID, MW,
-                AMOUNTORDERED, DATESTAMP, PERSON, SMILES, INCHI, SDF, CHEMIREG_PKEY, COMMENTS,SUPPLIERPLATEID,INITVOL,BARCODEID, SOLUTE
+                AMOUNTORDERED, DATESTAMP, PERSON, SMILES, INCHI, SDF, CHEMIREG_PKEY, COMMENTS,SUPPLIERPLATEID,INITVOL,BARCODEID, SOLUTE,CLASSIFICATION,SERIES
             )
             VALUES(
                 :SGCGLOBALID, :OLD_SGCGLOBAL_ID, :OLD_COMPOUND_ID, :DESCRIPTION, :CONCENTRATION, :SUPPLIER, :SUPPLIER_ID,
                 :MW, :AMOUNTORDERED, TO_TIMESTAMP('1970-01-01 00:00:00.0'
                    ,'YYYY-MM-DD HH24:MI:SS.FF') + NUMTODSINTERVAL(:DATESTAMP, 'SECOND'), :PERSON, :SMILES, :INCHI, :SDF, :CHEMIREG_PKEY, :COMMENTS,
-                :SUPPLIERPLATEID,:INITVOL,:BARCODEID,:SOLUTE
+                :SUPPLIERPLATEID,:INITVOL,:BARCODEID,:SOLUTE,:CLASSIFICATION,:SERIES
+            )
+        ''')
+        
+        classification_insert_statement = self.bh.cursor()
+        classification_insert_statement.prepare('''
+            INSERT INTO SGC.SGCCOMPOUND_CLASSIFICATION (
+                SERIES,DESCRIPTION,CHEMIREG_PKEY
+            )
+            VALUES(
+                :SERIES, :DESCRIPTION, :CHEMIREG_PKEY
+            )
+        ''')
+        
+        series_insert_statement = self.bh.cursor()
+        series_insert_statement.prepare('''
+            INSERT INTO SGC.SGCCOMPOUND_SERIES_NEW (
+                SERIES,DESCRIPTION,CHEMIREG_PKEY
+            )
+            VALUES(
+                :SERIES, :DESCRIPTION, :CHEMIREG_PKEY
             )
         ''')
 
-        self.delete_statement = self.bh.cursor()
-        self.delete_statement.prepare('''
+        self.insert_statements = {
+            'SGC/Compound Series': series_insert_statement,
+            'SGC/Compound Classification': classification_insert_statement
+        }
+
+        compound_delete_statement = self.bh.cursor()
+        compound_delete_statement.prepare('''
             delete from SGC.SGCCOMPOUND where CHEMIREG_PKEY = :CHEMIREG_PKEY
         ''')
-
         
-        self.chemireg_to_scarab_fields = {
+        compound_series_statement = self.bh.cursor()
+        compound_series_statement.prepare('''
+            delete from SGC.SGCCOMPOUND_SERIES_NEW where CHEMIREG_PKEY = :CHEMIREG_PKEY
+        ''')
+        
+        compound_classification_statement = self.bh.cursor()
+        compound_classification_statement.prepare('''
+            delete from SGC.SGCCOMPOUND_CLASSIFICATION where CHEMIREG_PKEY = :CHEMIREG_PKEY
+        ''')
+
+        self.delete_statements = {
+            'SGC/Compound Series': compound_series_statement,
+            'SGC/Compound Classification': compound_classification_statement
+        }
+        
+        compound_mapping = {
             'compound_id':'SGCGLOBALID',
             'old_sgc_global_id':'OLD_SGCGLOBAL_ID',
             'old_sgc_local_id':'OLD_COMPOUND_ID',
@@ -77,8 +115,32 @@ class SGCAuditClient(AuditClient):
             'supplier_plate_id':'SUPPLIERPLATEID',
             'volume':'INITVOL',
             'barcode':'BARCODEID',
-            'solvent':'SOLUTE'
+            'solvent':'SOLUTE',
+            'series':'SERIES',
+            'classification':'CLASSIFICATION'
         }
+        
+        self.chemireg_to_scarab_fields = {
+            'SGC/Compound Series': {'compound_id':'SERIES', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'},
+            'SGC/Compound Classification': {'compound_id':'CLASSIFICATION', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'}
+        }
+        
+        self.is_project_compound = {
+            'SGC/Compound Series': False,
+            'SGC/Compound Classification': False
+        }
+        
+        self.project_to_table = {
+            'SGC/Compound Series': 'SGCCOMPOUND_SERIES_NEW',
+            'SGC/Compound Classification': 'SGCCOMPOUND_CLASSIFICATION'
+        }
+        
+        for project in projects:
+            self.insert_statements[project] = compound_insert_statement
+            self.delete_statements[project] = compound_delete_statement
+            self.chemireg_to_scarab_fields[project] = compound_mapping
+            self.is_project_compound[project] = True
+            self.project_to_table[project] = 'SGCCOMPOUND'
 
         self.sdf_handle = tempfile.NamedTemporaryFile(delete=False, suffix='.sdf')
         self.sdf_writer = SDWriter(self.sdf_handle.name)
@@ -112,20 +174,26 @@ class SGCAuditClient(AuditClient):
 
     def insert_items(self, items):
         for item in items:
+            project = item['project']
+            
+            fields = self.chemireg_to_scarab_fields[project]
+            
+            insert_statement = self.insert_statements[project]
+            
             self.insert_count += 1
 
             params = {}
-            for key in self.chemireg_to_scarab_fields.keys():
+            for key in fields.keys():
                 if key == 'salted_sdf':
-                    clob_var = self.insert_statement.var(cx_Oracle.CLOB)
+                    clob_var = insert_statement.var(cx_Oracle.CLOB)
                     clob_var.setvalue(0, item[key])
-                    params[':' + self.chemireg_to_scarab_fields[key]] = clob_var
+                    params[':' + self.fields[key]] = clob_var
                     self.structure_updates += 1
                 else:
                     if key in item:
-                        params[':' + self.chemireg_to_scarab_fields[key]] = item[key]
+                        params[':' + self.fields[key]] = item[key]
                     else:
-                        params[':' + self.chemireg_to_scarab_fields[key]] = None
+                        params[':' + self.fields[key]] = None
 
 #                    if key == 'compound_id':
 #                        params[':' + 'OLD_COMPOUND_ID'] = params[':SGCGLOBALID'] = None
@@ -135,11 +203,9 @@ class SGCAuditClient(AuditClient):
 
 
             print('Inserting ' + item['compound_id'])
-            self.insert_statement.execute(None, params)
+            insert_statement.execute(None, params)
 
-            print(item['salted_sdf'])
-
-            if 'salted_sdf' in item:
+            if self.is_project_compound[project] and 'salted_sdf' in item:
                 if item['salted_sdf'] is None or item['salted_sdf'] == '':
                     mol = Chem.MolFromSmiles('')
                 else:
@@ -154,40 +220,45 @@ class SGCAuditClient(AuditClient):
     def update_items(self, items):
         locked_fields = {'id': True, 'username': True, 'date_record_created' : True}
         for item in items:
+            project = item['project']
+            
+            fields = self.chemireg_to_scarab_fields[project]
+            
             self.update_count += 1
             update_blocks = []
             update_values = {}
-            for field in self.chemireg_to_scarab_fields.keys():
-                if field == 'salted_sdf' and field in item:
+            for field in self.fields.keys():
+                if self.is_project_compound[project] and field == 'salted_sdf' and field in item:
                     self.structure_updates += 1
                     clob_var = self.insert_statement.var(cx_Oracle.CLOB)
                     clob_var.setvalue(0, item[field])
-                    update_blocks.append(self.chemireg_to_scarab_fields[field] + ' = :' + self.chemireg_to_scarab_fields[field])
-                    update_values[':' + self.chemireg_to_scarab_fields[field]] = clob_var
+                    update_blocks.append(self.fields[field] + ' = :' + self.fields[field])
+                    update_values[':' + self.fields[field]] = clob_var
                 else:
                     if field in locked_fields or field not in item:
                         continue
                     else:
-                        update_blocks.append(self.chemireg_to_scarab_fields[field] + ' = :' + self.chemireg_to_scarab_fields[field])
-                        update_values[':' + self.chemireg_to_scarab_fields[field]] = item[field]
+                        update_blocks.append(self.fields[field] + ' = :' + self.fields[field])
+                        update_values[':' + self.fields[field]] = item[field]
 
-                        if field == 'compound_id':
+                        if self.is_project_compound[project] and field == 'compound_id':
                             self.mbh.cursor().execute('UPDATE GlobalCompounds.allOxford set SgcGlobalId=%s where ChemiRegPKEY=%s and ChemiRegPKEY is not null', (item[field],item['id']))
 
-            print(item)
             if item['transaction_id'] > self.last_transaction_id:
                 self.last_transaction_id = item['transaction_id']
 
             print('Updating ' + item['compound_id'])
+            
+            project_table = self.project_to_table[project]
 
-            sql = 'UPDATE SGC.SGCCOMPOUND SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
+            sql = 'UPDATE SGC.' + project_table + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
 
             update_values[':CHEMIREG_PKEY'] = item['id']
 
             print(sql)
             print(update_values)
 
-            if 'salted_sdf' in item:
+            if self.is_project_compound[project] and 'salted_sdf' in item:
                 if item['salted_sdf'] is None or item['salted_sdf'] == '':
                     mol = Chem.MolFromSmiles('')
                 else:
@@ -197,7 +268,6 @@ class SGCAuditClient(AuditClient):
                     continue
 
                 mol.SetProp('SGCGLOBALID', item['compound_id'])
-#                mol.SetProp('SGCGLOBALID', item['compound_id'])
                 mol.SetProp('ChemiRegPKEY', str(item['id']))
 
                 self.sdf_writer.write(mol)
@@ -209,16 +279,23 @@ class SGCAuditClient(AuditClient):
 
     def archive_items(self, items):
         for item in items:
+            project = item['project']
+            
+            fields = self.chemireg_to_scarab_fields[project]
+            delete_statement = self.delete_statements[project]
+            
             self.delete_count += 1
-            params = {':' + self.chemireg_to_scarab_fields['id']: item['id']}
+            params = {':' + fields['id']: item['id']}
 
             if item['transaction_id'] > self.last_transaction_id:
                 self.last_transaction_id = item['transaction_id']
 
             print('Deleting ' + item['compound_id'])
 
-            self.delete_statement.execute(None, params)
-            self.delete_from_molcart(item['id'])  
+            delete_statement.execute(None, params)
+            
+            if self.is_project_compound[project]:
+                self.delete_from_molcart(item['id'])  
  
     def delete_from_molcart(self, id):
         delete_from_molcart = self.mbh.cursor()
