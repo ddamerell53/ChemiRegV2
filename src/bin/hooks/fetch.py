@@ -887,7 +887,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.insert_transaction_id
+				a.insert_transaction_id,
+				e.project_name
 			from
 				compounds a,
 				users b,
@@ -910,7 +911,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.update_transaction_id				
+				a.update_transaction_id,
+				e.project_name				
 			from
 				compounds a,
 				users b,
@@ -933,7 +935,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.archived_transaction_id
+				a.archived_transaction_id,
+				e.project_name
 			from
 				compounds a,
 				users b,
@@ -1749,7 +1752,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}	
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
@@ -1800,7 +1803,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
@@ -1850,7 +1853,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}	
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
