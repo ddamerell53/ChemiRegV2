@@ -42,6 +42,7 @@ class NodeProvider(object):
 
         self._after_connect = cb1
         self._after_error = cb2
+        self.closed = False 
 
     def login(self):
         login_url = self.hostname + ':' + str(self.port) + '/login'
@@ -63,7 +64,7 @@ class NodeProvider(object):
             try:
                 with urllib.request.urlopen(request,timeout=5) as response:
                     content = response.read()
-
+                    
                     content_obj = json.loads(content.decode('ascii'))
 
                     if 'token' in content_obj:
@@ -110,7 +111,12 @@ class NodeProvider(object):
             self.after_error(e)
 
     def _disconnected(self):
+        if self.closed:
+            return
+
         print('Disconnected')
+
+        self.closed = True
 
     def _process_response(self, data):
         if 'bioinfJobId' in data:
@@ -133,6 +139,9 @@ class NodeProvider(object):
                 self.msg_id_to_callback[msg_id](error, json)
 
                 self.msg_id_to_callback.pop(msg_id)
+
+                #Important - otherwise we leak file descriptors
+                data.close()
             else:
                 print('Warning message not found ' + msg_id)
 

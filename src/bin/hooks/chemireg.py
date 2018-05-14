@@ -124,7 +124,8 @@ class ChemiReg(object):
 
     def _close(self):
         if self.provider.socketIO is not None:
-            self.provider.socketIO._close()
+            print('Closing WebSocket!')
+            self.provider.socketIO.__exit__()
 
     def close(self):
         self._close()
