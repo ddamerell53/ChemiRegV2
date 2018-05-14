@@ -46,6 +46,8 @@ class ChemiReg(object):
         # Thread for listen for messages
         self.web_socket_thread = None
 
+        self.error = None
+
     def set_ready(self, ready):
         self.lock.acquire()
         try:
@@ -92,15 +94,20 @@ class ChemiReg(object):
 
     def connect(self):
         # Initialise NodeProvider which handles communication with ChemiReg via a WebSocket
-        self.provider = NodeProvider(self.hostname, self.port, self.username, self.password, None)
+        self.provider = NodeProvider(self.hostname, self.port, self.username, self.password, None, None)
 
         # This function is called after the connection has been established
         def after_connect():
             # Used to inform the initiating thread that we are connected (releases the block)
             self.set_ready(True)
 
+        def after_error(err):
+            self.set_ready(True)
+            self.error = err
+
         def start_login():
             self.provider._after_connect = after_connect
+            self.provider._after_error = after_error
             self.provider.login()
 
         self.web_socket_thread = threading.Thread(target=start_login)
@@ -108,11 +115,17 @@ class ChemiReg(object):
 
         while True:
             if self.is_ready():
-                break
+                if self.error is None:
+                    break
+                else:
+                    self.close()
+                    raise self.error
 
 
     def _close(self):
-        self.provider.socketIO._close()
+        if self.provider.socketIO is not None:
+            print('Closing WebSocket!')
+            self.provider.socketIO.__exit__()
 
     def close(self):
         self._close()
