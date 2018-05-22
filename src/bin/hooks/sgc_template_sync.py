@@ -13,5 +13,5 @@ if __name__ == '__main__':
        'password':''
     }
 
-    client = SGCAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, 'username','password', ['SGC - Oxford','SGC'], None, oracle_info, mysql_info) 
+    client = SGCAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, 'username','password', ['SGC - Oxford','SGC'], None, oracle_info, mysql_info, True) 
     client.process_updates()
