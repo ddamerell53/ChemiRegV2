@@ -14,12 +14,16 @@ import tempfile
 import subprocess
 import os
 import cx_Oracle
-import MySQLdb as mdb
 
 class SGCAuditClient(AuditClient):
-    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info):
+    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart):
         self.bh = cx_Oracle.connect(oracle_info['username']+'/'+oracle_info['password']+'@'+oracle_info['tns_name'])
-        self.mbh = mdb.connect(mysql_info['hostname'], mysql_info['username'], mysql_info['password'])
+        
+        self.has_molcart = has_molcart
+        
+        if self.has_molcart:
+            import MySQLdb as mdb
+            self.mbh = mdb.connect(mysql_info['hostname'], mysql_info['username'], mysql_info['password'])
 
         cur = self.bh.cursor()
         cur.execute('SELECT TRANSACTIONID FROM SGC.CHEMIREG_TRANSACTION',{})    
@@ -32,6 +36,7 @@ class SGCAuditClient(AuditClient):
         self.insert_count = 0
         self.delete_count = 0
         self.update_count = 0
+        
         self.structure_updates = 0
 
         complete_projects = [project for project in projects]
@@ -158,9 +163,10 @@ class SGCAuditClient(AuditClient):
     
         # We have to be sure to close the MySQL connection before calling our ICM script
         # because this Python script might lock the Molcart table
-        self.mbh.commit()
+        if self.has_molcart:
+            self.mbh.commit()
         
-        if self.structure_updates > 0:
+        if self.structure_updates > 0 and self.has_molcart:
             args = [
                 '/opt/local/icm/icm64',
                 os.path.dirname(os.path.abspath(__file__)) + '/molcart_insert.icm',
@@ -245,7 +251,7 @@ class SGCAuditClient(AuditClient):
                         update_blocks.append(fields[field] + ' = :' + fields[field])
                         update_values[':' + fields[field]] = item[field]
 
-                        if self.is_project_compound[project] and field == 'compound_id':
+                        if self.is_project_compound[project] and field == 'compound_id' and self.has_molcart:
                             self.mbh.cursor().execute('UPDATE GlobalCompounds.allOxford set SgcGlobalId=%s where ChemiRegPKEY=%s and ChemiRegPKEY is not null', (item[field],item['id']))
 
             if item['transaction_id'] > self.last_transaction_id:
@@ -302,7 +308,8 @@ class SGCAuditClient(AuditClient):
                 self.delete_from_molcart(item['id'])  
  
     def delete_from_molcart(self, id):
-        delete_from_molcart = self.mbh.cursor()
-        delete_from_molcart.execute('''
-            delete from GlobalCompounds.allOxford where ChemiRegPKEY = %s
-        ''',(id,))
+        if self.has_molcart:
+            delete_from_molcart = self.mbh.cursor()
+            delete_from_molcart.execute('''
+                delete from GlobalCompounds.allOxford where ChemiRegPKEY = %s
+            ''',(id,))
