@@ -34,7 +34,11 @@ class SGCAuditClient(AuditClient):
         self.update_count = 0
         self.structure_updates = 0
 
-        super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, projects, no_records)
+        complete_projects = [project for project in projects]
+        complete_projects.append('SGC/Compound Classifications')
+        complete_projects.append('SGC/Compound Series')
+
+        super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records)
 
         compound_insert_statement = self.bh.cursor()
         compound_insert_statement.prepare('''
@@ -53,10 +57,10 @@ class SGCAuditClient(AuditClient):
         classification_insert_statement = self.bh.cursor()
         classification_insert_statement.prepare('''
             INSERT INTO SGC.SGCCOMPOUND_CLASSIFICATION (
-                SERIES,DESCRIPTION,CHEMIREG_PKEY
+                CLASSIFICATION,DESCRIPTION,CHEMIREG_PKEY
             )
             VALUES(
-                :SERIES, :DESCRIPTION, :CHEMIREG_PKEY
+                :CLASSIFICATION, :DESCRIPTION, :CHEMIREG_PKEY
             )
         ''')
         
@@ -72,7 +76,7 @@ class SGCAuditClient(AuditClient):
 
         self.insert_statements = {
             'SGC/Compound Series': series_insert_statement,
-            'SGC/Compound Classification': classification_insert_statement
+            'SGC/Compound Classifications': classification_insert_statement
         }
 
         compound_delete_statement = self.bh.cursor()
@@ -92,7 +96,7 @@ class SGCAuditClient(AuditClient):
 
         self.delete_statements = {
             'SGC/Compound Series': compound_series_statement,
-            'SGC/Compound Classification': compound_classification_statement
+            'SGC/Compound Classifications': compound_classification_statement
         }
         
         compound_mapping = {
@@ -122,17 +126,17 @@ class SGCAuditClient(AuditClient):
         
         self.chemireg_to_scarab_fields = {
             'SGC/Compound Series': {'compound_id':'SERIES', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'},
-            'SGC/Compound Classification': {'compound_id':'CLASSIFICATION', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'}
+            'SGC/Compound Classifications': {'compound_id':'CLASSIFICATION', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'}
         }
         
         self.is_project_compound = {
             'SGC/Compound Series': False,
-            'SGC/Compound Classification': False
+            'SGC/Compound Classifications': False
         }
         
         self.project_to_table = {
             'SGC/Compound Series': 'SGCCOMPOUND_SERIES_NEW',
-            'SGC/Compound Classification': 'SGCCOMPOUND_CLASSIFICATION'
+            'SGC/Compound Classifications': 'SGCCOMPOUND_CLASSIFICATION'
         }
         
         for project in projects:
@@ -187,13 +191,13 @@ class SGCAuditClient(AuditClient):
                 if key == 'salted_sdf':
                     clob_var = insert_statement.var(cx_Oracle.CLOB)
                     clob_var.setvalue(0, item[key])
-                    params[':' + self.fields[key]] = clob_var
+                    params[':' + fields[key]] = clob_var
                     self.structure_updates += 1
                 else:
                     if key in item:
-                        params[':' + self.fields[key]] = item[key]
+                        params[':' + fields[key]] = item[key]
                     else:
-                        params[':' + self.fields[key]] = None
+                        params[':' + fields[key]] = None
 
 #                    if key == 'compound_id':
 #                        params[':' + 'OLD_COMPOUND_ID'] = params[':SGCGLOBALID'] = None
@@ -227,19 +231,19 @@ class SGCAuditClient(AuditClient):
             self.update_count += 1
             update_blocks = []
             update_values = {}
-            for field in self.fields.keys():
+            for field in fields.keys():
                 if self.is_project_compound[project] and field == 'salted_sdf' and field in item:
                     self.structure_updates += 1
                     clob_var = self.insert_statement.var(cx_Oracle.CLOB)
                     clob_var.setvalue(0, item[field])
-                    update_blocks.append(self.fields[field] + ' = :' + self.fields[field])
-                    update_values[':' + self.fields[field]] = clob_var
+                    update_blocks.append(fields[field] + ' = :' + fields[field])
+                    update_values[':' + fields[field]] = clob_var
                 else:
                     if field in locked_fields or field not in item:
                         continue
                     else:
-                        update_blocks.append(self.fields[field] + ' = :' + self.fields[field])
-                        update_values[':' + self.fields[field]] = item[field]
+                        update_blocks.append(fields[field] + ' = :' + fields[field])
+                        update_values[':' + fields[field]] = item[field]
 
                         if self.is_project_compound[project] and field == 'compound_id':
                             self.mbh.cursor().execute('UPDATE GlobalCompounds.allOxford set SgcGlobalId=%s where ChemiRegPKEY=%s and ChemiRegPKEY is not null', (item[field],item['id']))
