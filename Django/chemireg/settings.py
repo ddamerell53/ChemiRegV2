@@ -50,7 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'ChemiRegV2Django.urls'
+ROOT_URLCONF = 'chemireg.urls'
 
 TEMPLATES = [
     {
@@ -68,7 +68,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ChemiRegV2Django.wsgi.application'
+WSGI_APPLICATION = 'chemireg.wsgi.application'
 
 
 # Database
@@ -77,11 +77,9 @@ WSGI_APPLICATION = 'ChemiRegV2Django.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'chemireg',
+        'NAME': 'sat_reg',
         'USER': 'chemireg',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
-        'PORT': '',
+        'DATABASE':'sat_reg'
     }
 }
 
