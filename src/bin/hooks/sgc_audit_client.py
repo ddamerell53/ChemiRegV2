@@ -14,7 +14,6 @@ import tempfile
 import subprocess
 import os
 import cx_Oracle
-import MySQLdb as mdb
 
 class SGCAuditClient(AuditClient):
     def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart):
@@ -23,6 +22,7 @@ class SGCAuditClient(AuditClient):
         self.has_molcart = has_molcart
         
         if self.has_molcart:
+            import MySQLdb as mdb
             self.mbh = mdb.connect(mysql_info['hostname'], mysql_info['username'], mysql_info['password'])
 
         cur = self.bh.cursor()
