@@ -19,7 +19,11 @@ import MySQLdb as mdb
 class SGCAuditClient(AuditClient):
     def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart):
         self.bh = cx_Oracle.connect(oracle_info['username']+'/'+oracle_info['password']+'@'+oracle_info['tns_name'])
-        self.mbh = mdb.connect(mysql_info['hostname'], mysql_info['username'], mysql_info['password'])
+        
+        self.has_molcart = has_molcart
+        
+        if self.has_molcart:
+            self.mbh = mdb.connect(mysql_info['hostname'], mysql_info['username'], mysql_info['password'])
 
         cur = self.bh.cursor()
         cur.execute('SELECT TRANSACTIONID FROM SGC.CHEMIREG_TRANSACTION',{})    
@@ -32,7 +36,7 @@ class SGCAuditClient(AuditClient):
         self.insert_count = 0
         self.delete_count = 0
         self.update_count = 0
-        self.has_molcart = has_molcart
+        
         self.structure_updates = 0
 
         super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, projects, no_records)
