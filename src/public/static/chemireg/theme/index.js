@@ -2211,7 +2211,7 @@ function progress_listener(){
 		details_td.classList.add('compound_table_field');
 		details_td.classList.add('search_results_td_narrow');
 		details_td.classList.add('progress_td');
-		details_td.style.backgroundColor = '#e8ffe6';
+		details_td.style.backgroundColor = 'rgb(51, 195, 240)';
 		
 		var time_td = document.createElement('td');
 		time_td.style.textAlign = 'right';
@@ -2315,7 +2315,7 @@ function progress_listener(){
 							
 							var button_elem = document.createElement('button');
 							button_elem.style.height = 'initial';
-							button_elem.style.color = 'blue';
+							button_elem.style.color = 'white';
 							button_elem.style.border = 'none';
 							(function(){
 								var but = button_elem;
@@ -2330,7 +2330,7 @@ function progress_listener(){
 						}else{
 							var button_elem = document.createElement('button');
 							button_elem.style.height = 'initial';
-							button_elem.style.color = 'blue';
+							button_elem.style.color = 'white';
 							button_elem.style.border = 'none';
 							button_elem.classList.add('jump');
 							
@@ -3954,8 +3954,10 @@ function update_structure(ctab_content, compound_id, compound_button){
 				if(err != null){
 					show_message('Error fetching compounds',err);
 				}else{
-					entity_structure_to_update_btn = compound_button;
-					entity_structure_to_update = compound_id;
+					if(compound_button != null){
+						entity_structure_to_update_btn = compound_button;
+						entity_structure_to_update = compound_id;
+					}
 					
 					var ctab_key = CryptoJS.MD5(ctab_content).toString(CryptoJS.enc.Base64);
 
