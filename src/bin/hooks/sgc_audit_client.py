@@ -255,10 +255,14 @@ class SGCAuditClient(AuditClient):
             self.update_count += 1
             update_blocks = []
             update_values = {}
+
+            cur = self.bh.cursor()
+
+
             for field in fields.keys():
                 if self.is_project_compound[project] and field == 'salted_sdf' and field in item:
                     self.structure_updates += 1
-                    clob_var = self.insert_statement.var(cx_Oracle.CLOB)
+                    clob_var = cur.var(cx_Oracle.CLOB)
                     clob_var.setvalue(0, item[field])
                     update_blocks.append(fields[field] + ' = :' + fields[field])
                     update_values[':' + fields[field]] = clob_var
@@ -302,7 +306,6 @@ class SGCAuditClient(AuditClient):
 
                 self.delete_from_molcart(item['id'])
 
-            cur = self.bh.cursor()
             cur.execute(sql, update_values)
 
     def archive_items(self, items):
