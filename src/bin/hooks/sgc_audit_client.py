@@ -16,7 +16,7 @@ import os
 import cx_Oracle
 
 class SGCAuditClient(AuditClient):
-    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart):
+    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart, include_extra_columns=True):
         self.bh = cx_Oracle.connect(oracle_info['username']+'/'+oracle_info['password']+'@'+oracle_info['tns_name'])
         
         self.has_molcart = has_molcart
@@ -38,10 +38,18 @@ class SGCAuditClient(AuditClient):
         self.update_count = 0
         
         self.structure_updates = 0
+        self.include_extra_columns  = include_extra_columns
 
         complete_projects = [project for project in projects]
-        complete_projects.append('SGC/Compound Classifications')
-        complete_projects.append('SGC/Compound Series')
+        
+        extra_sql_cols = ''
+        extra_sql_placeholders = ''
+
+        if self.include_extra_columns:
+            complete_projects.append('SGC/Compound Classifications')
+            complete_projects.append('SGC/Compound Series')
+            extra_sql_cols=',CLASSIFICATION,SERIES'
+            extra_sql_placeholders=',:CLASSIFICATION,:SERIES'
 
         super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records)
 
@@ -49,60 +57,66 @@ class SGCAuditClient(AuditClient):
         compound_insert_statement.prepare('''
             INSERT INTO SGC.SGCCOMPOUND (
                 SGCGLOBALID, OLD_SGCGLOBAL_ID, COMPOUND_ID, DESCRIPTION, CONCENTRATION, SUPPLIER, SUPPLIER_ID, MW,
-                AMOUNTORDERED, DATESTAMP, PERSON, SMILES, INCHI, SDF, CHEMIREG_PKEY, COMMENTS,SUPPLIERPLATEID,INITVOL,BARCODEID, SOLUTE,CLASSIFICATION,SERIES
+                AMOUNTORDERED, DATESTAMP, PERSON, SMILES, INCHI, SDF, CHEMIREG_PKEY, COMMENTS,SUPPLIERPLATEID,INITVOL,BARCODEID, SOLUTE''' + extra_sql_cols + '''
             )
             VALUES(
                 :SGCGLOBALID, :OLD_SGCGLOBAL_ID, :OLD_COMPOUND_ID, :DESCRIPTION, :CONCENTRATION, :SUPPLIER, :SUPPLIER_ID,
                 :MW, :AMOUNTORDERED, TO_TIMESTAMP('1970-01-01 00:00:00.0'
                    ,'YYYY-MM-DD HH24:MI:SS.FF') + NUMTODSINTERVAL(:DATESTAMP, 'SECOND'), :PERSON, :SMILES, :INCHI, :SDF, :CHEMIREG_PKEY, :COMMENTS,
-                :SUPPLIERPLATEID,:INITVOL,:BARCODEID,:SOLUTE,:CLASSIFICATION,:SERIES
-            )
-        ''')
-        
-        classification_insert_statement = self.bh.cursor()
-        classification_insert_statement.prepare('''
-            INSERT INTO SGC.SGCCOMPOUND_CLASSIFICATION (
-                CLASSIFICATION,DESCRIPTION,CHEMIREG_PKEY
-            )
-            VALUES(
-                :CLASSIFICATION, :DESCRIPTION, :CHEMIREG_PKEY
-            )
-        ''')
-        
-        series_insert_statement = self.bh.cursor()
-        series_insert_statement.prepare('''
-            INSERT INTO SGC.SGCCOMPOUND_SERIES_NEW (
-                SERIES,DESCRIPTION,CHEMIREG_PKEY
-            )
-            VALUES(
-                :SERIES, :DESCRIPTION, :CHEMIREG_PKEY
+                :SUPPLIERPLATEID,:INITVOL,:BARCODEID,:SOLUTE''' + extra_sql_placeholders + '''
             )
         ''')
 
-        self.insert_statements = {
-            'SGC/Compound Series': series_insert_statement,
-            'SGC/Compound Classifications': classification_insert_statement
-        }
+        self.insert_statements = {}
+        self.delete_statements = {}
+ 
+        if self.include_extra_columns:
+            classification_insert_statement = self.bh.cursor()
+            classification_insert_statement.prepare('''
+                INSERT INTO SGC.SGCCOMPOUND_CLASSIFICATION (
+                    CLASSIFICATION,DESCRIPTION,CHEMIREG_PKEY
+                 )
+                VALUES(
+                    :CLASSIFICATION, :DESCRIPTION, :CHEMIREG_PKEY
+             )
+            ''')
+        
+            series_insert_statement = self.bh.cursor()
+            series_insert_statement.prepare('''
+                INSERT INTO SGC.SGCCOMPOUND_SERIES_NEW (
+                    SERIES,DESCRIPTION,CHEMIREG_PKEY
+                )
+                VALUES(
+                    :SERIES, :DESCRIPTION, :CHEMIREG_PKEY
+                )
+            ''')
+
+            self.insert_statements = {
+                'SGC/Compound Series': series_insert_statement,
+                'SGC/Compound Classifications': classification_insert_statement
+            }
+
+            compound_series_statement = self.bh.cursor()
+            compound_series_statement.prepare('''
+                delete from SGC.SGCCOMPOUND_SERIES_NEW where CHEMIREG_PKEY = :CHEMIREG_PKEY
+            ''')
+        
+            compound_classification_statement = self.bh.cursor()
+            compound_classification_statement.prepare('''
+                delete from SGC.SGCCOMPOUND_CLASSIFICATION where CHEMIREG_PKEY = :CHEMIREG_PKEY
+            ''')
+
+            self.delete_statements = {
+                'SGC/Compound Series': compound_series_statement,
+                'SGC/Compound Classifications': compound_classification_statement
+            }
 
         compound_delete_statement = self.bh.cursor()
         compound_delete_statement.prepare('''
             delete from SGC.SGCCOMPOUND where CHEMIREG_PKEY = :CHEMIREG_PKEY
         ''')
         
-        compound_series_statement = self.bh.cursor()
-        compound_series_statement.prepare('''
-            delete from SGC.SGCCOMPOUND_SERIES_NEW where CHEMIREG_PKEY = :CHEMIREG_PKEY
-        ''')
-        
-        compound_classification_statement = self.bh.cursor()
-        compound_classification_statement.prepare('''
-            delete from SGC.SGCCOMPOUND_CLASSIFICATION where CHEMIREG_PKEY = :CHEMIREG_PKEY
-        ''')
-
-        self.delete_statements = {
-            'SGC/Compound Series': compound_series_statement,
-            'SGC/Compound Classifications': compound_classification_statement
-        }
+       
         
         compound_mapping = {
             'compound_id':'SGCGLOBALID',
@@ -125,9 +139,11 @@ class SGCAuditClient(AuditClient):
             'volume':'INITVOL',
             'barcode':'BARCODEID',
             'solvent':'SOLUTE',
-            'series':'SERIES',
-            'classification':'CLASSIFICATION'
         }
+
+        if self.include_extra_columns:
+            compound_mapping['series'] = 'SERIES'
+            compound_mapping['classification'] = 'CLASSIFICATION'
         
         self.chemireg_to_scarab_fields = {
             'SGC/Compound Series': {'compound_id':'SERIES', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'},
@@ -180,7 +196,9 @@ class SGCAuditClient(AuditClient):
 
         self.bh.commit()
         self.bh.close()
-        self.mbh.commit()
+    
+        if self.has_molcart:
+            self.mbh.commit()
 
     def insert_items(self, items):
         for item in items:

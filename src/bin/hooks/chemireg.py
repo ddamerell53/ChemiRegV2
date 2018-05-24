@@ -209,6 +209,7 @@ class ChemiReg(object):
         }
         
         response = self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+        print(response)
         update_path = self.hostname + '/' + response['objects']['out_file'].replace('public/','')
 
         f = tempfile.NamedTemporaryFile(delete=False)
