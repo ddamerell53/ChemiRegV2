@@ -80,9 +80,18 @@ DATABASES = {
         'NAME': 'sat_reg',
         'USER': 'chemireg',
         'DATABASE':'sat_reg'
+    },
+    'oracle': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'SGC',
+        'USER': 'SGC',
+        'PASSWORD': 'sgc04lab',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
+DATABASE_ROUTERS = ['defaultdatabaserouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
