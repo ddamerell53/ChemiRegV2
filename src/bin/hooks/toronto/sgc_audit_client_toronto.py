@@ -19,7 +19,6 @@ from toronto.fetch_manager import FetchManager
 #
 # Note that the Django ORM would have been really helpful here but as we are using Oracle 11 we aren't able to use it !
 
-
 class SGCTorontoAuditClient(AuditClient):
     def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart,schema_name):
         # Connect to Oracle database
@@ -28,8 +27,14 @@ class SGCTorontoAuditClient(AuditClient):
         # Schema name to prefix table names with
         self.schema_name = schema_name
 
+        # MySQL schema name to prefix MySQL table names with
+        self.mysql_schema_name = mysql_info['molcart_database']
+
         # Include molcart support
         self.has_molcart = has_molcart
+
+        # MySQL connection information
+        self.mysql_info = mysql_info
 
         # Connect to Molcart
         if self.has_molcart:
@@ -157,9 +162,14 @@ class SGCTorontoAuditClient(AuditClient):
         # Update Molcart if structures have been updated and Molcart is available
         if self.structure_updates > 0 and self.has_molcart:
             args = [
-                '/opt/local/icm/icm64',
+                self.icm_path,
                 os.path.dirname(os.path.abspath(__file__)) + '/molcart_insert.icm',
-                'sdf','=',self.sdf_handle.name
+                'sdf','=',self.sdf_handle.name,
+                'hostname', '=',self.mysql_info['hostname'],
+                'username', '=', self.mysql_info['username'],
+                'password', '=', self.mysql_info['password'],
+                'database', '=', self.mysql_info['molcart_database'],
+                'table_name', '=', self.mysql_info['molcart_table_name']
             ]
 
             # An exception will be thrown if the ICM process doesn't return a 0 exit status
@@ -209,8 +219,10 @@ if __name__ == '__main__':
     mysql_info = {
         'hostname': '',
         'username': '',
-        'password': ''
+        'password': '',
+        'molcart_database': '',
+        'molcart_table_name': ''
     }
 
-    client = SGCTorontoAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, '','', ['SGC - Toronto','SGC'], None, oracle_info, mysql_info, False, 'TORONTO_TEST')
+    client = SGCTorontoAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, '','', ['SGC - Toronto','SGC'], None, oracle_info, mysql_info, False, 'TORONTO_TEST','/usr/local/icm/icm64')
     client.process_updates()

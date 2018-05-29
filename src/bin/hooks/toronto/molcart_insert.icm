@@ -1,0 +1,74 @@
+# Connect to Molcart
+
+hostname = Getarg('hostname');
+username = Getarg('username');
+password = Getarg('password');
+database = Getarg('database');
+table_name = Getarg('table_name');
+
+connect molcart hostname username password database name='molcart_conn'
+
+# Open SDF
+
+sdf_file = Getarg('sdf')
+
+read table mol sdf_file name='INPUT_TABLE'
+
+colCount = 2
+
+# Build column index, type, size, map
+cols = Name(INPUT_TABLE)
+col_defs = Collection()
+for i=1, Nof(cols)
+        col = cols[i]
+        colName = Split(col, '.')[2]
+
+        print colName
+
+        if(Type($col) == 'sarray') then
+                maxLen = -1
+                for j=1, Nof($col) then
+                        colSize = Length($col[j])
+                        if(colSize > maxLen) then
+                                maxLen = colSize
+                        endif
+                endfor
+                col_defs[colName]= Collection('type', 'string', 'col_size', maxLen)
+        elseif(Type($col) == 'iarray') then
+                col_defs[colName] = Collection('type', 'int')
+        elseif(Type($col) == 'rarray') then
+                col_defs[colName] = Collection('type', 'real')
+        else
+                col_defs[colName] = Collection('type', 'unknown')
+        endif
+        col_defs[colName, 'position'] = i
+endfor
+
+# Determine column sizes
+
+col_args = Sarray(13)
+
+required_cols = {'mol', 'to_name','chemireg_pkey'}
+
+for i=1, Nof(required_cols) then
+    col_name = required_cols[i]
+
+    if(Exist(col_defs, col_name)) then
+            def = col_defs[col_name]
+
+            if(def['type'] == 'string') then
+                    col_args[i] = String(def['position']) + ' string(' + String(def['col_size']) + ') ' + col_name
+            elseif(def['type'] == 'int') then
+                    col_args[i] = String(def['position']) + ' int ' + col_name
+            elseif(def['type'] == 'real') then
+                    col_args[i] = String(def['position']) + ' real ' + col_name
+            elseif(col_name == 'mol') then
+                    col_args[i] = String(def['position'])  + ' chemical ' + col_name
+            endif
+    endif
+endfor
+
+# Insert into Molcart
+make molcart table INPUT_TABLE name= database + "." + table_name  append column = col_args connect="molcart_conn"
+
+quit()

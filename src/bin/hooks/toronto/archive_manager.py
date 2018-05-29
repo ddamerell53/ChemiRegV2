@@ -82,7 +82,7 @@ class ArchiveManager(object):
 
         query = self.parent.mbh.cursor()
 
-        sql = 'delete from GlobalCompounds.allOxford where ChemiRegPKEY = %s'
+        sql = 'delete from ' + self.parent.mysql_info['molcart_database'] + '.' + self.parent.mysql_info['molcart_table_name'] + ' where chemireg_pkey = %s'
         params = (compound['id'],)
 
         if self.parent.debug_sql:

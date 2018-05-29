@@ -127,8 +127,8 @@ class InsertManager(object):
             else:
                 mol = Chem.MolFromMolBlock(compound['salted_sdf'])
 
-            mol.SetProp('SGCGLOBALID', compound['compound_id'])
-            mol.SetProp('ChemiRegPKEY', str(compound['id']))
+            mol.SetProp('to_name', compound['compound_id'])
+            mol.SetProp('chemireg_pkey', str(compound['id']))
 
             self.parent.structure_updates += 1
 
