@@ -48,8 +48,8 @@ class SGCAuditClient(AuditClient):
         if self.include_extra_columns:
             complete_projects.append('SGC/Compound Classifications')
             complete_projects.append('SGC/Compound Series')
-            extra_sql_cols=',CLASSIFICATION,SERIES'
-            extra_sql_placeholders=',:CLASSIFICATION,:SERIES'
+            extra_sql_cols=',CLASSIFICATION,SERIES, FOLLOW_UP_LIST'
+            extra_sql_placeholders=',:CLASSIFICATION,:SERIES, FOLLOW_UP_LIST'
 
         super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records)
 
