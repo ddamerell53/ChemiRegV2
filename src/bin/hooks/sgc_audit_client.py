@@ -144,6 +144,7 @@ class SGCAuditClient(AuditClient):
         if self.include_extra_columns:
             compound_mapping['series'] = 'SERIES'
             compound_mapping['classification'] = 'CLASSIFICATION'
+            compound_mapping['follow_up_list'] = 'FOLLOW_UP_LIST'
         
         self.chemireg_to_scarab_fields = {
             'SGC/Compound Series': {'compound_id':'SERIES', 'description':'DESCRIPTION','id': 'CHEMIREG_PKEY'},
