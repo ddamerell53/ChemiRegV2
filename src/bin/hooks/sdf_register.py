@@ -462,9 +462,8 @@ class CompoundManager(object):
 					# Handle custom functions
 					if field_before_update_function is not None:
 						func_parts = field_before_update_function.split('.')
-						function_module = '.'.join(func_parts[:-1])
-
-						getattr(function_module, func_parts[-1:])(field_name, changes[entity_pkey])
+						function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+						getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
 
 					cur = self.custom_field_cursors[field_type]
 					
@@ -1116,9 +1115,8 @@ class CompoundManager(object):
 				# Handle custom functions
 				if field_before_update_function is not None:
 					func_parts = field_before_update_function.split('.')
-					function_module = '.'.join(func_parts[:-1])
-
-					getattr(function_module, func_parts[-1:])(field_name, obj)
+					function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+					getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
 				
 				field_value = None
 				
@@ -1813,7 +1811,7 @@ if __name__ == '__main__':
 			error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 			output_json['invalid_exception'] = e.value
 		except InvalidCustomFieldValue as e:
-			output_json['invalid_exception'] = e.value
+			error = e.value
 			
 		output_json['error'] = error
 			
@@ -1982,7 +1980,7 @@ if __name__ == '__main__':
 								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 								output_json['invalid_exception'] = e.value
 							except InvalidCustomFieldValue as e:
-								output_json['invalid_exception'] = e.value
+								error = e.value
 								
 							output_json['error'] = error
 						
@@ -2007,7 +2005,7 @@ if __name__ == '__main__':
 				error = e.value
 				output_json['invalid_exception'] = e.value
 			except InvalidCustomFieldValue as e:
-				output_json['invalid_exception'] = e.value
+				error = e.value
 				
 			output_json['upload_id'] = upload_id
 			output_json['error'] = error
