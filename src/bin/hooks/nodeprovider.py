@@ -105,6 +105,7 @@ class NodeProvider(object):
         self.socketIO.on('connect', self._socket_authenticated)
         self.socketIO.on('disconnect', self._disconnected)
         self.socketIO.on('open', self._socket_authenticated)
+
         try:
             self.socketIO.wait()
         except Exception as e:

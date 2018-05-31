@@ -5,6 +5,7 @@ from abc import abstractmethod
 
 import ijson
 
+
 class AuditClient(ABC):
     def __init__(self, hostname, port, username, password, since_transaction_id, projects, no_records):
         self.since_transaction_id = since_transaction_id
