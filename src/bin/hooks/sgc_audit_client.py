@@ -213,6 +213,7 @@ class SGCAuditClient(AuditClient):
     # to not hold up the ChemiReg to Scarab synchronisation, follow-up compounds are connected to their parent compounds and xtals outside of the
     # all-or-nothing process.
     def process_follow_up_list(self):
+        print('Updating follow-ups')
         # Import here for those installations which don't have our common Python library
         from org.sgc.CommonCore import CommonCore
 
@@ -265,6 +266,9 @@ class SGCAuditClient(AuditClient):
             # Split the follow-up string into crystal ID:Compound ID pairs
             pairs = follow_up_list.split(',')
 
+            # If one pair fails we don't want to update the FOLLOW_UP_PROCESSED flag
+            update_follow_up_flag = True
+
             # Iteerate Crystal ID:Compound ID pairs
             for pair in pairs:
                 # Split the pair into Crystal ID and Compound ID
@@ -281,9 +285,13 @@ class SGCAuditClient(AuditClient):
                 xtal_row = query_is_xtal.fetchone()
                 if xtal_row is None:
                     # We get here when the Crystal ID doesn't exist and so we email the user asking them to correct
-                    msg = 'Compound ' + sgcglobalid + ' references  mounted crystal ' + xtal_id + ' which doesn\'t exist\nPlease update in ChemiReg'                    
+                    msg = 'Compound ' + sgcglobalid + ' references  mounted crystal ' + xtal_id + ' which doesn\'t exist<br/>Please update in ChemiReg'                    
+
+                    print(user_email_address)
 
                     CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
+
+                    update_follow_up_flag = False
                     continue
                 else:
                     xtal_pkey = xtal_row[0]
@@ -297,9 +305,11 @@ class SGCAuditClient(AuditClient):
 
                 if compound_row is None:
                     # We get here if the parent Compound ID doesn't exist and so email the user asking them to correct
-                    msg = 'Compound ' + sgcglobalid + ' references parent compound ' + compound_id + ' which doesn\'t exist\nPlease update in ChemiReg'
+                    msg = 'Compound ' + sgcglobalid + ' references parent compound ' + compound_id + ' which doesn\'t exist<br/>Please update in ChemiReg'
 
                     CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
+
+                    update_follow_up_flag = False
                     continue
                 else:
                     parent_compound_pkey = compound_row[0]
@@ -308,8 +318,9 @@ class SGCAuditClient(AuditClient):
                 # Insert the follow-up relationship for the current follow-up compound
                 query_insert_follow_up_info.execute(None, {':COMPOUND_PKEY':compound_pkey, ':PARENT_COMPOUND_PKEY':parent_compound_pkey, ':XTAL_MOUNT_PKEY':xtal_pkey, ':PERSON':user, ':DATESTAMP':datestamp})
 
-            # Update the follow-up status for the current follow-up compound
-            query_update_followup_status.execute(None, {':PKEY':compound_pkey})
+            if update_follow_up_flag:
+                # Update the follow-up status for the current follow-up compound
+                query_update_followup_status.execute(None, {':PKEY':compound_pkey})
 
         # Compound all changes to Scarab
         CommonCore.bh.commit()
