@@ -223,7 +223,7 @@ class SGCAuditClient(AuditClient):
 
         # Query to delete existing relationships for follow-up compounds
         query_delete_existing = CommonCore.bh.cursor()
-        query_delete_existing.prepare('DELETE FROM SGC.SGCCOMPOUNDS_FOLLOW_UP WHERE PKEY = :PKEY')
+        query_delete_existing.prepare('DELETE FROM SGC.SGCCOMPOUNDS_FOLLOW_UP WHERE SGCCOMPOUND_PKEY = :PKEY')
 
         # Query to test if a crystal ID is correct
         query_is_xtal = CommonCore.bh.cursor()
