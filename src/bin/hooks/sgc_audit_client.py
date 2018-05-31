@@ -49,7 +49,7 @@ class SGCAuditClient(AuditClient):
             complete_projects.append('SGC/Compound Classifications')
             complete_projects.append('SGC/Compound Series')
             extra_sql_cols=',CLASSIFICATION,SERIES, FOLLOW_UP_LIST'
-            extra_sql_placeholders=',:CLASSIFICATION,:SERIES, FOLLOW_UP_LIST'
+            extra_sql_placeholders=',:CLASSIFICATION,:SERIES, :FOLLOW_UP_LIST'
 
         super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records)
 
@@ -200,6 +200,119 @@ class SGCAuditClient(AuditClient):
     
         if self.has_molcart:
             self.mbh.commit()
+
+        if self.include_extra_columns:
+            self.process_follow_up_list()
+
+    # process_follow_up_list connects follow-up compounds to their parent compounds and xtals in Scarab.
+    # 
+    # The synchronisation between ChemiReg and Scarab is an all-or-nothing process because of the way transactions are handled in ChemiReg
+    # Which means that when the script receieves a list of compound changes to make in Scarab either the whole set of changes are made or none are.
+    #
+    # Follow-up compounds reference xtals and parent compounds and there's a slim chance these won't exist by the time this script runs.  So
+    # to not hold up the ChemiReg to Scarab synchronisation, follow-up compounds are connected to their parent compounds and xtals outside of the
+    # all-or-nothing process.
+    def process_follow_up_list(self):
+        # Import here for those installations which don't have our common Python library
+        from org.sgc.CommonCore import CommonCore
+
+        # Query to find follow-up compounds for which we need to process the parent compounds and xtals
+        query = CommonCore.bh.cursor()
+        query.execute("SELECT PKEY, FOLLOW_UP_LIST, PERSON, SGCGLOBALID,DATESTAMP FROM SGC.SGCCOMPOUND WHERE FOLLOW_UP_LIST_PROCESSED= 'no' and FOLLOW_UP_LIST IS NOT NULL",{})
+
+        # Query to delete existing relationships for follow-up compounds
+        query_delete_existing = CommonCore.bh.cursor()
+        query_delete_existing.prepare('DELETE FROM SGC.SGCCOMPOUNDS_FOLLOW_UP WHERE PKEY = :PKEY')
+
+        # Query to test if a crystal ID is correct
+        query_is_xtal = CommonCore.bh.cursor()
+        query_is_xtal.prepare('SELECT PKEY FROM SGC.XTAL_MOUNT WHERE UPPER(XTAL_MOUNT_ID) = UPPER(:XTAL_ID)')
+
+        # Query to test if a parent compound ID is correct
+        query_is_compound = CommonCore.bh.cursor()
+        query_is_compound.prepare('SELECT PKEY FROM SGC.SGCCOMPOUND WHERE UPPER(SGCGLOBALID) = UPPER(:SGCGLOBALID)')
+
+        # Query to insert follow-up compound relationships
+        query_insert_follow_up_info = CommonCore.bh.cursor()
+        query_insert_follow_up_info.prepare('INSERT INTO SGC.SGCCOMPOUNDS_FOLLOW_UP (SGCCOMPOUND_PKEY, SGCCOMPOUND_PARENT_PKEY, SGCXTALMOUNT_PKEY, PERSON, DATESTAMP) values(:COMPOUND_PKEY, :PARENT_COMPOUND_PKEY, :XTAL_MOUNT_PKEY,:PERSON,:DATESTAMP)')
+
+        # Query to update the processed flagged for follow-up compounds
+        query_update_followup_status = CommonCore.bh.cursor()
+        query_update_followup_status.prepare('UPDATE SGC.SGCCOMPOUND SET FOLLOW_UP_LIST_PROCESSED = \'yes\' WHERE PKEY = :PKEY')
+
+        # List of email addresses to send errors to
+        cc_adds = ['david.damerell@sgc.ox.ac.uk', 'sgcit@sgc.ox.ac.uk']
+
+        # Iterate list of follow-up compounds to process
+        for row in query.fetchall():
+            # compound Scarab primary key
+            compound_pkey = row[0]
+            # follow-up list crystal ID:Compound ID,
+            follow_up_list = row[1]
+            # User that created the follow-up compound
+            user = row[2]
+            # SGC Global ID of the follow-up compound
+            sgcglobalid = row[3]
+
+            datestamp = row[4]
+
+            # Get the email address of the user that created the follow-up compound
+            user_email_address = CommonCore.get_user_email_address(user)
+
+            # Delete existing follow-up records for this follow-up compound
+            query_delete_existing.execute(None, {':PKEY':compound_pkey})
+
+            # Split the follow-up string into crystal ID:Compound ID pairs
+            pairs = follow_up_list.split(',')
+
+            # Iteerate Crystal ID:Compound ID pairs
+            for pair in pairs:
+                # Split the pair into Crystal ID and Compound ID
+                parts = pair.split(':')
+                
+                xtal_id = parts[0].rstrip().lstrip()
+                compound_id = parts[1].rstrip().lstrip()
+                
+                # Test if the crystal ID exists
+                query_is_xtal.execute(None, {':XTAL_ID': xtal_id})
+
+                xtal_pkey = None
+
+                xtal_row = query_is_xtal.fetchone()
+                if xtal_row is None:
+                    # We get here when the Crystal ID doesn't exist and so we email the user asking them to correct
+                    msg = 'Compound ' + sgcglobalid + ' references  mounted crystal ' + xtal_id + ' which doesn\'t exist\nPlease update in ChemiReg'                    
+
+                    CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
+                    continue
+                else:
+                    xtal_pkey = xtal_row[0]
+
+                # Test if the parent Compound ID exists
+                parent_compound_pkey = None
+    
+                query_is_compound.execute(None, {':SGCGLOBALID': compound_id})
+
+                compound_row = query_is_compound.fetchone()
+
+                if compound_row is None:
+                    # We get here if the parent Compound ID doesn't exist and so email the user asking them to correct
+                    msg = 'Compound ' + sgcglobalid + ' references parent compound ' + compound_id + ' which doesn\'t exist\nPlease update in ChemiReg'
+
+                    CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
+                    continue
+                else:
+                    parent_compound_pkey = compound_row[0]
+                
+            
+                # Insert the follow-up relationship for the current follow-up compound
+                query_insert_follow_up_info.execute(None, {':COMPOUND_PKEY':compound_pkey, ':PARENT_COMPOUND_PKEY':parent_compound_pkey, ':XTAL_MOUNT_PKEY':xtal_pkey, ':PERSON':user, ':DATESTAMP':datestamp})
+
+            # Update the follow-up status for the current follow-up compound
+            query_update_followup_status.execute(None, {':PKEY':compound_pkey})
+
+        # Compound all changes to Scarab
+        CommonCore.bh.commit()
 
     def insert_items(self, items):
         for item in items:
