@@ -5,6 +5,7 @@ MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 RUN apt-get update && \
 apt-get install -y git vim build-essential libcap2-bin libcairo2
 RUN useradd -ms /bin/bash chemireg
+RUN git clone
 USER chemireg
 COPY chemireg.tar.gz /tmp/chemireg.tar.gz
 RUN cd /home/chemireg && \

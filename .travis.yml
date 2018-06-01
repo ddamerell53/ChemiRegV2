@@ -9,6 +9,7 @@ before_install:
   - docker pull ddamerell/chemireg:sgc_rdkit_postgres_bigm
   - docker pull continuumio/anaconda3
   - cd docker/chemireg
+  - docker build -t chemireg .
   - cd ../chemireg_postgres
   - docker build -t chemireg_postgres:latest .
   - docker tag chemireg ddamerell/chemireg:latest
