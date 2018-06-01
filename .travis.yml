@@ -6,10 +6,13 @@ services:
   - docker
 
 before_install:
-  - docker pull postgres:9.6.6
-  - cd docker/sgc_rdkit_postgres
-  - wget https://github.com/rdkit/rdkit/archive/Release_2017_09_1.tar.gz
-  - docker build -t sgc_rdkit_postgres:latest .
+  - docker pull ddamerell/chemireg:sgc_rdkit_postgres_bigm
+  - docker pull continuumio/anaconda3
+  - cd docker/chemireg
+  - cd ../chemireg_postgres
+  - docker build -t chemireg_postgres:latest .
+  - docker tag chemireg ddamerell/chemireg:latest
+  - docker tag chemireg_postgres ddamerell/chemireg:postgres
 
 script:
   - echo "Hello World2"
