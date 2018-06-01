@@ -12,4 +12,4 @@ before_install:
   - docker build -t sgc_rdkit_postgres:latest .
 
 script:
-  - echo "Hello World"
+  - echo "Hello World2"
