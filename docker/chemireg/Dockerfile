@@ -5,11 +5,12 @@ MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 RUN apt-get update && \
 apt-get install -y git vim build-essential libcap2-bin libcairo2
 RUN useradd -ms /bin/bash chemireg
-RUN git clone
+RUN echo "Git force update 1"
+RUN git clone https://github.com/ddamerell53/ChemiRegV2.git && \
+rm /home/chemireg -rf && \
+mv ChemiRegV2 /home/chemireg && \
+chown chemireg.users /home/chemireg -R
 USER chemireg
-COPY chemireg.tar.gz /tmp/chemireg.tar.gz
-RUN cd /home/chemireg && \
-tar zxvf /tmp/chemireg.tar.gz
 USER root
 RUN cd /home/chemireg/src && \
 conda install --yes --file python_requirements.txt
@@ -36,9 +37,9 @@ RUN setcap 'cap_net_bind_service=+ep' /home/chemireg/node-v8.9.3-linux-x64/bin/n
 RUN /opt/conda/bin/conda install jupyter -y --quiet && \
 mkdir /opt/notebooks
 USER chemireg
-RUN cd / &&\
-tar zxvf /home/chemireg/src/jupyter.tar.gz && \
-rm /home/chemireg/src/jupyter.tar.gz
+RUN cd /home/chemireg && \
+mkdir .jupyter && \
+cp jupyter_notebook_config.json .jupyter/
 ENV PYTHONPATH=/home/chemireg/src/bin/hooks
 RUN chmod u+x /home/chemireg/src/start.sh
 CMD /home/chemireg/src/start.sh
