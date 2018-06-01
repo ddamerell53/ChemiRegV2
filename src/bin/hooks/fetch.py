@@ -2189,8 +2189,3 @@ if __name__ == '__main__':
 
 	with open(output_json_path, 'w') as fw:
     		fw.write(rapidjson.dumps(output_json))
-    		
-    		
-    		
-    		
-    		:quit
