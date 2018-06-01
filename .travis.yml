@@ -20,4 +20,5 @@ before_script:
   - docker run -i -p 127.0.0.1:80:80 -p 127.0.0.1:443:443 -p 127.0.0.1:8888:8888 --name chemireg --link chemireg_postgres -d ddamerell/chemireg:latest
 
 script:
-  - echo "Hello World2"
+  - echo "Starting tests"
+  - docker exec -i -t chemireg python /home/chemireg/src/bin/hooks/create_test_env.py
