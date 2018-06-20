@@ -20,7 +20,7 @@ from toronto.fetch_manager import FetchManager
 # Note that the Django ORM would have been really helpful here but as we are using Oracle 11 we aren't able to use it !
 
 class SGCTorontoAuditClient(AuditClient):
-    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart,schema_name):
+    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart,schema_name, icm_path):
         # Connect to Oracle database
         self.connect_to_oracle(oracle_info)
 
@@ -38,7 +38,7 @@ class SGCTorontoAuditClient(AuditClient):
 
         # Connect to Molcart
         if self.has_molcart:
-            self.connect_to_molcart()
+            self.connect_to_molcart(mysql_info)
 
         # Fetch the last transaction ID processed
         self.populate_internal_transaction_id()
@@ -66,6 +66,8 @@ class SGCTorontoAuditClient(AuditClient):
 
         self.debug_sql = True
         self.debug_actions = True
+
+        self.icm_path = icm_path
 
         # Call super-constructor here as we need to know the last processed transaction ID
         super(SGCTorontoAuditClient, self).__init__(hostname, port, username, password, self.last_transaction_id, projects, no_records)
@@ -211,18 +213,18 @@ class SGCTorontoAuditClient(AuditClient):
 
 if __name__ == '__main__':
     oracle_info = {
-        'username': '',
+        'username': 'TORONTO_TEST',
         'password': '',
-        'tns_name': ''
+        'tns_name': 'SGC'
     }
 
     mysql_info = {
         'hostname': '',
-        'username': '',
+        'username': 'toronto_test',
         'password': '',
-        'molcart_database': '',
-        'molcart_table_name': ''
+        'molcart_database': 'TORONTO_TEST',
+        'molcart_table_name': 'molcart_test'
     }
 
-    client = SGCTorontoAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, '','', ['SGC - Toronto','SGC'], None, oracle_info, mysql_info, False, 'TORONTO_TEST','/usr/local/icm/icm64')
+    client = SGCTorontoAuditClient('https://globalchemireg.sgc.ox.ac.uk', 443, 'sgc_toronto_sync','', ['SGC - Toronto','SGC'], None, oracle_info, mysql_info, True, 'TORONTO_TEST','/opt/local/icm/icm64')
     client.process_updates()
