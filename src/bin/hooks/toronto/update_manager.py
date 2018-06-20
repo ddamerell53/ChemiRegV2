@@ -64,15 +64,16 @@ class UpdateManager(object):
                 update_blocks.append(fields[field] + ' = :' + fields[field])
                 update_values[':' + fields[field]] = compound[field]
 
-        sql = 'UPDATE ' + self.parent.schema_name + '.CH_COMPOUND' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
+        if len(update_blocks) > 0:
+            sql = 'UPDATE ' + self.parent.schema_name + '.CH_COMPOUND' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
 
-        update_values[':CHEMIREG_PKEY'] = compound['id']
+            update_values[':CHEMIREG_PKEY'] = compound['id']
 
-        if self.parent.debug_sql:
-            print(sql)
-            print(update_values)
+            if self.parent.debug_sql:
+                print(sql)
+                print(update_values)
 
-        query.execute(sql, update_values)
+            query.execute(sql, update_values)
 
     # update_ch_compound_chemlib updates @compound in the CH_COMPOUND_CHEMLIB table
     def update_ch_compound_chemlib(self, compound):
@@ -98,19 +99,20 @@ class UpdateManager(object):
             update_blocks.append(fields[field] + ' = :' + fields[field])
             update_values[':' + fields[field]] = compound[field]
 
-        if 'library_name' in compound:
-            update_blocks.append('CH_CHEMLIB_PKEY = :CH_CHEMLIB_PKEY')
-            update_values[':CH_CHEMLIB_PKEY'] = self.parent.fetch_manager.get_library_pkey(compound['library_name'],compound)
+        if len(update_blocks) > 0:
+            if 'library_name' in compound:
+                update_blocks.append('CH_CHEMLIB_PKEY = :CH_CHEMLIB_PKEY')
+                update_values[':CH_CHEMLIB_PKEY'] = self.parent.fetch_manager.get_library_pkey(compound['library_name'],compound)
 
-        sql = 'UPDATE ' + self.parent.schema_name + '.CH_COMPOUND_CHEMLIB' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
+            sql = 'UPDATE ' + self.parent.schema_name + '.CH_COMPOUND_CHEMLIB' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
 
-        update_values[':CHEMIREG_PKEY'] = compound['id']
+            update_values[':CHEMIREG_PKEY'] = compound['id']
 
-        if self.parent.debug_sql:
-            print(sql)
-            print(update_values)
+            if self.parent.debug_sql:
+                print(sql)
+                print(update_values)
 
-        query.execute(sql, update_values)
+            query.execute(sql, update_values)
 
     # update_ch_stock updates @compound in the CH_STOCK table
     def update_ch_stock(self, compound):
@@ -144,15 +146,16 @@ class UpdateManager(object):
             update_blocks.append('CH_PLATE_PKEY = :CH_PLATE_PKEY')
             update_values[':CH_PLATE_PKEY'] = self.parent.fetch_manager.get_plate_pkey(compound['barcode'], compound)
 
-        sql = 'UPDATE ' + self.parent.schema_name + '.CH_STOCK' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
+        if len(update_blocks) > 0:
+            sql = 'UPDATE ' + self.parent.schema_name + '.CH_STOCK' + ' SET ' + (','.join(update_blocks)) + ' where CHEMIREG_PKEY=:CHEMIREG_PKEY'
 
-        update_values[':CHEMIREG_PKEY'] = compound['id']
+            update_values[':CHEMIREG_PKEY'] = compound['id']
 
-        if self.parent.debug_sql:
-            print(sql)
-            print(update_values)
+            if self.parent.debug_sql:
+                print(sql)
+                print(update_values)
 
-        query.execute(sql, update_values)
+            query.execute(sql, update_values)
 
     # update_molcart updates @compound in the Molcart table
     def update_molcart(self, compound):
