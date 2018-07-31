@@ -219,7 +219,7 @@ if __name__ == '__main__':
     }
 
     mysql_info = {
-        'hostname': '',
+        'hostname': 'fides.sgc.ox.ac.uk',
         'username': 'toronto_test',
         'password': '',
         'molcart_database': 'TORONTO_TEST',
