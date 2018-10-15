@@ -3,10 +3,15 @@
 hostname = Getarg('hostname');
 username = Getarg('username');
 password = Getarg('password');
-database = Getarg('database');
+database_name = Getarg('database');
 table_name = Getarg('table_name');
 
-connect molcart hostname username password database name='molcart_conn'
+q_name = database_name + "." + table_name
+
+print database_name
+print table_name
+
+connect molcart hostname username password database_name name='molcart_conn'
 
 # Open SDF
 
@@ -69,6 +74,7 @@ for i=1, Nof(required_cols) then
 endfor
 
 # Insert into Molcart
-make molcart table INPUT_TABLE name= database + "." + table_name  append column = col_args connect="molcart_conn"
+
+make molcart table INPUT_TABLE name=q_name   append column = col_args connect="molcart_conn"
 
 quit()

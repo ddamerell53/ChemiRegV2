@@ -1,11 +1,17 @@
 from rdkit import Chem
 import cx_Oracle
 
+from archive_manager import ArchiveManager
+from insert_manager import InsertManager
+
 class UpdateManager(object):
     def __init__(self, parent):
         self.parent = parent
         self.ch_compound_pkey = None
         self.locked_fields = {'id': True, 'username': True, 'date_record_created': True}
+
+        self.archive_manager = ArchiveManager(self.parent)
+        self.insert_manager = InsertManager(self.parent)
 
     # update_items updates @compounds present in the Toronto schema
     def update_compounds(self, compounds):
@@ -163,15 +169,5 @@ class UpdateManager(object):
             print('Updating Molcart ' + compound['compound_id'])
 
         if 'salted_sdf' in compound:
-            if compound['salted_sdf'] is None or compound['salted_sdf'] == '':
-                mol = Chem.MolFromSmiles('')
-            else:
-                mol = Chem.MolFromMolBlock(compound['salted_sdf'])
-
-            if mol is not None:
-                mol.SetProp('to_name', compound['compound_id'])
-                mol.SetProp('chemireg_pkey', str(compound['id']))
-
-                self.parent.sdf_writer.write(mol)
-
-                self.parent.delete_from_molcart(compound['id'])
+            self.archive_manager.archive_from_molcart(compound)
+            self.insert_manager.insert_into_sdf(compound)
