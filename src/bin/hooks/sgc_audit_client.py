@@ -263,38 +263,50 @@ class SGCAuditClient(AuditClient):
             # Delete existing follow-up records for this follow-up compound
             query_delete_existing.execute(None, {':PKEY':compound_pkey})
 
-            # Split the follow-up string into crystal ID:Compound ID pairs
-            pairs = follow_up_list.split(',')
+            if ',' in follow_up_list:
+                # Split the follow-up string into crystal ID:Compound ID pairs
+                pairs = follow_up_list.split(',')
+            elif follow_up_list is not None and follow_up_list != '':
+                pairs = [follow_up_list]
+
 
             # If one pair fails we don't want to update the FOLLOW_UP_PROCESSED flag
             update_follow_up_flag = True
 
             # Iteerate Crystal ID:Compound ID pairs
             for pair in pairs:
-                # Split the pair into Crystal ID and Compound ID
-                parts = pair.split(':')
-                
-                xtal_id = parts[0].rstrip().lstrip()
-                compound_id = parts[1].rstrip().lstrip()
-                
-                # Test if the crystal ID exists
-                query_is_xtal.execute(None, {':XTAL_ID': xtal_id})
-
+                xtal_id = None
                 xtal_pkey = None
 
-                xtal_row = query_is_xtal.fetchone()
-                if xtal_row is None:
-                    # We get here when the Crystal ID doesn't exist and so we email the user asking them to correct
-                    msg = 'Compound ' + sgcglobalid + ' references  mounted crystal ' + xtal_id + ' which doesn\'t exist<br/>Please update in ChemiReg'                    
+                if ':' in pair:
 
-                    print(user_email_address)
-
-                    CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
-
-                    update_follow_up_flag = False
-                    continue
+                    # Split the pair into Crystal ID and Compound ID
+                    parts = pair.split(':')
+                
+                    xtal_id = parts[0].rstrip().lstrip()
+                    compound_id = parts[1].rstrip().lstrip()
                 else:
-                    xtal_pkey = xtal_row[0]
+                    compound_id = pair                
+
+                if xtal_id is not None:
+                    # Test if the crystal ID exists
+                    query_is_xtal.execute(None, {':XTAL_ID': xtal_id})
+
+                    xtal_pkey = None
+
+                    xtal_row = query_is_xtal.fetchone()
+                    if xtal_row is None:
+                        # We get here when the Crystal ID doesn't exist and so we email the user asking them to correct
+                        msg = 'Compound ' + sgcglobalid + ' references  mounted crystal ' + xtal_id + ' which doesn\'t exist<br/>Please update in ChemiReg'                    
+
+                        print(user_email_address)
+
+                        CommonCore.send_email(user_email_address, cc_adds, 'Action Required: Follow-up compound error ' + sgcglobalid, msg, msg)
+
+                        update_follow_up_flag = False
+                        continue
+                    else:
+                        xtal_pkey = xtal_row[0]
 
                 # Test if the parent Compound ID exists
                 parent_compound_pkey = None
@@ -446,7 +458,7 @@ class SGCAuditClient(AuditClient):
             if item['transaction_id'] > self.last_transaction_id:
                 self.last_transaction_id = item['transaction_id']
 
-            print('Deleting ' + item['compound_id'])
+            print('Deleting ' + item['compound_id'] + '/' + str(item['id']))
 
             delete_statement.execute(None, params)
             
