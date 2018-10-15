@@ -2103,7 +2103,7 @@ if __name__ == '__main__':
 						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
 					elif input_json['task'] == 'export_excel':
 						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['from_row'],input_json['to_row'], input_json['_username'], input_json['project_name'])
+						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
 						excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
 						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
 				elif input_json['action'] == 'update_instructions':

@@ -76,7 +76,6 @@ class ChemiReg(object):
             if self.is_ready():
                 return self.blocking_results
             else:
-
                 sleep(0.05)
 
     def _process_response(self, error, json):
@@ -132,7 +131,7 @@ class ChemiReg(object):
 
         self.web_socket_thread.join()
 
-    def register_sdf(self, sdf, project_name, config, cb):
+    def register_sdf(self, sdf, project_name, config):
         self.set_ready(False)
 
         def _process_upload(error, upload_key):
@@ -230,6 +229,42 @@ class ChemiReg(object):
 
         return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
 
+    def fetch_wild(self, terms, project, from_row, to_row):
+        arguments = {
+            'action': 'search',
+            'task': 'fetch',
+            'search_terms': terms,
+            '_username': None,
+            'project': project,
+            'from_row': from_row,
+            'to_row': to_row,
+            'ctab_content': ''
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+
+    def fetch_all(self, project, from_row, to_row):
+        arguments = {
+            'project': project,
+            '_username': None,
+            'action': 'search_all',
+            'task': 'fetch',
+            'forget_search': True,
+            'from_row': from_row,
+            'to_row': to_row
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch', arguments)
+
+    def fast_fetch(self, project, term):
+        arguments = {
+            'project': project,
+            '_username': None,
+            'find_terms': term
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:FastFetch', arguments)
+
     def fetch_count(self, ids, project, from_row, to_row, cb):
         arguments = {
             'action': 'fetch_exact',
@@ -266,9 +301,9 @@ class ChemiRegTests(object):
     def run_tests(self):
         self.fetch_test1()
 
-        #self.insert_json_test1()
+        self.insert_json_test1()
 
-        #self.update_test1()
+        self.update_test1()
 
         self.after_tests()
 
