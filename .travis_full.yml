@@ -1,0 +1,15 @@
+sudo: required
+
+language: python
+
+services:
+  - docker
+
+before_install:
+  - docker pull postgres:9.6.6
+  - cd docker/sgc_rdkit_postgres
+  - wget https://github.com/rdkit/rdkit/archive/Release_2017_09_1.tar.gz
+  - docker build -t sgc_rdkit_postgres:latest .
+
+script:
+  - echo "Hello World2"
