@@ -8,3 +8,12 @@ Whilst we are refining and documentating you can play with the docker images as 
 * Login to ChemiReg (http://localhost) as the administrator with the password you just entered
 
 More documentation to follow
+
+To develop using the Docker images for the time being the simplest solution is the following 
+
+* Do all of the above and then
+* Clone this repository to a directory of choice from which you will be able to rsync
+* Enter the running ChemiReg container (docker exec -i -t chemireg /bin/bash)
+* Stop NodeJS (ps aux | grep "node" and then kill the process by ID)
+* rsync username@server:/home/username/chemireg.git/src src
+* To start ChemiReg with your latest code run cd src & start.sh
