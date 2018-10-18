@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PYTHONPATH="/home/oracle/ChemiRegV2/src/bin/hooks"
+export PYTHONPATH="/home/oracle/ChemiRegV2/src/bin/hooks:/home/oracle/python_scripts/src"
 export LD_LIBRARY_PATH="/usr/local/lib:/usr/local/oracle/product/11.2.0/lib:/lib:/usr/lib"
 export LD_LIBRARY_PATH="/usr/local/lib:/usr/local/oracle/product/11.2.0/lib:/lib:/usr/lib"
 export ORACLE_BASE="/usr/local/oracle"

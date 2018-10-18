@@ -335,7 +335,8 @@ class AuthenticationManager(object):
 				a.human_name,
 				a.project_foreign_key_id,
 				c.project_name,
-				a.calculated
+				a.calculated,
+				a.before_update_function
 			from
 				custom_fields a left outer join projects c on (a.project_foreign_key_id = c.id),
 				custom_field_types b
@@ -1149,7 +1150,8 @@ class AuthenticationManager(object):
 				'visible': row[9],
 				'project_foreign_key_id': row[11],
 				'foreign_key_project_name': row[12],
-				'calculated': row[13]
+				'calculated': row[13],
+				'before_update_function': row[14]
 			}
 			
 			i += 1

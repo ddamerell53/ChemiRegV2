@@ -28,7 +28,7 @@ logging.getLogger('socketIO-client').setLevel(logging.INFO)
 logging.basicConfig()
 
 class NodeProvider(object):
-    def __init__(self, hostname, port, username, password, cb):
+    def __init__(self, hostname, port, username, password, cb1, cb2):
         self.hostname = hostname
         self.port = port
         self.username = username
@@ -40,7 +40,9 @@ class NodeProvider(object):
 
         self.msg_id_to_callback = {}
 
-        self._after_connect = cb
+        self._after_connect = cb1
+        self._after_error = cb2
+        self.closed = False 
 
     def login(self):
         login_url = self.hostname + ':' + str(self.port) + '/login'
@@ -55,11 +57,14 @@ class NodeProvider(object):
 
         print('Connecting to ' + login_url)
 
+        attempts = 0
+        attempt_limit = 4
+
         while True:
             try:
-                with urllib.request.urlopen(request) as response:
+                with urllib.request.urlopen(request,timeout=5) as response:
                     content = response.read()
-
+                    
                     content_obj = json.loads(content.decode('ascii'))
 
                     if 'token' in content_obj:
@@ -70,18 +75,27 @@ class NodeProvider(object):
                     else:
                         raise Exception('Authentication failed no token in response')
             except urllib.error.URLError as e:
+                attempts += 1
+
+                if attempts == attempt_limit:
+                    print('Informing caller of error')
+                    self.after_error(e)
+                    break
+
                 print('Sleeping!')
                 print(e)
                 time.sleep(10)
+            except Exception as e:
+                self.after_error(e)
+                break
 
     def configure_socket(self):
         if self.hostname.startswith('https'):
             needs_sslv4 = True
         else:
             needs_sslv4 = False
-        
-        self.socketIO = SocketIO(self.hostname, self.port, LoggingNamespace,
-                                 transports=['xhr-polling'],needs_sslv4=needs_sslv4)
+        print('Creating WebSocket connection') 
+        self.socketIO = SocketIO(self.hostname, self.port, LoggingNamespace,False,transports=['xhr-polling'],needs_sslv4=needs_sslv4)
         time.sleep(3)
         self.socketIO.on('authenticated', self._socket_authenticated)
         self.socketIO.emit('authenticate', {'token': self.auth_token})
@@ -92,10 +106,18 @@ class NodeProvider(object):
         self.socketIO.on('disconnect', self._disconnected)
         self.socketIO.on('open', self._socket_authenticated)
 
-        self.socketIO.wait()
+        try:
+            self.socketIO.wait()
+        except Exception as e:
+            self.after_error(e)
 
     def _disconnected(self):
+        if self.closed:
+            return
+
         print('Disconnected')
+
+        self.closed = True
 
     def _process_response(self, data):
         if 'bioinfJobId' in data:
@@ -118,6 +140,9 @@ class NodeProvider(object):
                 self.msg_id_to_callback[msg_id](error, json)
 
                 self.msg_id_to_callback.pop(msg_id)
+
+                #Important - otherwise we leak file descriptors
+                data.close()
             else:
                 print('Warning message not found ' + msg_id)
 
@@ -136,6 +161,9 @@ class NodeProvider(object):
 
     def set_after_connect(self, cb):
         self._after_connect = cb
+
+    def after_error(self, error):
+        self._after_error(error)
 
     def get_by_named_query(self, query_id, data, cb):
         json = {"queryId": query_id, 'parameters': self._serialise(data)}

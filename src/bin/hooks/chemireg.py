@@ -46,6 +46,8 @@ class ChemiReg(object):
         # Thread for listen for messages
         self.web_socket_thread = None
 
+        self.error = None
+
     def set_ready(self, ready):
         self.lock.acquire()
         try:
@@ -74,7 +76,6 @@ class ChemiReg(object):
             if self.is_ready():
                 return self.blocking_results
             else:
-
                 sleep(0.05)
 
     def _process_response(self, error, json):
@@ -92,15 +93,20 @@ class ChemiReg(object):
 
     def connect(self):
         # Initialise NodeProvider which handles communication with ChemiReg via a WebSocket
-        self.provider = NodeProvider(self.hostname, self.port, self.username, self.password, None)
+        self.provider = NodeProvider(self.hostname, self.port, self.username, self.password, None, None)
 
         # This function is called after the connection has been established
         def after_connect():
             # Used to inform the initiating thread that we are connected (releases the block)
             self.set_ready(True)
 
+        def after_error(err):
+            self.set_ready(True)
+            self.error = err
+
         def start_login():
             self.provider._after_connect = after_connect
+            self.provider._after_error = after_error
             self.provider.login()
 
         self.web_socket_thread = threading.Thread(target=start_login)
@@ -108,18 +114,24 @@ class ChemiReg(object):
 
         while True:
             if self.is_ready():
-                break
+                if self.error is None:
+                    break
+                else:
+                    self.close()
+                    raise self.error
 
 
     def _close(self):
-        self.provider.socketIO._close()
+        if self.provider.socketIO is not None:
+            print('Closing WebSocket!')
+            self.provider.socketIO.__exit__()
 
     def close(self):
         self._close()
 
         self.web_socket_thread.join()
 
-    def register_sdf(self, sdf, project_name, config, cb):
+    def register_sdf(self, sdf, project_name, config):
         self.set_ready(False)
 
         def _process_upload(error, upload_key):
@@ -196,6 +208,7 @@ class ChemiReg(object):
         }
         
         response = self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+        print(response)
         update_path = self.hostname + '/' + response['objects']['out_file'].replace('public/','')
 
         f = tempfile.NamedTemporaryFile(delete=False)
@@ -215,6 +228,42 @@ class ChemiReg(object):
         }
 
         return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+
+    def fetch_wild(self, terms, project, from_row, to_row):
+        arguments = {
+            'action': 'search',
+            'task': 'fetch',
+            'search_terms': terms,
+            '_username': None,
+            'project': project,
+            'from_row': from_row,
+            'to_row': to_row,
+            'ctab_content': ''
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
+
+    def fetch_all(self, project, from_row, to_row):
+        arguments = {
+            'project': project,
+            '_username': None,
+            'action': 'search_all',
+            'task': 'fetch',
+            'forget_search': True,
+            'from_row': from_row,
+            'to_row': to_row
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch', arguments)
+
+    def fast_fetch(self, project, term):
+        arguments = {
+            'project': project,
+            '_username': None,
+            'find_terms': term
+        }
+
+        return self.query('saturn.db.provider.hooks.ExternalJsonHook:FastFetch', arguments)
 
     def fetch_count(self, ids, project, from_row, to_row, cb):
         arguments = {
@@ -252,9 +301,9 @@ class ChemiRegTests(object):
     def run_tests(self):
         self.fetch_test1()
 
-        #self.insert_json_test1()
+        self.insert_json_test1()
 
-        #self.update_test1()
+        self.update_test1()
 
         self.after_tests()
 

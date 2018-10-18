@@ -1,4 +1,4 @@
-﻿FROM continuumio/anaconda3
+FROM continuumio/anaconda3
 
 MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 

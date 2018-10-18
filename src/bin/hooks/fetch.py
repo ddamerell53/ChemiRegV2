@@ -888,7 +888,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.insert_transaction_id
+				a.insert_transaction_id,
+				e.project_name
 			from
 				compounds a,
 				users b,
@@ -911,7 +912,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.update_transaction_id				
+				a.update_transaction_id,
+				e.project_name				
 			from
 				compounds a,
 				users b,
@@ -934,7 +936,8 @@ class CompoundFetchManager(object):
 				--to_char(a.date_record_created, 'Day DD Month YYYY HH:MM:SS'),
 				extract('epoch' from date_record_created),
 				a.batchable,
-				a.archived_transaction_id
+				a.archived_transaction_id,
+				e.project_name
 			from
 				compounds a,
 				users b,
@@ -1750,7 +1753,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}	
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
@@ -1801,7 +1804,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
@@ -1851,7 +1854,7 @@ class CompoundFetchManager(object):
 			if not is_first:
 				cache_str += ',\n'
 				
-			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5]}	
+			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
 			if self.strip_salts and len(obj['compound_id']) == 11:
 				obj['_compound_id'] = obj['compound_id']
@@ -2100,7 +2103,7 @@ if __name__ == '__main__':
 						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
 					elif input_json['task'] == 'export_excel':
 						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['from_row'],input_json['to_row'], input_json['_username'], input_json['project_name'])
+						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
 						excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
 						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
 				elif input_json['action'] == 'update_instructions':
@@ -2186,8 +2189,3 @@ if __name__ == '__main__':
 
 	with open(output_json_path, 'w') as fw:
     		fw.write(rapidjson.dumps(output_json))
-    		
-    		
-    		
-    		
-    		

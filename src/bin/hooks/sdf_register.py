@@ -31,6 +31,7 @@ from rdkit.Chem import Descriptors
 from rdkit.Chem.rdmolfiles import SDWriter
 from salt_remove import StripMol
 from rdkit.Chem import AllChem
+from exceptions import InvalidCustomFieldValue
 
 # ChemiReg modules - CC0
 import authenticate
@@ -456,7 +457,14 @@ class CompoundManager(object):
 					field = project_fields[field_name]
 					field_type = field['type_name']
 					field_id = field['field_id']
-					
+					field_before_update_function = field['before_update_function']
+
+					# Handle custom functions
+					if field_before_update_function is not None:
+						func_parts = field_before_update_function.split('.')
+						function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+						getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
+
 					cur = self.custom_field_cursors[field_type]
 					
 					if field['required'] == True and changes[entity_pkey][field_name] is None:
@@ -1101,6 +1109,14 @@ class CompoundManager(object):
 				field = project_fields_by_type[field_type][field_name]
 				table_name = field['table_name']
 				field_id = field['field_id']
+
+				field_before_update_function = field['before_update_function']
+
+				# Handle custom functions
+				if field_before_update_function is not None:
+					func_parts = field_before_update_function.split('.')
+					function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+					getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
 				
 				field_value = None
 				
@@ -1168,6 +1184,7 @@ class CompoundManager(object):
 					raise MissingEntityException({'project_name': project_name, 'entity_id': entity_id})
 				else:
 					raise RegistrationException('Unknown error ' + error_message)
+
 				
 	def convert_excel_to_sdf(self, input_file, field_mappings):
 		tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.sdf')
@@ -1793,6 +1810,8 @@ if __name__ == '__main__':
 		except InvalidValueException as e:
 			error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 			output_json['invalid_exception'] = e.value
+		except InvalidCustomFieldValue as e:
+			error = e.value
 			
 		output_json['error'] = error
 			
@@ -1913,6 +1932,8 @@ if __name__ == '__main__':
 						except InvalidValueException as e:
 							error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 							output_json['invalid_exception'] = e.value
+						except InvalidCustomFieldValue as e:
+							output_json['invalid_exception'] = e.value
 							
 						output_json['error'] = error
 					else:					
@@ -1958,6 +1979,8 @@ if __name__ == '__main__':
 							except InvalidValueException as e:
 								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 								output_json['invalid_exception'] = e.value
+							except InvalidCustomFieldValue as e:
+								error = e.value
 								
 							output_json['error'] = error
 						
@@ -1981,6 +2004,8 @@ if __name__ == '__main__':
 			except InvalidCharacterException as e:
 				error = e.value
 				output_json['invalid_exception'] = e.value
+			except InvalidCustomFieldValue as e:
+				error = e.value
 				
 			output_json['upload_id'] = upload_id
 			output_json['error'] = error
