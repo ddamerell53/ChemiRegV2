@@ -449,24 +449,24 @@
 }
 
 .main_menu_followed:after { content: "/"; display: inline-block;  }
-.main_menu_followed:hover:after { color:white}
+.main_menu_followed:hover:after { color:grey}
 .main_menu {
-	color:white;
+	color:grey;
 	padding: 0 0;
 	border: none;
 	margin-bottom:0px;
 }
 
 .main_menu:hover {
-	color: grey;
+	color: background-color:#2c5aa0;
 }
 
 .main_menu:active {
-	color:black;
+	color:rgb(44, 90, 160);
 }
 
 .screen_selected {
-	color:black;
+	color:rgb(44, 90, 160);
 }
 
 .changes {
@@ -475,4 +475,22 @@
 
 .sweet-alert button {
 	color:white !important;
+}
+
+#search > div > div {
+    margin: 10px;
+
+}
+
+#search > div > div > div{
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    border: none;
+     flex:1;
+     border-bottom: 1px solid grey;
+}
+
+#search_selection-selectized{
+    width:100% !important;
+
 }
