@@ -4063,3 +4063,55 @@ function on_password_key_down(e){
 		login();
 	}
 }
+
+function create_modal(){
+    var container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.zIndex = 1;
+    container.style.paddingTop = '20px';
+    container.style.left = 0;
+    container.style.top = 0;
+    container.style.minWidth = '200px';
+    container.style.minHeight = '100px';
+    container.style.backgroundColor = 'rgb(247, 248, 251)';
+
+    header = document.createElement('div');
+    header.style.position = 'absolute';
+    header.style.top = '0px';
+    header.style.backgroundColor = 'rgb(125, 117, 117)';
+    header.style.height = '20px';
+    header.style.width = '100%';
+
+    var titleSpan = document.createElement('span');
+    titleSpan.innerText = this.title;
+
+    titleSpan.style.color = 'white';
+    titleSpan.style.fontSize = '16px';
+    titleSpan.style.fontWeight = 'bold';
+
+    header.appendChild(titleSpan);
+
+    var closeButton = document.createElement('span');
+    closeButton.style.color = 'white';
+    closeButton.style.float = 'right';
+    closeButton.style.fontSize = '16px';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.innerHTML = '&times;';
+    closeButton.style.cursor = 'pointer';
+
+    closeButton.addEventListener('click', function(e){
+        close();
+    });
+
+    header.appendChild(closeButton);
+
+    container.appendChild(header);
+
+    content = document.createElement('div');
+    content.style.backgroundColor = '#fefefe';
+    content.style.width = '100%';
+
+    container.appendChild(content);
+
+    document.body.appendChild(container);
+}

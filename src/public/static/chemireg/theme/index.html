@@ -80,7 +80,7 @@
 		<!-- Free for academic and personal use -->
         <!-- <script src="molsoft/moledit.js" type="text/javascript"></script> -->
 	</head>
-	<body onload="start()" style="display:flex;flex-direction:column;height:100vh;overflow:hidden">
+	<body onload="start()" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;background-color:rgb(44, 90, 160) ">
 		<!-- Header -->
 		<div style=''>
 			<div style="display:none">
@@ -92,12 +92,12 @@
 				
 			</div>
 			<div >
-				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:#33C3F0;padding:5px; margin-bottom:10px" class="screen_button_container">
+				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:white;padding:5px; margin-bottom:10px" class="screen_button_container">
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
 					
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="switch_screen('results')">Results</button>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Search</button>
-					<button    class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload')">Upload</button>
+					<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload')">Upload</button>
 					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="switch_screen('home')">Activity</button>
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 					
@@ -133,26 +133,35 @@
 			</div>
 		</div>
 		
-		<div id="login" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
-			<h2 class="title">ChemiReg, Registration made simple</h2>
-			<img class="title_image" src="images/ChemiReg.png" width="600" style="margin-left:auto;margin-right:auto"/>
-			<h3 class="sub_title">Designed in Oxford at the SGC, powered by RDkit</h3>
+		<div id="login" style="position: relative;  height: 100%;background-color:#2c5aa0;display:none">
+			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+			<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
+			<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
+
+
+
 			<div >
 				<label class="login_field_username_label" style="display:inline-block" for="username">Username</label>
-				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block">
-				
+				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block;border: 1px solid #029696;border: 1px solid #029696;    height:30px;    width: 200px;">
+
 				<label class="login_field_password_label" style="display:inline-block" for="password">Password</label>
-				<input class="login_field" style="display:inline-block" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
-				
+				<input class="login_field" style="display:inline-block;border: 1px solid #029696;border: 1px solid #029696;    height:30px;    width: 200px;" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
+
 			</div>
-			<div>
-				<button class="login_field" style="display:inline-block; padding-left:20px;padding-right:20px"  tabindex="3" class="button-primary" onclick="login()">Login</button>
+			<div style="margin-top:10px;overflow: auto;text-align:center;">
+				<button class="login_field" style="display:inline-block;   padding:0 0;  padding-left: 30px;    padding-right: 30px;       background-color: #2c5aa0;    color: white;    border: none"  tabindex="3" class="button-primary" onclick="login()">Login</button>
 			</div>
-			<div>
-				<a tabindex="5" onclick="request_password_reset()" style="margin-right:10px;cursor:pointer">Reset Password</a>
-				<a  tabindex="4" style="display:none;cursor:pointer"  id="registration_button" onclick="switch_screen('registration')">Register for an account</a>
+			<div style="overflow: auto;margin: auto;position: absolute;left: 0;bottom: 0;right: 0;text-align:center;margin-bottom:10px">
+				<a tabindex="5" onclick="request_password_reset()" style="cursor:pointer;color: #029696">Reset Password</a>
+				<a  tabindex="4" style="display:none;cursor:pointer;color: #029696"  id="registration_button" onclick="switch_screen('registration')">| Register for an account</a>
+				<br/>
+
+				<span class="sub_title">Designed in Oxford at the SGC, powered by RDkit</span>
 			</div>
-		</div>
+
+
+			</div>
+    	</div>
 		
 		<div id="password_reset" class="row" style="display:none;margin-left:10px">
 			<div class="twelve columns">
@@ -251,7 +260,7 @@
 			</div>
 		</div>
 		
-                <div id="login_progress" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
+                <div id="login_progress_old" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
 >
                         <h2 class="title">ChemiReg, Registration made simple</h2>
 			<img class="title_image" src="images/ChemiReg.png" width="600" style="margin-left:auto;margin-right:auto"/>
@@ -260,6 +269,23 @@
                                 Please wait....
 		        </div>
 		</div>
+
+		<div id="login_progress" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
+			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
+				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
+
+
+
+				<div >
+					Please wait
+				</div>
+				<div style="overflow: auto;margin: auto;position: absolute;left: 0;bottom: 0;right: 0;text-align:center;margin-bottom:10px">
+
+					<span class="sub_title">Designed in Oxford at the SGC, powered by RDkit</span>
+				</div>
+			</div>
+    	</div>
 
 	
 		<div id="upload" class="row" style="display:none;padding-left:10px;padding-right:10px;overflow:auto">
@@ -299,34 +325,52 @@
 			</div>
 	    </div>
 	    
-		<div id="search"  style="display:flex;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;position:fixed;top='-2000px';">
-			<div id="search_button_container">
-				<div>
-					<button id="search_button_search" class="button u-full-width" style="display:none" onclick="search()">Search</button>
-				</div>
-			</div>
-			<div id="search_input_container"  class="row">
-				<div class="nine columns">
+		<div id="search"  style="display:none;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;justify-content:center;position:fixed;top='-2000px';">
+
+			<div style="margin:auto;width:70%;height:50%;background-color: white;  border-radius: 10px;">
+				<div style="display:flex">
 					<select style="display:none" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
-					
-				</div>
-				<div class="three columns">			
-					<label id="search_wildcard_label" class="button" style="border:none;display:none">
+
+					<button id="search_button_search" tyle="display:none" onclick="search()">?</button>
+
+					<label id="search_wildcard_label"  style="border:none;display:none"><span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span> </label>
 					    <input id="wildcard_search" type="checkbox"    style="display:none" checked/>
-					    <span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span>
-					  </label>							
-					</div>	
+
+					<button onclick="search()">Draw Structure</button>
+
+
+
+
+				</div>
 			</div>
-			<div style="display:none" id="save_structure">
+
+		</div>
+
+	<div style="display:none">
+		<div style="display:none" id="save_structure">
 				<div >
 					<button class="button u-full-width" onclick="update_structure()">Update Structure</button>
 				</div>
 			</div>
 			<div style="display:flex;flex-direction:column;flex-grow:1">
 				<div id="structure_editor" style="flex-grow:1;position:relative">
-					
+
 				</div>
 			</div>
-		</div>
+		<div id="search_button_container">
+				<div>
+
+				</div>
+			</div>
+			<div id="search_input_container"  class="row">
+				<div class="nine columns">
+
+
+				</div>
+				<div class="three columns">
+
+					</div>
+			</div>
+	</div>
 	</body>
 </html>
