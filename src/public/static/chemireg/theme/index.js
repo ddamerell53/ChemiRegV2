@@ -859,7 +859,8 @@ function on_project_change(cb){
 	
 	update_key_cache(function(){
 		if(cb == null){
-			fetch_all(true);
+		    switch_screen('search');
+			//fetch_all(true);
 		}else{
 			cb();
 		}
