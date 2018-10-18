@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <!-- 
  ChemiReg - web-based compound registration platform
- Written in 2017 by David Damerell <david.damerell@sgc.ox.ac.uk>, Brian Marsden <brian.marsden@sgc.ox.ac.uk>
+ Written in 2017 by David Damerell <david.damerell@sgc.ox.ac.uk>, Brian Marsden <brian.marsden@sgc.ox.ac.uk>, leonidas.koukouflis@sgc.ox.ac.uk
  
  To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
  You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -328,14 +328,15 @@
 		<div id="search"  style="display:none;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;justify-content:center;position:fixed;top='-2000px';">
 
 			<div style="margin:auto;width:70%;height:50%;background-color: white;  border-radius: 10px;">
-				 <img  src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px;display:block"/>
 				<div style="display:flex">
 					<select style="display:none" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
 
-					<button id="search_button_search" tyle="display:none" onclick="search()">Search</button>
+					<button id="search_button_search" tyle="display:none" onclick="search()">?</button>
+
 					<label id="search_wildcard_label"  style="border:none;display:none"><span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span> </label>
 					    <input id="wildcard_search" type="checkbox"    style="display:none" checked/>
 
+					<button onclick="search()">Draw Structure</button>
 
 
 
