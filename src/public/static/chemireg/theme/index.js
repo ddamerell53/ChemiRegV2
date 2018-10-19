@@ -52,6 +52,18 @@ var user_settings;
 var cols_ordered = []; //leo
 var row_index = -1;
 
+var current_screen = null;
+
+var screen_locked = false;
+
+function is_screen_locked(){
+    return screen_locked;
+}
+
+function lock_screen(lock){
+    screen_locked = lock;
+}
+
 function reset_paging_panel(){
 	query_page = 0;
 	query_size = 0;
@@ -116,7 +128,7 @@ function create_structure_editor(){
 		iframe.setAttribute('height', '100%');
 		iframe.style.width = '100%';
 		iframe.style.height = '100%';
-		iframe.style.position = 'absolute';
+		//iframe.style.position = 'absolute';
 		iframe.style.border = 'none';
 
 		container.appendChild(iframe);
@@ -333,7 +345,7 @@ function show_upload_set(upload_id,selectedFile){
 	new_fetch(true);
 }
 
-function new_fetch(auto_show){
+function new_fetch(auto_show, screen){
 	// Starts a timer which will switch to the home screen to show progress if more than 2 seconds have passed
 	// We are trying to avoid fast queries hiding and then displaying the results table
 	set_action_done(false);
@@ -362,7 +374,7 @@ function new_fetch(auto_show){
 					current_fetch.from_row = 0;
 					current_fetch.to_row = page_size-1;
 
-					fetch(auto_show);
+					fetch(auto_show, screen);
 				}
 			}
 	);
@@ -370,7 +382,7 @@ function new_fetch(auto_show){
 
 function set_action_done(done){
 	action_done = done;
-	
+    return;
 	if(!action_done){		
 		setTimeout(function(){
 			if(!action_done){				
@@ -382,7 +394,7 @@ function set_action_done(done){
 
 
 
-function fetch(auto_show){
+function fetch(auto_show, screen){
 	insert_mode = false;
 	
 	current_fetch.task = 'fetch';
@@ -407,7 +419,11 @@ function fetch(auto_show){
 					update_paging_panel();
 
 					if(auto_show){
-						switch_screen('results');
+					    if(screen == null){
+					        screen = 'results';
+					    }
+
+						switch_screen(screen);
 					}
 				}
 			}
@@ -825,6 +841,8 @@ function update_upload_field_table(){
 
 function on_project_change(cb){
 	row_index = 0;
+
+	current_fetch = null;
 	
 	if(get_project() == 'Logout'){
 		logout();
@@ -859,8 +877,15 @@ function on_project_change(cb){
 	
 	update_key_cache(function(){
 		if(cb == null){
-		    switch_screen('search');
-			//fetch_all(true);
+		    var screen = null;
+
+		    if(current_screen != null && current_screen == 'session_loading_screen'){
+		        screen = 'search';
+		    }else{
+		        screen = current_screen;
+		    }
+
+			fetch_all(true, screen);
 		}else{
 			cb();
 		}
@@ -2522,7 +2547,13 @@ function logout(){
 
 var first_load = true;
 
-function refresh_session(){	
+function switch_to_default_screen(){
+    switch_screen('search');
+}
+
+function refresh_session(){
+    switch_screen('session_loading_screen');
+
 	reset_paging_panel();
 	clear_results_table();
 
@@ -2560,7 +2591,7 @@ function refresh_session(){
 					document.getElementById(inactive_list[i]).style.display='none';
 				}
 				
-				switch_screen('home');
+				switch_to_default_screen();
 	
 				saturn.core.Util.getProvider().getByNamedQuery(
 						'saturn.db.provider.hooks.ExternalJsonHook:Register',
@@ -2657,7 +2688,7 @@ function refresh_session(){
 								}else{
 									upload_section.innerText = 'Select (Excel, CSV, Txt)'
 								}
-								
+
 								on_project_change();
 							}
 						}
@@ -2690,13 +2721,13 @@ function refresh_session(){
 	}
 }
 
-function fetch_all(forget_search){
+function fetch_all(forget_search, screen){
 	if(get_project().indexOf('Search History') > -1){
-		fetch_all_user(forget_search);
+		fetch_all_user(forget_search, screen);
 	}else{
 		current_fetch = {'project':get_project(), '_username': null, 'action':'search_all', 'forget_search': forget_search};
 		
-		new_fetch(true);
+		new_fetch(true, screen);
 	}
 }
 
@@ -2721,10 +2752,10 @@ function fetch_user_settings(cb){
 	
 }
 
-function fetch_all_user(forget_search){
+function fetch_all_user(forget_search, screen){
 	current_fetch = {'project':get_project(), '_username': null, 'action':'search_user_all', 'forget_search': forget_search};
 	
-	new_fetch(false);
+	new_fetch(false, screen);
 }
 
 
@@ -3012,7 +3043,9 @@ function delete_file(file_uuid, compound_id){
 var clientCore;
 
 function start(){
-	switch_screen('progress');
+    create_structure_editor_container();
+
+    switch_screen('session_loading_screen');
 	
 	document.getElementById('project_selection').addEventListener('change', function(){		
 		var upload_section = document.getElementById('upload_section_heading');
@@ -3023,7 +3056,7 @@ function start(){
 		}else{
 			upload_section.innerText = 'Upload (Excel, CSV, Txt)'
 		}
-		
+
 		on_project_change();
 	});
 	
@@ -3848,14 +3881,24 @@ function register(){
 	);
 }
 
+function on_results_click(){
+    if(current_fetch == null){
+        fetch_all();
+    }
+
+    switch_screen('results');
+}
+
 function switch_screen(screen_id){
+    current_screen = screen_id
+
 	if(screen_id == 'search' && enable_structure_field()){
 		document.body.onresize=function(){import_from_string(get_mol_file());}
 	}else{
 		document.body.onresize=null;
 	}
-	
-	var screens = ['login_progress','home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help'];
+
+	var screens = ['login_progress','home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help', 'session_loading_screen'];
 	for(var i=0;i<screens.length;i++){
 		var screen = screens[i];
 		if(screen == screen_id){
@@ -3891,14 +3934,10 @@ function switch_screen(screen_id){
 			}
 		}
 	}
-	
-	document.getElementById('save_structure').style.display='none';
-	
-	document.getElementById('search_input_container').style.display='block';
+
 	document.getElementById('search_wildcard_label').style.display='block';
 	document.getElementById('wildcard_search').style.display='initial';
 	document.getElementById('wildcard_search_span').style.display='initial';
-	document.getElementById('search_button_container').style.display='block';
 	document.getElementById('search_button_search').style.display='initial';
 	
 	
@@ -3910,11 +3949,9 @@ function switch_screen(screen_id){
 }
 
 function update_structure_ui(entity_id, structure_btn){
-	switch_screen('search');
+	//switch_screen('search');
 
-	document.getElementById('search_input_container').style.display='none';
-	document.getElementById('search_button_container').style.display='none';
-	document.getElementById('save_structure').style.display='block';
+	open_structure_window(update_structure);
 	
 	entity_structure_to_update = entity_id;
 	entity_structure_to_update_btn = structure_btn;
@@ -4064,7 +4101,9 @@ function on_password_key_down(e){
 	}
 }
 
-function create_modal(){
+function create_modal(title){
+    var self = new Object();
+
     var container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.zIndex = 1;
@@ -4083,7 +4122,7 @@ function create_modal(){
     header.style.width = '100%';
 
     var titleSpan = document.createElement('span');
-    titleSpan.innerText = this.title;
+    titleSpan.innerText = title;
 
     titleSpan.style.color = 'white';
     titleSpan.style.fontSize = '16px';
@@ -4099,9 +4138,19 @@ function create_modal(){
     closeButton.innerHTML = '&times;';
     closeButton.style.cursor = 'pointer';
 
-    closeButton.addEventListener('click', function(e){
-        close();
-    });
+    var close = function(e){
+        container.style.display = 'none';
+
+        if(self.onClose != null){
+            self.onClose();
+        }
+    };
+
+    closeButton.addEventListener('click', close);
+
+    var open = function(){
+        container.style.display = 'block';
+    }
 
     header.appendChild(closeButton);
 
@@ -4114,4 +4163,53 @@ function create_modal(){
     container.appendChild(content);
 
     document.body.appendChild(container);
+
+    self.container = container;
+    self.content = content;
+    self.header = header;
+    self.close = close;
+    self.open = open;
+    self.onClose = null;
+
+    return self;
+}
+
+function create_glass_window(title){
+    var modal = create_modal(title);
+
+    modal.container.style.width = '100%';
+    modal.container.style.height = '100%';
+    modal.container.style.backgroundColor = 'rgba(0,0,0,0.4)';
+
+    modal.header.style.width = '50%';
+    modal.header.style.margin = 'auto';
+    modal.header.style.position = 'initial';
+    modal.header.style.padding = '20px';
+
+    modal.content.style.backgroundColor = '#fefefe';
+    modal.content.style.margin = 'auto';
+    modal.content.style.padding = '20px';
+    modal.content.style.width = '50%';
+
+    return modal;
+}
+
+var structure_window = null;
+
+function create_structure_editor_container(){
+    structure_window = create_glass_window('Structure Editor');
+
+    structure_window.content.setAttribute('id', 'structure_editor');
+    structure_window.content.style.height = '50%';
+
+    structure_window.close();
+}
+
+function open_structure_window(cb){
+    structure_window.onClose = cb;
+    structure_window.open();
+}
+
+function open_structure_window_for_search(){
+    open_structure_window(search);
 }

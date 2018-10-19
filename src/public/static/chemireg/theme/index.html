@@ -95,7 +95,7 @@
 				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:white;padding:5px; margin-bottom:10px" class="screen_button_container">
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
 					
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="switch_screen('results')">Results</button>
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Results</button>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Search</button>
 					<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload')">Upload</button>
 					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="switch_screen('home')">Activity</button>
@@ -331,12 +331,12 @@
 				<div style="display:flex">
 					<select style="display:none" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
 
-					<button id="search_button_search" tyle="display:none" onclick="search()">?</button>
+					<button id="search_button_search" style="display:none" onclick="search()">&#x1f50d;</button>
 
 					<label id="search_wildcard_label"  style="border:none;display:none"><span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span> </label>
 					    <input id="wildcard_search" type="checkbox"    style="display:none" checked/>
 
-					<button onclick="search()">Draw Structure</button>
+					<button onclick="open_structure_window_for_search()">Draw Structure</button>
 
 
 
@@ -346,31 +346,21 @@
 
 		</div>
 
-	<div style="display:none">
-		<div style="display:none" id="save_structure">
+		<div id="session_loading_screen" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
+			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
+				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
+
+
 				<div >
-					<button class="button u-full-width" onclick="update_structure()">Update Structure</button>
+					<img src="images/ajax-loader.gif"/>
 				</div>
-			</div>
-			<div style="display:flex;flex-direction:column;flex-grow:1">
-				<div id="structure_editor" style="flex-grow:1;position:relative">
+				<div style="overflow: auto;margin: auto;position: absolute;left: 0;bottom: 0;right: 0;text-align:center;margin-bottom:10px">
 
+					<span class="sub_title">Designed in Oxford at the SGC, powered by RDkit</span>
 				</div>
+
 			</div>
-		<div id="search_button_container">
-				<div>
-
-				</div>
-			</div>
-			<div id="search_input_container"  class="row">
-				<div class="nine columns">
-
-
-				</div>
-				<div class="three columns">
-
-					</div>
-			</div>
-	</div>
+    	</div>
 	</body>
 </html>
