@@ -1906,7 +1906,7 @@ function make_editable(target){
 	target.contentEditable = true;
 }
 
-function handle_files(files){
+function handle_files(files, cb=null){
 	var a = document.getElementById('file_select');
 
 	if(files.length > 1){
@@ -1933,6 +1933,11 @@ function handle_files(files){
 			    
 			    file_parser.readLines(start_index+1, index, function (err, index, lines, isEof, progress) {
 			    	_update_upload_field_mapping(lines);
+
+			    	if(cb != null){
+			    	    cb();
+			    	}
+
 			    });
 			});
 		});
@@ -1968,6 +1973,10 @@ function handle_files(files){
 			}			
 			
 			_update_upload_field_mapping(headers);
+
+			if(cb != null){
+                cb();
+            }
 		};
 		reader.readAsBinaryString(upload_files[0]); 
 	}else{
@@ -4028,6 +4037,7 @@ function update_structure(ctab_content, compound_id, compound_button){
 	}
 	
 	if(ctab_has_structure(ctab_content)){
+
 		current_fetch = {'ctab_content':ctab_content, '_username': null};
 
 		saturn.core.Util.getProvider().getByNamedQuery(
@@ -4324,13 +4334,19 @@ function show_simple_upload(files){
     upload_defaults._update.map_column = null;
     upload_defaults._update.default_value = false;
 
-    handle_files(file_array);
+    handle_files(file_array, function(){
+        report = generate_preupload_report();
 
-    report = generate_preupload_report();
+        upload_report_panel.enable_advanced_options(false);
 
-    upload_report_panel.enable_advanced_options(false);
+        upload_report_panel.update_form_state(true);
 
-    upload_report_panel.update_form_state(true)
+        mapping_fields.get(get_entity_name() + " ID ")[0].setValue('Set');
+        mapping_fields.get('Update existing')[0].setValue('Set');
+        mapping_fields.get('Batchable')[0].setValue('Set');
+    });
+
+
 }
 
 function reset_upload_report_panel(){
@@ -4374,6 +4390,9 @@ class UploadReportPanel {
 
     create_upload_configuration_panel(){
         this.upload_configuration_panel = create_glass_window('Upload options');
+        this.upload_configuration_panel.content.style.overflow = 'auto';
+        this.upload_configuration_panel.content.style.height = '80%';
+
         this.hide_upload_configuration_panel();
 
         var table = document.createElement('table');
