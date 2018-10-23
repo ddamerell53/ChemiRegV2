@@ -56,6 +56,12 @@ var current_screen = null;
 
 var screen_locked = false;
 
+var fields_in_upload_file = null;
+
+var upload_report_panel = null;
+
+var activity_panel = null;
+
 function is_screen_locked(){
     return screen_locked;
 }
@@ -132,6 +138,16 @@ function create_structure_editor(){
 		iframe.style.border = 'none';
 
 		container.appendChild(iframe);
+
+		structure_window.container.style.position = 'absolute';
+		structure_window.container.style.top = '-100000px';
+
+		setTimeout(function(){
+		    structure_window.close();
+
+		    structure_window.container.style.position = 'fixed';
+		    structure_window.container.style.top = '0px';
+		},3000);
 	}
 }
 
@@ -161,13 +177,18 @@ function register_sdf_ui(){
 }
 
 function register_sdf(){
-	var files = [];
+	/*var files = [];
 	var inputFiles = document.getElementById('input').files;
 	for(var i=0;i<inputFiles.length;i++){
 		files.push(inputFiles[i]);
+	}*/
+
+	var files = new Array();
+	for(var i =0;i<upload_files.length;i++){
+	    files.push(upload_files[i]);
 	}
 	
-	if(files.length == 0){
+	if(upload_files.length == 0){
 		show_message('No files selected','Please select files to upload');
 		return;
 	}
@@ -249,10 +270,14 @@ function register_sdf(){
 								}
 								
 								current_fetch = {'action':'fetch_exact', 'ids': compounds,'_username': null, 'project_name': get_project(),'project': get_project()};
-								new_fetch(true);								
+								new_fetch(true);
+
+								reset_upload_report_panel();
 							}else{
 								var upload_id = objs[0].upload_id;
 								show_upload_set(upload_id, selectedFile.name);
+
+								reset_upload_report_panel();
 							}
 						}
 					}
@@ -696,7 +721,7 @@ function update_upload_field_table(){
 				
 				selectize_cmp.setValue('Set', false);
 				
-				mapping_fields.set(field_item.human_name,[selectize_cmp,field_name]);
+				mapping_fields.set(field_item.human_name,[selectize_cmp,field_name, tr_element]);
 			}
 		})();
 	}
@@ -863,10 +888,10 @@ function on_project_change(cb){
 	document.getElementById('search_selection-selectized').setAttribute('placeholder', get_entity_name());
 	
 	if(enable_structure_field()){
-		document.getElementById('structure_editor').style.display = 'flex';
+		document.getElementById('search_draw_structure_button').style.display = 'initial';
 		
 	}else{
-		document.getElementById('structure_editor').style.display = 'none';
+		document.getElementById('search_draw_structure_button').style.display = 'none';
 	}
 	
 	// Prefetch items to populate drop-downs, this mechanism won't scale for very large collections
@@ -1973,6 +1998,8 @@ function _update_upload_field_mapping(lines){
 			fields.push({'compound_id': field})
 		}
 	}
+
+	fields_in_upload_file = fields;
 	
 	var field_to_closest_distance = new haxe.ds.StringMap();
 	var field_to_closest_field = new haxe.ds.StringMap();
@@ -2025,6 +2052,10 @@ function _update_upload_field_mapping(lines){
 		var field_name = mapping_field_names.next();
 		var selectize = mapping_fields.get(field_name)[0];
 		var real_field_name = mapping_fields.get(field_name)[1];
+
+		if(real_field_name == 'compound_id'){
+		    continue;
+		}
 
 		selectize.clearOptions();
 		selectize.load(function(cb){
@@ -2237,7 +2268,7 @@ function progress_listener(){
 		details_td.classList.add('compound_table_field');
 		details_td.classList.add('search_results_td_narrow');
 		details_td.classList.add('progress_td');
-		details_td.style.backgroundColor = 'rgb(51, 195, 240)';
+		details_td.style.backgroundColor = 'rgb(44, 90, 160)';
 		
 		var time_td = document.createElement('td');
 		time_td.style.textAlign = 'right';
@@ -2267,6 +2298,7 @@ function progress_listener(){
 					
 					var font_elem = document.createElement('font');
 					font_elem.style.fontSize = '13.3px';
+					font_elem.style.color = 'white';
 					font_elem.appendChild(document.createTextNode(Reflect.field(obj, 'name')))
 					
 					details_td.appendChild(font_elem);
@@ -2460,6 +2492,9 @@ function progress_listener(){
 			if(endTime == null){
 				endTime = Date.now();
 				runTimer = true;
+
+				time_td.style.fontSize = '16px';
+			    time_td.style.color = 'red';
 			}
 			
 			var job = clientCore.msgIdToJobInfo.get(msgId);
@@ -2475,6 +2510,7 @@ function progress_listener(){
 			
 			var row_tr = document.createElement('tr');
 			row_tr.style.marginTop = '4px';
+
 			row_tr.appendChild(action_td);
 			row_tr.appendChild(details_td);
 			row_tr.appendChild(time_td);
@@ -2576,7 +2612,7 @@ function refresh_session(){
 						'_username': null
 				};
 				
-				active_list = ['home_button','help_button','upload_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
+				active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
 				inactive_list = ['registration_button', 'loading'];
 	
 				for(var i=0;i<active_list.length;i++){
@@ -2697,7 +2733,7 @@ function refresh_session(){
 		}, 2000);
 
 	}else{
-		inactive_list = ['home_button','help_button','upload_button','search_button','results_button','search_button','loading','project_selection', 'main_buttons'];
+		inactive_list = ['home_button','help_button','search_button','results_button','search_button','loading','project_selection', 'main_buttons'];
 		active_list = ['registration_button', ];
 
 		for(var i=0;i<active_list.length;i++){
@@ -3043,6 +3079,11 @@ function delete_file(file_uuid, compound_id){
 var clientCore;
 
 function start(){
+    upload_report_panel = new UploadReportPanel();
+    activity_panel = new ActivityPanel();
+
+    reset_upload_report_panel();
+
     create_structure_editor_container();
 
     switch_screen('session_loading_screen');
@@ -3326,7 +3367,7 @@ function update_paging_panel(){
 
 	// Disable paging buttons when in insert mode
 	if(!insert_mode){
-		html += '<div style="display:flex;flex-direction:row;margin-bottom:0px">';
+		html += '<div style="display:flex;flex-direction:row;margin-bottom:0px;background-color:rgb(44, 90, 160)">';
 		var from_row = 0;
 		var to_row = page_size -1 ;
 	
@@ -3398,7 +3439,7 @@ function update_paging_panel(){
 	var entity_name = get_entity_name();
 	
 	
-	extra_buttons = '<div style="display:flex;flex-direction:row;background-color:white"><div style="display:inline-box;background-color:#33C3F0;">';
+	extra_buttons = '<div style="display:flex;flex-direction:row;background-color:white"><div style="display:inline-box;background-color:rgb(44, 90, 160)">';
 	
 	var add_enable = '';
 	
@@ -3408,7 +3449,7 @@ function update_paging_panel(){
 	
 	extra_buttons += "<button  "+add_enable+" style='padding-left:10px;padding-right:5px; border:none;color:white;margin-bottom:0px'href='#' onclick='add_new_row()'>Add</button>"
 	extra_buttons += '<button onclick="save_changes()" id="save_btn" disabled="true"  onclick="save_changes()" style="padding-left:5px;padding-right:5px;border:none;color:white;margin-bottom:0px">Save</button>';
-	extra_buttons += '</div><div style="display:inline-box;flex-grow:1;text-align:center;font-size:large">Records: ' + query_size + '</div><div style="display:inline-box;background-color:#33C3F0;">'
+	extra_buttons += '</div><div style="display:inline-box;flex-grow:1;text-align:center;font-size:large">Records: ' + query_size + '</div><div style="display:inline-box;background-color:rgb(44, 90, 160)">'
 		
 		
 	if(enable_structure_field()){
@@ -3491,9 +3532,13 @@ function enable_addition(){
 }
 
 function load_structure_in_editor(ctab_content){
+    open_structure_window_for_search();
+
+
+
 	import_from_string(ctab_content);
 	
-	switch_screen('search')
+
 }
 
 function perform_search(ctab_content){
@@ -3612,6 +3657,8 @@ function ctab_has_structure(ctab_content){
 }
 
 function search(){
+    activity_panel.show();
+
 	var ctab_content = get_mol_file();
 	
 	var terms = search_control[0].selectize.items;
@@ -3623,7 +3670,7 @@ function search(){
 	}else{
 		current_fetch = {'action':'fetch_exact','ids':terms, '_username': null, 'ctab_content': ctab_content, 'project':document.getElementById('project_selection').value};
 	}
-	
+
 	var ctab_real = ctab_has_structure(ctab_content);
 	
 	if(ctab_real){		
@@ -3898,11 +3945,11 @@ function switch_screen(screen_id){
 		document.body.onresize=null;
 	}
 
-	var screens = ['login_progress','home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help', 'session_loading_screen'];
+	var screens = ['login_progress','home','registration','upload', 'results', 'login', 'search', 'password_reset_link', 'help', 'session_loading_screen', 'upload_simple'];
 	for(var i=0;i<screens.length;i++){
 		var screen = screens[i];
 		if(screen == screen_id){
-			if(screen == 'results' || screen == "login" || screen == "search" || screen == 'home' || screen == 'help'){
+			if(screen == 'results' || screen == "login" || screen == "search" || screen == 'help'){
 				if(screen == 'search'){
 					document.getElementById(screen).style.top='0';
 					document.getElementById(screen).style.position='initial';
@@ -3936,8 +3983,8 @@ function switch_screen(screen_id){
 	}
 
 	document.getElementById('search_wildcard_label').style.display='block';
-	document.getElementById('wildcard_search').style.display='initial';
-	document.getElementById('wildcard_search_span').style.display='initial';
+	/*document.getElementById('wildcard_search').style.display='initial';
+	document.getElementById('wildcard_search_span').style.display='initial';*/
 	document.getElementById('search_button_search').style.display='initial';
 	
 	
@@ -4202,7 +4249,7 @@ function create_structure_editor_container(){
     structure_window.content.setAttribute('id', 'structure_editor');
     structure_window.content.style.height = '50%';
 
-    structure_window.close();
+
 }
 
 function open_structure_window(cb){
@@ -4211,5 +4258,485 @@ function open_structure_window(cb){
 }
 
 function open_structure_window_for_search(){
-    open_structure_window(search);
+    open_structure_window(function(){
+        var ctab_content = get_mol_file();
+	    var ctab_real = ctab_has_structure(ctab_content);
+
+        if(ctab_real){
+            activity_panel.show();
+
+            search();
+        }
+    });
 }
+
+function on_file_drop(ev){
+    ev.preventDefault();
+
+    if (ev.dataTransfer.items){
+        var files = [];
+        for(var i = 0; i < ev.dataTransfer.items.length; i++) {
+            if (ev.dataTransfer.items[i].kind === 'file') {
+                var file = ev.dataTransfer.items[i].getAsFile();
+
+                files.push(file);
+
+            }
+        }
+
+        show_simple_upload(files);
+    }else{
+        for (var i = 0; i < ev.dataTransfer.files.length; i++) {
+          var file = ev.dataTransfer.files[i].name;
+        }
+    }
+ }
+
+ function disable_default_drag_over(event){
+    event.preventDefault();
+
+ }
+
+ function get_project_custom_fields(){
+    return custom_fields[get_project()];
+ }
+
+ function get_project_field_config(field_name){
+    return custom_fields[get_project()][field_name];
+ }
+
+
+
+ function generate_preupload_report(){
+    return new PreUploadReport();
+ }
+
+function show_simple_upload(files){
+    reset_upload_report_panel();
+
+    var file_array = new Array();
+    for(var i=0;i<files.length;i++){
+        file_array.push(files[i]);
+    }
+
+    upload_defaults.compound_id.map_column = null;
+    upload_defaults.batchable.map_column = null;
+    upload_defaults._update.map_column = null;
+    upload_defaults._update.default_value = false;
+
+    handle_files(file_array);
+
+    report = generate_preupload_report();
+
+    upload_report_panel.enable_advanced_options(false);
+
+    upload_report_panel.update_form_state(true)
+}
+
+function reset_upload_report_panel(){
+    upload_report_panel.set_state(UploadState.FAILED, ValidationState.FAILED);
+}
+
+class ActivityPanel {
+    constructor(){
+        this.build();
+    }
+
+    build(){
+        this.activity_panel = create_glass_window('Activity');
+        this.activity_panel.container.setAttribute('id', 'home');
+        this.activity_panel.content.style.overflow = 'auto';
+        this.activity_panel.content.style.height = '80%';
+
+        this.hide();
+
+        const div = document.createElement('div');
+        div.setAttribute('id', 'progress');
+
+        this.activity_panel.content.appendChild(div);
+    }
+
+    show(){
+        this.activity_panel.container.style.display = 'block';
+    }
+
+    hide(){
+        this.activity_panel.container.style.display = 'none';
+    }
+}
+
+class UploadReportPanel {
+    constructor(){
+        this.create_upload_configuration_panel();
+
+        this.add_listeners();
+    }
+
+    create_upload_configuration_panel(){
+        this.upload_configuration_panel = create_glass_window('Upload options');
+        this.hide_upload_configuration_panel();
+
+        var table = document.createElement('table');
+        table.setAttribute('id', 'advanced_register_options_table');
+        table.setAttribute('class', 'upload_fields');
+
+        var head = document.createElement('head');
+
+        var head_row = document.createElement('tr');
+
+        var col1 = document.createElement('th');
+        col1.style.textAlign = 'center';
+        col1.innerText = 'Field Name';
+        head_row.appendChild(col1);
+
+        var col2 = document.createElement('th');
+        col2.style.textAlign = 'center';
+        col2.innerText = 'Map to field';
+        head_row.appendChild(col2);
+
+        var col1 = document.createElement('th');
+        col1.style.textAlign = 'center';
+        col1.innerText = 'Set value';
+        head_row.appendChild(col1);
+
+        head.appendChild(head_row);
+
+        table.appendChild(head);
+
+        var body = document.createElement('tbody');
+        body.setAttribute('id', 'advanced_register_options_table_body');
+
+        table.appendChild(body);
+
+        this.create_advanced_options_button();
+
+        this.upload_configuration_panel.content.appendChild(table);
+
+        var self = this;
+
+        this.upload_configuration_panel.onClose = function(){
+            self.on_upload_form_close();
+        }
+    }
+
+    on_upload_form_close(){
+        this.update_form_state(false);
+    }
+
+    update_form_state(auto_open_form){
+        report = generate_preupload_report();
+
+        this.set_state(UploadState.PASSED, report.get_validation_state(), auto_open_form);
+    }
+
+    create_advanced_options_button(){
+        this._advanced_options_button = document.createElement('button');
+
+
+        this.enable_advanced_options(true);
+
+        const self = this;
+
+        this._advanced_options_button.addEventListener('click', function(){
+            self.enable_advanced_options(!self._advanced_options_enabled);
+        });
+
+        this.upload_configuration_panel.content.appendChild(this._advanced_options_button);
+    }
+
+    get_advanced_options_button(){
+        return this._advanced_options_button;
+    }
+
+    enable_advanced_options(enable){
+        this._advanced_options_enabled = enable;
+
+        if(enable){
+            this.get_advanced_options_button().innerText = 'Hide advanced options';
+
+            if(mapping_fields.exists(get_entity_name() + " ID ")){
+                mapping_fields.get(get_entity_name() + " ID ")[2].style.display = 'table-row';
+                mapping_fields.get('Batchable')[2].style.display = 'table-row';
+                mapping_fields.get('Update existing')[2].style.display = 'table-row';
+            }
+
+
+        }else{
+            this.get_advanced_options_button().innerText = 'Show advanced options';
+
+            if(mapping_fields.exists(get_entity_name() + " ID ")){
+                mapping_fields.get(get_entity_name() + " ID ")[2].style.display = 'none';
+                mapping_fields.get('Batchable')[2].style.display = 'none';
+                mapping_fields.get('Update existing')[2].style.display = 'none';
+            }
+        }
+    }
+
+    add_listeners(){
+        var button = this.get_validation_button();
+
+        var self = this;
+
+        button.addEventListener('click', function(){
+            self.show_upload_configuration_panel();
+        });
+
+    }
+
+    show_upload_configuration_panel(){
+        this.upload_configuration_panel.container.style.display = 'block';
+    }
+
+    hide_upload_configuration_panel(){
+        this.upload_configuration_panel.container.style.display = 'none';
+    }
+
+    set_state(upload_state, validation_state,auto_open_form){
+        this.upload_state = upload_state;
+        this.validation_state = validation_state;
+
+        this._update_file_button_state();
+        this._update_validation_state(auto_open_form);
+    }
+
+    _update_file_button_state(){
+        const button = this.get_file_upload_button();
+
+        let color = 'white';
+        let font_color = '#555';
+
+        if(this.upload_state == UploadState.PASSED){
+            color = 'green';
+            font_color = 'white';
+
+            this.set_workflow_button_enabled(this.get_workflow_push_to_validate_button(), true);
+        }else{
+            this.set_validation_button_state(true);
+            this.set_upload_button_state(false);
+
+            this.set_workflow_button_enabled(this.get_workflow_push_to_validate_button(), false);
+        }
+
+        button.style.backgroundColor = color;
+        button.style.color = font_color;
+
+
+    }
+
+    _update_validation_state(auto_open_form){
+        const validation_button = document.getElementById('upload_validation_button');
+
+        let color = 'white';
+        let font_color = '#555';
+
+        if(this.upload_state != UploadState.PASSED){
+            this.set_validation_button_state(false);
+            this.set_upload_button_state(false);
+
+            this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), false);
+        }else{
+            font_color = 'white';
+            if(this.validation_state == ValidationState.PASSED){
+                color = 'green';
+
+                this.set_validation_button_state(true);
+                this.set_upload_button_state(true);
+
+                this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), true);
+            }else if(this.validation_state == ValidationState.FUSSY){
+                color = 'green';
+
+                this.set_validation_button_state(true);
+                this.set_upload_button_state(true);
+
+                if(auto_open_form){
+                    this.show_upload_configuration_panel();
+                }
+
+                this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), true);
+            }else if(this.validation_state == ValidationState.FAILED){
+                color = 'red';
+
+                this.set_validation_button_state(true);
+                this.set_upload_button_state(false);
+
+                if(auto_open_form){
+                    this.show_upload_configuration_panel();
+                }
+            }
+        }
+
+        validation_button.style.backgroundColor = color;
+        validation_button.style.color = font_color;
+    }
+
+    set_upload_button_state(enabled){
+        const button = this.get_upload_button();
+
+        if(enabled){
+            button.removeAttribute('disabled');
+        }else{
+            button.setAttribute('disabled', null);
+        }
+    }
+
+     set_validation_button_state(enabled){
+        const button = this.get_validation_button();
+
+        if(enabled){
+            button.removeAttribute('disabled');
+        }else{
+            button.setAttribute('disabled', null);
+        }
+    }
+
+    get_file_upload_button(){
+        return document.getElementById('upload_file_state_button');
+    }
+
+    get_validation_button(){
+        return document.getElementById('upload_validation_button');
+    }
+
+    get_upload_button(){
+        return document.getElementById('upload_upload_button');
+    }
+
+    get_workflow_push_to_validate_button(){
+        return document.getElementById('upload_workflow_push_to_validate');
+    }
+
+    get_workflow_push_to_upload_button(){
+        return document.getElementById('upload_workflow_push_to_upload');
+    }
+
+    set_workflow_button_enabled(button, enabled){
+        if(enabled){
+            button.style.backgroundImage = 'url(images/workflow_left.png)';
+        }else{
+            button.style.backgroundImage = 'url(images/workflow_left_grey.png)';
+        }
+    }
+}
+
+const UploadState = {
+    PASSED : 1,
+    FAILED: 2
+}
+
+const ValidationState = {
+    PASSED: 1,
+    FUSSY: 2,
+    FAILED: 3
+}
+
+class PreUploadReport {
+    constructor(){
+        this.populate_internal_maps();
+    }
+
+    populate_internal_maps(){
+        // Dictionary of custom field names which have been mapped to fields in the upload file
+        const custom_fields_mapped_in_file = new Map();
+
+        // Dictionary of fields in the upload file which aren't mapped
+        const file_fields_not_mapped = new Map();
+
+        // Dictionary of custom field definitions for the active project
+        const project_custom_fields = get_project_custom_fields();
+
+        // Dictionary of fussy matched fields
+        const project_custom_fields_fussy = new Map();
+
+        const file_fields_mapped = new Map();
+
+        // Iterate fields in file to build up a map
+        for(const field_in_file in fields_in_upload_file){
+            file_fields_mapped.set(field_in_file, false);
+        }
+
+        // Iterate project fields
+        for(const project_field_name in project_custom_fields){
+            const upload_config = upload_defaults[project_field_name];
+
+            if(project_field_name == '_mol' || project_field_name == '_update' || project_field_name == 'batchable' || project_field_name == 'compound_id'){
+                continue;
+            }else{
+                // Test if the field has been mapped to a field in the file
+                if(upload_config.map_column != null){
+                    // Field in the user upload file
+                    const field_in_file = upload_config.map_column
+
+                    // Mark the file field as being mapped
+                    file_fields_mapped.set(field_in_file, true);
+
+                    // Set project field as being mapped
+                    custom_fields_mapped_in_file.set(project_field_name, field_in_file);
+
+                    // Get configuration for project field
+                    const field_config = Reflect.field(project_custom_fields, project_field_name);
+
+                    // Check if the field name matching is fussy
+                    if(project_field_name.toLowerCase() != field_in_file && field_config.human_name != field_in_file){
+                        project_custom_fields_fussy.set(project_field_name, field_in_file);
+                    }
+                }
+            }
+        }
+
+        // Generate list of file fields not mapped
+        for(const field_name in file_fields_mapped){
+            if(!file_fields_mapped.get(field_name)){
+                file_fields_not_mapped.set(field_name);
+            }
+        }
+
+        const required_fields_not_present = new Map();
+        const missing_fields_str = '';
+
+        for(const project_field_name in project_custom_fields){
+            const project_field_config = project_custom_fields[project_field_name];
+
+            if(project_field_config.required && ! project_field_config.calculated && ! custom_fields_mapped_in_file.has(project_field_name)){
+                if(upload_defaults[project_field_name].default_value == null){
+                    required_fields_not_present.set(project_field_name, true);
+                }
+
+            }
+        }
+
+        this._project_required_fields_not_mapped = required_fields_not_present;
+        this._project_fields_mapped = custom_fields_mapped_in_file;
+        this._file_fields_not_mapped = file_fields_not_mapped;
+        this._project_custom_fussy_matched_fields = project_custom_fields_fussy;
+    }
+
+    get unmapped_required_fields() { return this._project_required_fields_not_mapped; }
+    get unmapped_file_fields() { return this._file_fields_not_mapped; }
+    get mapped_project_fields() { return this._project_fields_mapped;}
+    get fuzzy_matched_fields() { return this._project_custom_fussy_matched_fields;}
+
+    has_unmapped_required_fields(){
+        return this.unmapped_required_fields.size > 0
+    }
+
+    has_unmapped_file_fields(){
+        return this.unmapped_file_fields.size > 0
+    }
+
+    has_fuzzy_matched_fields(){
+        return this.fuzzy_matched_fields.size > 0
+    }
+
+    get_validation_state(){
+        if(this.has_unmapped_required_fields()){
+            return ValidationState.FAILED;
+        }else if(this.has_fuzzy_matched_fields()){
+            return ValidationState.FUSSY;
+        }else{
+            return ValidationState.PASSED;
+        }
+    }
+}
+
+

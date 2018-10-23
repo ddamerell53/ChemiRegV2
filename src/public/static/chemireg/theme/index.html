@@ -94,11 +94,12 @@
 			<div >
 				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:white;padding:5px; margin-bottom:10px" class="screen_button_container">
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
-					
+
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Results</button>
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Search</button>
-					<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload')">Upload</button>
-					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="switch_screen('home')">Activity</button>
+
+					<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
+					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 					
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
@@ -124,14 +125,7 @@
 			</div>
 			
 		</div>
-		
-		<div id="home" style="display:flex;flex-direction:column;overflow:hidden;flex-grow:1">
-			<div style="overflow:hidden;display:flex;flex-direction:column;flex-grow:1">
-				<div id="progress" style="flex-grow:1;overflow:auto;padding-left:10px;padding-right:10px;">
-	
-				</div>
-			</div>
-		</div>
+
 		
 		<div id="login" style="position: relative;  height: 100%;background-color:#2c5aa0;display:none">
 			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
@@ -194,18 +188,18 @@
 		</div>
 			
 		<div id="results" style="display:flex;flex-direction:column;overflow:hidden;flex-grow:1" >
-			<div  style="overflow:hidden;display:flex;flex-direction:column;flex-grow:1">
-				<div id="compound_table_container" style="flex-grow:1;overflow:auto;padding-left:10px;padding-right:10px;">
-					<table id="compound_table_results" style="min-width:100%;clear:both;padding-bottom:50px" class="search_results">
-						<thead style="background-color:white">
+			<div  style="overflow:hidden;display:flex;flex-direction:column;flex-grow:1;background-color:white">
+				<div id="compound_table_container" style="flex-grow:1;overflow:auto;">
+					<table id="compound_table_results" style="min-width:100%;clear:both;padding-bottom:50px;" class="search_results">
+						<thead style="background-color:rgb(44, 90, 160);color:white">
 							
 						</thead>
-						<tbody id="compounds_results" style="font-size: small;">
+						<tbody id="compounds_results" style="font-size: small;background-color:white">
 
 						</tbody>
 					</table>
 				</div>
-				<div  id="compound_table_paging" style="width:100%;display:inline-block;background-color:#33C3F0;">
+				<div  id="compound_table_paging" style="width:100%;display:inline-block;background-color:background-color:rgb(44, 90, 160)">
 
 				</div>
 			</div>
@@ -298,7 +292,7 @@
 					<button class="button u-full-width" onclick="document.getElementById('input').click()" id="file_select">Select (SDF, Excel, CSV, Txt)</button>
 				</div>
 				<div class="row" id="advanced_register_options" style="overflow:auto">
-					<table id="advanced_register_options_table" class="upload_fields" style="width:100%">
+					<table id="advanced_register_options_table2" class="upload_fields" style="width:100%">
 						<thead>
 							<tr>
 								<th style="text-align:center">
@@ -312,7 +306,7 @@
 								</th>
 							</tr>
 						</thead>
-						<tbody id="advanced_register_options_table_body">
+						<tbody id="advanced_register_options_table_body2">
 						
 						</tbody>
 					</table>
@@ -328,18 +322,44 @@
 		<div id="search"  style="display:none;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;justify-content:center;position:fixed;top='-2000px';">
 
 			<div style="margin:auto;width:70%;height:50%;background-color: white;  border-radius: 10px;">
-				<div style="display:flex">
-					<select style="display:none" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
+				<h2 style="margin-left:10px">Search</h2>
+				<div style="display:flex;">
+					<select style="display:none;" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
 
-					<button id="search_button_search" style="display:none" onclick="search()">&#x1f50d;</button>
+					<label id="search_wildcard_label"  style="border:none;margin:2px;">
+						Wildcard
 
-					<label id="search_wildcard_label"  style="border:none;display:none"><span id="wildcard_search_span" class="label-body" style="display:none" >Wildcard</span> </label>
-					    <input id="wildcard_search" type="checkbox"    style="display:none" checked/>
-
-					<button onclick="open_structure_window_for_search()">Draw Structure</button>
-
+					<input id="wildcard_search" type="checkbox"    style="" checked/>
+					</label>
 
 
+					<button id="search_draw_structure_button" onclick="open_structure_window_for_search()" style="margin:2px;display:none">Draw Structure</button>
+
+					<button id="search_button_search" style="margin:2px" onclick="search()">&#x1f50d;</button>
+				</div>
+
+				<h2 style="margin-left:10px">Upload Files</h2>
+				<div id="upload_drop_component" style="display:flex;justify-content:center;flex-direction:column;">
+
+					<div style="display:flex;flex-direction:row;;justify-content:center;">
+						<div>
+							<button style="width:100px;height:100px;padding:2px" id="upload_template_button">Template file</button>
+
+							<button style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
+							<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" style="width:100px;height:100px;padding:2px">File Upload</button>
+
+							<input onclick="this.value=''" type="file" id="upload_simple_input" style="display:none" onchange="show_simple_upload(this.files)" accept=".xlsx,.csv,.txt,.sdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple/>
+
+							<button id="upload_workflow_push_to_validate" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+
+							<button disabled id="upload_validation_button" style="width:100px;height:100px;;padding:2px">Validated</button>
+
+							<button id="upload_workflow_push_to_upload" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+
+							<button onclick="register_sdf_ui()" disabled id="upload_upload_button" style="width:100px;height:100px;;padding:2px">Upload</button>
+						</div>
+
+					</div>
 
 				</div>
 			</div>
@@ -361,6 +381,11 @@
 				</div>
 
 			</div>
+    	</div>
+
+		<div id="upload_simple" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
+
+
     	</div>
 	</body>
 </html>
