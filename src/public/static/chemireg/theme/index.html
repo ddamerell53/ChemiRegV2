@@ -100,18 +100,28 @@
 
 					<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
 					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
+
+
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
-					
+
+
+					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| View Upload history</button>
+					<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()" style="display:none;margin-left:20px"></button>
+
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
 					
-					<div id="project_selection_div" style="display:inline-block;margin:initial">
-					<select  id="project_selection" style="display:none;height:initial;margin:initial;margin-right:10px;width:100%;max-width:300px">
-						<option>
-							Projects
-						</option>
-					</select>
+
+					<div id="project_selection_div" style="display:inline-block;margin:initial;">
+						Projects
+						<select  id="project_selection" style="display:none;height:initial;margin:initial;margin-right:10px;width:100%;max-width:300px">
+							<option>
+								Projects
+							</option>
+						</select>
 					</div>
-				</div>
+					<button id="projects_hide_special_button" class="main_menu" onclick="toggle_hide_special_projects()" style="font-size:20pt">+</button>
+
+					</div>
 				<div style="display:flex;flex-direction:row">
 					<!--  <button id="all_button" style='display:none;margin-top:5px;border-radius:initial;background-color:#33C3F0;padding-left:10px;padding-right:5px; border:none;color:white;margin-bottom:0px' onclick="fetch_all(false)">All</button>-->
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
@@ -321,7 +331,13 @@
 	    
 		<div id="search"  style="display:none;padding-left:10px;padding-right:10px;flex-direction:column;flex-grow:1;justify-content:center;position:fixed;top='-2000px';">
 
+
+
 			<div style="margin:auto;width:70%;height:50%;background-color: white;  border-radius: 10px;">
+
+
+
+
 				<h2 style="margin-left:10px">Search</h2>
 				<div style="display:flex;">
 					<select style="display:none;" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
@@ -337,30 +353,31 @@
 
 					<button id="search_button_search" style="margin:2px" onclick="search()">&#x1f50d;</button>
 				</div>
+				<div id="home_upload_panel">
+					<h2 style="margin-left:10px">Upload Files</h2>
+					<div id="upload_drop_component" style="display:flex;justify-content:center;flex-direction:column;">
 
-				<h2 style="margin-left:10px">Upload Files</h2>
-				<div id="upload_drop_component" style="display:flex;justify-content:center;flex-direction:column;">
+						<div style="display:flex;flex-direction:row;;justify-content:center;">
+							<div>
+								<button style="width:100px;height:100px;padding:2px" id="upload_template_button" onclick="load_template_project()">Template file</button>
 
-					<div style="display:flex;flex-direction:row;;justify-content:center;">
-						<div>
-							<button style="width:100px;height:100px;padding:2px" id="upload_template_button">Template file</button>
+								<button style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" style="width:100px;height:100px;padding:2px">File Upload</button>
 
-							<button style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
-							<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" style="width:100px;height:100px;padding:2px">File Upload</button>
+								<input onclick="this.value=''" type="file" id="upload_simple_input" style="display:none" onchange="show_simple_upload(this.files)" accept=".xlsx,.csv,.txt,.sdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple/>
 
-							<input onclick="this.value=''" type="file" id="upload_simple_input" style="display:none" onchange="show_simple_upload(this.files)" accept=".xlsx,.csv,.txt,.sdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple/>
+								<button id="upload_workflow_push_to_validate" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
 
-							<button id="upload_workflow_push_to_validate" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button disabled id="upload_validation_button" style="width:100px;height:100px;;padding:2px">Validated</button>
 
-							<button disabled id="upload_validation_button" style="width:100px;height:100px;;padding:2px">Validated</button>
+								<button id="upload_workflow_push_to_upload" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
 
-							<button id="upload_workflow_push_to_upload" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button onclick="register_sdf_ui()" disabled id="upload_upload_button" style="width:100px;height:100px;;padding:2px">Upload</button>
+							</div>
 
-							<button onclick="register_sdf_ui()" disabled id="upload_upload_button" style="width:100px;height:100px;;padding:2px">Upload</button>
 						</div>
 
 					</div>
-
 				</div>
 			</div>
 

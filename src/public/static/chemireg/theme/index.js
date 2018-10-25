@@ -62,6 +62,11 @@ var upload_report_panel = null;
 
 var activity_panel = null;
 
+var current_project = null;
+var previous_project = null;
+
+var projects_hide_special = true;
+
 function is_screen_locked(){
     return screen_locked;
 }
@@ -152,10 +157,7 @@ function create_structure_editor(){
 }
 
 function get_project(){
-	var projectSelection = document.getElementById('project_selection')
-	var project_name = project_selection.value;
-	
-	return project_name;
+	return current_project;
 }
 
 function register_sdf_ui(){
@@ -193,8 +195,7 @@ function register_sdf(){
 		return;
 	}
 
-	var projectSelection = document.getElementById('project_selection')
-	var project_name = project_selection.value;
+	var project_name = get_project();
 	
 	var next = null;
 	next = function(){
@@ -1148,12 +1149,10 @@ function add_row(compound_table_body, compound, replace_row){
 				
 				if(get_project().indexOf('/Search History') > -1){					
 					var new_project = compound.project_name;
-					
-					document.getElementById('project_selection').value = new_project;
-					
-					on_project_change(function(){
+
+					set_project(new_project, true, function(){
 						load_structure_in_editor(ctab);
-					})
+					});
 				}else{
 					load_structure_in_editor(ctab);
 				}
@@ -1810,9 +1809,7 @@ function fetch_upload_set(entity_id, entity_pkey){
 		}
 	}
 	
-	set_project(project_name);
-	
-	on_project_change(function(){
+	set_project(project_name, true, function(){
 		show_upload_set(upload_id, upload_id);
 	});
 }
@@ -2215,9 +2212,9 @@ function rerun(msgId){
 	};
 	
 	if(current_fetch.project != get_project()){
-		set_project(current_fetch.project);
+		set_project(current_fetch.project, true, fetch);
 		
-		on_project_change(fetch)
+		//on_project_change(fetch)
 	}else{
 		fetch();
 	}
@@ -2227,8 +2224,26 @@ function rerun(msgId){
 	
 }
 
-function set_project(project){
+function set_project(project, signal_change, cb){
 	document.getElementById('project_selection').value = project;
+
+	_set_project(project, signal_change, cb);
+}
+
+function _set_project(project, signal_change, cb){
+    _set_back_project_button();
+
+    previous_project = current_project;
+
+    current_project = project;
+
+    on_project_change(function(){
+        update_actions();
+
+        if(signal_change){
+            on_project_change(cb);
+        }
+    });
 }
 
 function progress_listener(){	
@@ -2592,9 +2607,143 @@ function logout(){
 
 var first_load = true;
 
+function load_upload_history(){
+    set_project(get_project() + '/Uploads', true, function(){
+
+
+        switch_screen('results');
+    });
+}
+
+function load_template_project(){
+    set_project(get_project() + '/Templates', true, function(){
+
+
+        switch_screen('results');
+    });
+}
+
+function back_project(){
+    set_project(previous_project, true, function(){
+        switch_screen('search');
+    });
+}
+
+function get_back_project_button(){
+    return document.getElementById('main_menu_upload_history_back');
+}
+
+function _set_back_project_button(){
+    var config = get_project_configuration();
+
+    if(config != null){
+        get_back_project_button().innerText = ' | Back to ' + get_project_configuration().entity_name + 's';
+    }
+}
+
 function switch_to_default_screen(){
     switch_screen('search');
 }
+
+function update_actions(){
+    var upload_history_button = document.getElementById('main_menu_upload_history');
+    if(get_project().endsWith('/Uploads')){
+        upload_history_button.style.display = 'none';
+
+        get_back_project_button().style.display = 'initial';
+    }else{
+        upload_history_button.style.display = 'initial';
+
+        get_back_project_button().style.display = 'none';
+    }
+
+    var upload_panel = document.getElementById('home_upload_panel');
+    if(get_project_configuration().enable_addition){
+        upload_panel.style.display = 'initial';
+    }else{
+        upload_panel.style.display = 'none';
+    }
+
+    var template_button = document.getElementById('upload_template_button');
+
+    if(get_project().endsWith('/Templates')){
+        template_button.style.display = 'none';
+
+        get_back_project_button().style.display = 'initial';
+    }else{
+        template_button.style.display = 'initial';
+
+        get_back_project_button().style.display = 'none';
+    }
+
+
+    var select = document.getElementById('project_selection');
+
+    if(get_hide_special_projects()){
+        for(let i=0;i<select.children.length;i++){
+            const child = select.children[i];
+
+            var project_name = child.innerText;
+
+            var enable = true;
+
+            if(project_name == null){
+                enable = false;
+            }else if(project_name.endsWith('/Custom Row Buttons')){
+                enable = false;
+            }else if(project_name.endsWith('/Uploads')){
+                enable = false;
+            }else if(project_name.endsWith('/Search History')){
+                enable = false;
+            }else if(project_name.endsWith('/Settings')){
+                enable = false;
+            }
+
+            if(enable){
+                child.style.display = 'initial';
+            }else{
+                child.style.display = 'none';
+            }
+        }
+    }else{
+         for(let i=0;i<select.children.length;i++){
+            const child = select.children[i];
+
+            child.style.display = 'initial';
+        }
+    }
+}
+
+function hide_special_projects(hide){
+    projects_hide_special = hide;
+}
+
+function get_hide_special_projects(){
+    return projects_hide_special;
+}
+
+function toggle_hide_special_projects(){
+    hide_special_projects(!get_hide_special_projects());
+
+    update_actions();
+
+    var button = document.getElementById('projects_hide_special_button');
+
+    if(button.innerText == '+'){
+        button.innerText = '-';
+    }else{
+        button.innerText = '+';
+    }
+}
+
+function clear_project_selection(){
+    var projectSelection = document.getElementById('project_selection');
+
+    projectSelection.innerHTML = "";
+
+	projectSelection.selectedIndex = 0;
+}
+
 
 function refresh_session(){
     switch_screen('session_loading_screen');
@@ -2603,11 +2752,8 @@ function refresh_session(){
 	clear_results_table();
 
 	var projectSelection = document.getElementById('project_selection');
-	while(projectSelection.options.length > 0){
-		projectSelection.remove(0);
-	}
 
-	projectSelection.selectedIndex = 0;
+	clear_project_selection();
 
 	if(clientCore.isLoggedIn()){
 		setTimeout(function(){
@@ -2635,9 +2781,7 @@ function refresh_session(){
 				for(var i=0;i<inactive_list.length;i++){
 					document.getElementById(inactive_list[i]).style.display='none';
 				}
-				
-				switch_to_default_screen();
-	
+
 				saturn.core.Util.getProvider().getByNamedQuery(
 						'saturn.db.provider.hooks.ExternalJsonHook:Register',
 						[request],
@@ -2647,6 +2791,8 @@ function refresh_session(){
 							if(err != null){
 								show_message('Error requesting project list',err);
 							}else{
+							    clear_project_selection();
+
 								var projects = Reflect.fields(objs[0].projects);
 								
 								projects.sort(function(a,b){									
@@ -2734,7 +2880,9 @@ function refresh_session(){
 									upload_section.innerText = 'Select (Excel, CSV, Txt)'
 								}
 
-								on_project_change();
+								set_project(real_projects[0], true, function(){
+                                    switch_to_default_screen();
+								});
 							}
 						}
 				);
@@ -2817,10 +2965,8 @@ function repeat_search(entity_id, entity_pkey){
 	search_obj = JSON.parse(matching_entity.json);
 	
 	new_project = search_obj.project;
-	
-	document.getElementById('project_selection').value = new_project;
-	
-	on_project_change(function(){
+
+	set_project(new_project, true, function(){
 		saturn.core.Util.getProvider().getByNamedQuery(
 				'saturn.db.provider.hooks.ExternalJsonHook:Fetch',
 				[{'action': 'as_svg', 'ctab_content': search_obj.ctab_content}],
@@ -2841,7 +2987,7 @@ function repeat_search(entity_id, entity_pkey){
 						ctab_to_image[ctab_key] = mol_image;
 
 						current_fetch = search_obj
-						
+
 						new_fetch(true);
 					}
 				}
@@ -3107,7 +3253,9 @@ function start(){
 			upload_section.innerText = 'Upload (Excel, CSV, Txt)'
 		}
 
-		on_project_change();
+		set_project(document.getElementById('project_selection').value, true,function(){
+
+		});
 	});
 	
 	saturn.client.core.ClientCore.main();
@@ -3551,7 +3699,7 @@ function load_structure_in_editor(ctab_content){
 }
 
 function perform_search(ctab_content){
-	current_fetch = {'action':'search','search_terms':[], '_username': null, 'ctab_content': ctab_content, 'project':document.getElementById('project_selection').value};
+	current_fetch = {'action':'search','search_terms':[], '_username': null, 'ctab_content': ctab_content, 'project':get_project()};
 
 	import_from_string(ctab_content);
 
@@ -3675,9 +3823,9 @@ function search(){
 	var wildcard_input = document.getElementById('wildcard_search');
 	
 	if(wildcard_input.checked){
-		current_fetch = {'action':'search','search_terms':terms, '_username': null, 'ctab_content': ctab_content, 'project':document.getElementById('project_selection').value};
+		current_fetch = {'action':'search','search_terms':terms, '_username': null, 'ctab_content': ctab_content, 'project':get_project()};
 	}else{
-		current_fetch = {'action':'fetch_exact','ids':terms, '_username': null, 'ctab_content': ctab_content, 'project':document.getElementById('project_selection').value};
+		current_fetch = {'action':'fetch_exact','ids':terms, '_username': null, 'ctab_content': ctab_content, 'project':get_project()};
 	}
 
 	var ctab_real = ctab_has_structure(ctab_content);

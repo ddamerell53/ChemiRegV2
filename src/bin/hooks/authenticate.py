@@ -801,8 +801,25 @@ class AuthenticationManager(object):
 			self.create_project_projects(project_name)
 
 		self.conn.commit()
+
+	def create_template_project(self, parent_project_name):
+		project_name = parent_project_name + '/Templates'
+
+		self.create_project(project_name, None, False)
+
+		self.update_project_configuration(
+			project_name=project_name,
+			enable_structure_field=False,
+			enable_attachment_field=True,
+			entity_name='Template',
+			enable_addition=True
+		)
+
+		self.add_custom_field(project_name, 'varchar', 'description', 'Description', True, True, False)
 		
 	def create_project_projects(self, parent_project_name):
+		self.create_template_project(parent_project_name)
+
 		project_name = parent_project_name + '/Uploads'
 		
 		self.create_project(project_name, None, False)
@@ -1547,9 +1564,54 @@ class AuthenticationManager(object):
 			self.add_custom_field(project_name, 'foreign_key', 'supplier','Supplier', True, True, False)
 			self.create_foreign_key(project_name, 'supplier', 'OxChem/Supplier List')
 			
-			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)	
-		
-				
+			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)
+
+
+	def update_project_view(self, project_name):
+		custom_fields = self.get_custom_fields(project_name)
+
+		custom_field_types = self.get_custom_field_types()
+
+		field_id_to_table = {}
+
+		for field_type in custom_field_types:
+			field_id_to_table[field_type['id']] = field_type['table_name']
+
+		corrected_project_name = 'v_' + project_name.lower().replace('/', '_')
+
+		view_sql = 'create or replace view ' + corrected_project_name + ' '
+
+		select_sql = ' as select compounds.compound_id'
+		tables_sql = ' from compounds '
+		join_sql = ['compounds.archived_transaction_id is null']
+
+		table_id = 1
+
+		previous_field = 'compounds.id'
+
+		for field in custom_fields.values():
+			field_name = field['field_name']
+			type_id = field['type_id']
+			field_id = field['field_id']
+
+			table_alias = 'tbx_' + str(table_id)
+
+			select_sql += ',' + table_alias + '.custom_field_value' + ' as ' + field_name
+			tables_sql += ',' + field_id_to_table[type_id] + ' as ' + table_alias
+			join_sql.append(table_alias + '.custom_field_id = ' + str(
+				field_id) + ' and ' + table_alias + '.entity_id = ' + previous_field + ' and ' + table_alias + '.archived_transaction_id is null')
+
+			previous_field = table_alias + '.entity_id'
+
+			table_id += 1
+
+		view_sql += select_sql + tables_sql + ' where ' + (' and '.join(join_sql))
+
+		self.conn.cursor().execute(view_sql)
+
+		print('Created view ' + corrected_project_name)
+
+
 class InsecurePasswordException(Exception):
 	def __init__(self, value):
 		self.value = value

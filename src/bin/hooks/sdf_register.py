@@ -18,6 +18,8 @@ import csv
 import datetime
 import shutil
 
+import traceback
+
 # lGPL
 import psycopg2
 
@@ -82,6 +84,16 @@ class CompoundManager(object):
 			self.conn = ConnectionManager.get_new_connection()
 
 		self.conn.cursor().execute('BEGIN')
+
+		self.error_cur = self.conn.cursor()
+		self.error_cur.execute('''
+			prepare insert_error as
+			insert into error_log (
+				error_uuid,
+				error_description
+			)
+			values($1,$2)
+		''')
 
 		self.cur = self.conn.cursor()
 		
@@ -630,6 +642,15 @@ class CompoundManager(object):
 
 		for row in self.supplier_list_cur.fetchall():
 			self.supplier_list[row[0]] = 1
+
+	def log_error(self, error_description):
+		error_uuid = str(uuid.uuid1())
+
+		self.error_cur.execute("execute insert_error (%s, %s)", (error_uuid, error_description))
+
+		self.conn.commit()
+
+		return error_uuid
 			
 	def get_next_id(self, id_prefix, project_name):
 		next_int = 1
@@ -1781,213 +1802,28 @@ if __name__ == '__main__':
 	
 	with open(input_json_path, 'r') as f:
 		input_json = json.load(f)
-	
+
+	output_json = {}
+
 	manager = CompoundManager()
 
-	if 'save_changes' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		changes = input_json['save_changes']
-		username = input_json['_username']
-		project_name = input_json['project_name']
-		output_json = {'error': None}
-		
-		error = None
-		
-		try:
-			output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-		except authenticate.UnauthorisedException as e:
-			error = e.value
-		except InvalidFieldNameException as e:
-			error = e.value
-		except RegistrationException as e:
-			error = e.value 
-		except MissingEntityException as e:
-			error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-			output_json['missing_entity'] = e.value
-		except NotNullException as e:
-			error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-			output_json['not_null_exception'] = e.value	
-		except InvalidValueException as e:
-			error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-			output_json['invalid_exception'] = e.value
-		except InvalidCustomFieldValue as e:
-			error = e.value
-			
-		output_json['error'] = error
-			
-	elif 'delete_file' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		file_uuid = input_json['delete_file']
-		username = input_json['_username']
+	try:
+		if 'save_changes' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			changes = input_json['save_changes']
+			username = input_json['_username']
+			project_name = input_json['project_name']
+			output_json = {'error': None}
 
-		output_json = {'error': None}
+			error = None
 
-		try:
-			manager.delete_file_upload(username, file_uuid)
-		except authenticate.UnauthorisedException as e:
-			ouput_json['error'] = str(e)
-		except InvalidFileUUIDException as e:
-			output_json['error'] = str(e)
-
-	elif 'delete_compound' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		id = input_json['delete_compound']
-		username = input_json['_username']
-
-		output_json = {'error' : None}	
-
-		try:
-			manager.delete_compound(username, id)
-		except authenticate.UnauthorisedException as e:
-			output_json['error'] = str(e) 	
-	elif 'delete_upload_set' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		upload_id = input_json['upload_id']
-		username = input_json['_username']
-		project_name = input_json['project_name']
-
-		output_json = {'error' : None}	
-
-		try:
-			manager.delete_upload_set(username, upload_id, project_name)
-			
-			manager.monotone_transaction_ids()
-			
-			manager.conn.commit()
-			
-		except authenticate.UnauthorisedException as e:
-			output_json['error'] = str(e) 	
-	elif 'register_supplier' in input_json:
-		#PROTECTION: _username is provided here as at the moment all users can create suppliers
-		#           NodeJS protects this function from unauthenticated users
-
-		supplier = input_json['register_supplier']
-		manager.register_supplier(supplier)
-
-		output_json = {'error': None}
-	elif 'upload_key_attach' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		file_path = input_json['upload_key_attach']
-		compound_id = input_json['id']
-		file_name = input_json['file_name']
-		username = input_json['_username']
-
-		error = None
-		upload_uuid = None
-		try:
-			upload_uuid = manager.attach_file(username, compound_id, file_path, file_name)
-		except authenticate.UnauthorisedException as e:
-			error = str(e)
-
-		output_json = {'error': error, 'uuid': upload_uuid}
-	elif 'upload_key_sdf' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-
-		upload_id = None
-		error = None
-
-		username = input_json['_username']
-		project_name = input_json['project_name']
-
-		#TODO: Move this check into register_from_ctab as all the other methods check the username there self
-		if manager.auth_manager.has_project(username, project_name):
-			project_id = manager.auth_manager.get_project_id(project_name)
-			
-			output_json = {}
-			
 			try:
-				with open('/tmp/cmp_reg.log', 'w') as fw:
-					input_file = input_json['upload_key_sdf']
-					
-					username = input_json['_username']
-					project_name = input_json['project_name']
-					output_json = {'error': None}
-					
-					if '_update' in input_json['upload_defaults'] and input_json['upload_defaults']['_update']['default_value']:
-						if input_json['name'].endswith('.xlsx'):
-							changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name)	
-						elif input_json['name'].endswith('.csv'):
-							changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name)	
-						elif input_json['name'].endswith('.txt'):
-							changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name)	
-						elif input_json['name'].endswith('sdf'):
-							changes = manager.convert_ctab_to_changes(input_file,input_json['upload_defaults'],project_name)	
-						
-						error = None
-						
-						try:
-							output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-						except authenticate.UnauthorisedException as e:
-							error = e.value
-						except InvalidFieldNameException as e:
-							error = e.value
-						except RegistrationException as e:
-							error = e.value 
-						except MissingEntityException as e:
-							error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-							output_json['missing_entity'] = e.value
-						except NotNullException as e:
-							error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-							output_json['not_null_exception'] = e.value	
-						except InvalidValueException as e:
-							error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-							output_json['invalid_exception'] = e.value
-						except InvalidCustomFieldValue as e:
-							output_json['invalid_exception'] = e.value
-							
-						output_json['error'] = error
-					else:					
-						project_def = manager.auth_manager.get_project_configuration(project_name)
-						
-						if project_def['enable_structure_field']:	
-							original_file = None
-							if input_json['name'].endswith('.xlsx'):
-								original_file = input_file	
-								input_file = manager.convert_excel_to_sdf(input_file,input_json['upload_defaults'])	
-							elif input_json['name'].endswith('.csv'):
-								original_file = input_file	
-								input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],',')
-							elif input_json['name'].endswith('.txt'):
-								original_file = input_file	
-								input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],'\t')
-								
-							upload_id = manager.register_from_ctab(input_file, input_json['_username'], input_json['upload_defaults'],input_json['project_name'], fw, None, input_json['name'], original_file)['upload_id']
-						else:
-							if input_json['name'].endswith('.xlsx'):
-								changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name, True)	
-							elif input_json['name'].endswith('.csv'):
-								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name,True)	
-							elif input_json['name'].endswith('.txt'):
-								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name,True)	
-								
-							error = None
-						
-							try:
-								output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-							except authenticate.UnauthorisedException as e:
-								error = e.value
-							except InvalidFieldNameException as e:
-								error = e.value
-							except RegistrationException as e:
-								error = e.value 
-							except MissingEntityException as e:
-								error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-								output_json['missing_entity'] = e.value
-							except NotNullException as e:
-								error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-								output_json['not_null_exception'] = e.value	
-							except InvalidValueException as e:
-								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-								output_json['invalid_exception'] = e.value
-							except InvalidCustomFieldValue as e:
-								error = e.value
-								
-							output_json['error'] = error
-						
-						
-			except RegistrationException as e:
+				output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+			except authenticate.UnauthorisedException as e:
 				error = e.value
-			except InvalidPrefixException as e:
+			except InvalidFieldNameException as e:
+				error = e.value
+			except RegistrationException as e:
 				error = e.value
 			except MissingEntityException as e:
 				error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
@@ -1998,20 +1834,212 @@ if __name__ == '__main__':
 			except InvalidValueException as e:
 				error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 				output_json['invalid_exception'] = e.value
-			except ValueToLongException as e:
-				error = 'Field ' + e.value['human_name'] + ' has value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id'] + ' larger than 4,000 characters'
-				output_json['invalid_exception'] = e.value
-			except InvalidCharacterException as e:
-				error = e.value
-				output_json['invalid_exception'] = e.value
 			except InvalidCustomFieldValue as e:
 				error = e.value
-				
-			output_json['upload_id'] = upload_id
+
 			output_json['error'] = error
-		else:
-			output_json = {'error': 'Not authorised for requested project'}	
+
+		elif 'delete_file' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			file_uuid = input_json['delete_file']
+			username = input_json['_username']
+
+			output_json = {'error': None}
+
+			try:
+				manager.delete_file_upload(username, file_uuid)
+			except authenticate.UnauthorisedException as e:
+				ouput_json['error'] = str(e)
+			except InvalidFileUUIDException as e:
+				output_json['error'] = str(e)
+
+		elif 'delete_compound' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			id = input_json['delete_compound']
+			username = input_json['_username']
+
+			output_json = {'error' : None}
+
+			try:
+				manager.delete_compound(username, id)
+			except authenticate.UnauthorisedException as e:
+				output_json['error'] = str(e)
+		elif 'delete_upload_set' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			upload_id = input_json['upload_id']
+			username = input_json['_username']
+			project_name = input_json['project_name']
+
+			output_json = {'error' : None}
+
+			try:
+				manager.delete_upload_set(username, upload_id, project_name)
+
+				manager.monotone_transaction_ids()
+
+				manager.conn.commit()
+
+			except authenticate.UnauthorisedException as e:
+				output_json['error'] = str(e)
+		elif 'register_supplier' in input_json:
+			#PROTECTION: _username is provided here as at the moment all users can create suppliers
+			#           NodeJS protects this function from unauthenticated users
+
+			supplier = input_json['register_supplier']
+			manager.register_supplier(supplier)
+
+			output_json = {'error': None}
+		elif 'upload_key_attach' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			file_path = input_json['upload_key_attach']
+			compound_id = input_json['id']
+			file_name = input_json['file_name']
+			username = input_json['_username']
+
+			error = None
+			upload_uuid = None
+			try:
+				upload_uuid = manager.attach_file(username, compound_id, file_path, file_name)
+			except authenticate.UnauthorisedException as e:
+				error = str(e)
+
+			output_json = {'error': error, 'uuid': upload_uuid}
+		elif 'upload_key_sdf' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+
+			upload_id = None
+			error = None
+
+			username = input_json['_username']
+			project_name = input_json['project_name']
+
+			#TODO: Move this check into register_from_ctab as all the other methods check the username there self
+			if manager.auth_manager.has_project(username, project_name):
+				project_id = manager.auth_manager.get_project_id(project_name)
+
+				output_json = {}
+
+				try:
+					with open('/tmp/cmp_reg.log', 'w') as fw:
+						input_file = input_json['upload_key_sdf']
+
+						username = input_json['_username']
+						project_name = input_json['project_name']
+						output_json = {'error': None}
+
+						if '_update' in input_json['upload_defaults'] and input_json['upload_defaults']['_update']['default_value']:
+							if input_json['name'].endswith('.xlsx'):
+								changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name)
+							elif input_json['name'].endswith('.csv'):
+								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name)
+							elif input_json['name'].endswith('.txt'):
+								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name)
+							elif input_json['name'].endswith('sdf'):
+								changes = manager.convert_ctab_to_changes(input_file,input_json['upload_defaults'],project_name)
+
+							error = None
+
+							try:
+								output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+							except authenticate.UnauthorisedException as e:
+								error = e.value
+							except InvalidFieldNameException as e:
+								error = e.value
+							except RegistrationException as e:
+								error = e.value
+							except MissingEntityException as e:
+								error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+								output_json['missing_entity'] = e.value
+							except NotNullException as e:
+								error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+								output_json['not_null_exception'] = e.value
+							except InvalidValueException as e:
+								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+								output_json['invalid_exception'] = e.value
+							except InvalidCustomFieldValue as e:
+								output_json['invalid_exception'] = e.value
+
+							output_json['error'] = error
+						else:
+							project_def = manager.auth_manager.get_project_configuration(project_name)
+
+							if project_def['enable_structure_field']:
+								original_file = None
+								if input_json['name'].endswith('.xlsx'):
+									original_file = input_file
+									input_file = manager.convert_excel_to_sdf(input_file,input_json['upload_defaults'])
+								elif input_json['name'].endswith('.csv'):
+									original_file = input_file
+									input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],',')
+								elif input_json['name'].endswith('.txt'):
+									original_file = input_file
+									input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],'\t')
+
+								upload_id = manager.register_from_ctab(input_file, input_json['_username'], input_json['upload_defaults'],input_json['project_name'], fw, None, input_json['name'], original_file)['upload_id']
+							else:
+								if input_json['name'].endswith('.xlsx'):
+									changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name, True)
+								elif input_json['name'].endswith('.csv'):
+									changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name,True)
+								elif input_json['name'].endswith('.txt'):
+									changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name,True)
+
+								error = None
+
+								try:
+									output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+								except authenticate.UnauthorisedException as e:
+									error = e.value
+								except InvalidFieldNameException as e:
+									error = e.value
+								except RegistrationException as e:
+									error = e.value
+								except MissingEntityException as e:
+									error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+									output_json['missing_entity'] = e.value
+								except NotNullException as e:
+									error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+									output_json['not_null_exception'] = e.value
+								except InvalidValueException as e:
+									error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+									output_json['invalid_exception'] = e.value
+								except InvalidCustomFieldValue as e:
+									error = e.value
+
+								output_json['error'] = error
+
+
+				except RegistrationException as e:
+					error = e.value
+				except InvalidPrefixException as e:
+					error = e.value
+				except MissingEntityException as e:
+					error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+					output_json['missing_entity'] = e.value
+				except NotNullException as e:
+					error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+					output_json['not_null_exception'] = e.value
+				except InvalidValueException as e:
+					error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+					output_json['invalid_exception'] = e.value
+				except ValueToLongException as e:
+					error = 'Field ' + e.value['human_name'] + ' has value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id'] + ' larger than 4,000 characters'
+					output_json['invalid_exception'] = e.value
+				except InvalidCharacterException as e:
+					error = e.value
+					output_json['invalid_exception'] = e.value
+				except InvalidCustomFieldValue as e:
+					error = e.value
+
+				output_json['upload_id'] = upload_id
+				output_json['error'] = error
+			else:
+				output_json = {'error': 'Not authorised for requested project'}
+	except Exception as e:
+		tb = traceback.format_exc()
+		error_uuid = manager.log_error(tb)
+
+		output_json['error'] = 'Internal error - please contact the system administrator'
 
 	with open(output_json_path, 'w') as fw:
 		fw.write(json.dumps(output_json))
-		
