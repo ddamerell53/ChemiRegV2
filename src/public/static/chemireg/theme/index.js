@@ -911,8 +911,9 @@ function on_project_change(cb){
 		        screen = current_screen;
 		    }
 
-			fetch_all(true, screen);
+            fetch_all(true, screen, true);
 		}else{
+		    fetch_all(true, null,false);
 			cb();
 		}
 	});
@@ -2647,21 +2648,27 @@ function switch_to_default_screen(){
 
 function update_actions(){
     var upload_history_button = document.getElementById('main_menu_upload_history');
-    if(get_project().endsWith('/Uploads')){
-        upload_history_button.style.display = 'none';
 
-        get_back_project_button().style.display = 'initial';
-    }else{
-        upload_history_button.style.display = 'initial';
+    var enable_back_button = false;
 
-        get_back_project_button().style.display = 'none';
+    if(get_project().endsWith('/Uploads') || get_project().endsWith('Templates')){
+        enable_back_button = true;
     }
 
     var upload_panel = document.getElementById('home_upload_panel');
     if(get_project_configuration().enable_addition){
-        upload_panel.style.display = 'initial';
+        if(get_project().endsWith('/Uploads') || get_project().endsWith('Templates')){
+            upload_history_button.style.display = 'none';
+        }else{
+            upload_panel.style.display = 'initial';
+
+            upload_history_button.style.display = 'initial';
+        }
+
     }else{
         upload_panel.style.display = 'none';
+
+        upload_history_button.style.display = 'none';
     }
 
     var template_button = document.getElementById('upload_template_button');
@@ -2669,10 +2676,14 @@ function update_actions(){
     if(get_project().endsWith('/Templates')){
         template_button.style.display = 'none';
 
-        get_back_project_button().style.display = 'initial';
+        enable_back_button = true;
     }else{
         template_button.style.display = 'initial';
+    }
 
+    if(enable_back_button){
+        get_back_project_button().style.display = 'initial';
+    }else{
         get_back_project_button().style.display = 'none';
     }
 
@@ -2767,20 +2778,7 @@ function refresh_session(){
 						'_username': null
 				};
 				
-				active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
-				inactive_list = ['registration_button', 'loading'];
-	
-				for(var i=0;i<active_list.length;i++){
-					if(active_list[i] == 'main_buttons'){
-						document.getElementById(active_list[i]).style.display='flex';
-					}else{
-						document.getElementById(active_list[i]).style.display='initial';
-					}
-				}
-	
-				for(var i=0;i<inactive_list.length;i++){
-					document.getElementById(inactive_list[i]).style.display='none';
-				}
+
 
 				saturn.core.Util.getProvider().getByNamedQuery(
 						'saturn.db.provider.hooks.ExternalJsonHook:Register',
@@ -2882,6 +2880,21 @@ function refresh_session(){
 
 								set_project(real_projects[0], true, function(){
                                     switch_to_default_screen();
+
+                                    active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
+                                    inactive_list = ['registration_button', 'loading'];
+
+                                    for(var i=0;i<active_list.length;i++){
+                                        if(active_list[i] == 'main_buttons'){
+                                            document.getElementById(active_list[i]).style.display='flex';
+                                        }else{
+                                            document.getElementById(active_list[i]).style.display='initial';
+                                        }
+                                    }
+
+                                    for(var i=0;i<inactive_list.length;i++){
+                                        document.getElementById(inactive_list[i]).style.display='none';
+                                    }
 								});
 							}
 						}
@@ -2914,13 +2927,13 @@ function refresh_session(){
 	}
 }
 
-function fetch_all(forget_search, screen){
+function fetch_all(forget_search, screen, auto_show){
 	if(get_project().indexOf('Search History') > -1){
 		fetch_all_user(forget_search, screen);
 	}else{
 		current_fetch = {'project':get_project(), '_username': null, 'action':'search_all', 'forget_search': forget_search};
 		
-		new_fetch(true, screen);
+		new_fetch(auto_show, screen);
 	}
 }
 
@@ -3857,7 +3870,7 @@ function search(){
 	}else if(terms.length > 0){
 		new_fetch(true);
 	}else{
-		fetch_all(false);
+		fetch_all(true, null, false);
 	}
 }
 
@@ -4087,10 +4100,12 @@ function register(){
 
 function on_results_click(){
     if(current_fetch == null){
-        fetch_all();
+        fetch_all(false, 'results', true);
+    }else{
+        switch_screen('results');
     }
 
-    switch_screen('results');
+
 }
 
 function switch_screen(screen_id){
