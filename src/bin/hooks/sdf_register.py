@@ -400,6 +400,12 @@ class CompoundManager(object):
 							self._create_user(changes, entity_pkey)
 
 							changes[entity_pkey]['password'] = '<HIDDEN>'
+
+						if new_project_name == 'User to Project':
+							self._create_user_to_project(changes, entity_pkey)
+
+						if new_project_name.endswith('/Custom Fields'):
+							self._create_custom_field(changes, entity_pkey,new_project_name)
 						
 						self.insert_entity(changes[entity_pkey], new_project_name, new_project_fields_by_type)
 						
@@ -429,6 +435,10 @@ class CompoundManager(object):
 				self._update_project(changes, entity_pkey)
 			elif project_name == 'Users':
 				self._update_user(changes, entity_pkey)
+			elif project_name == 'User to Project':
+				self._update_user_to_project(changes, entity_pkey)
+			elif project_name.endswith('/Custom Fields'):
+				self._update_custom_field(changes, entity_pkey, new_project_name)
 			
 			project_fields = self.auth_manager.get_custom_fields(project_name)
 			
@@ -556,6 +566,106 @@ class CompoundManager(object):
 		self.conn.commit()
 
 		return updated_rows
+
+	def _update_custom_field(self, changes, entity_pkey, project_name):
+		entry = changes[entity_pkey]
+
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		name = old_entity['compound_id']
+		required = old_entity['required']
+		visible = old_entity['visible']
+		human_name = old_entity['human_name']
+		calculated = old_entity['calculated']
+		foreign_key_project = old_entity['foreign_key_project']
+		field_type = old_entity['type']
+
+		parent_project_name = re.sub('/Custom Fields$', '', project_name)
+
+		if 'name' in entry:
+			name = entry['name']
+
+		if 'required' in entry:
+			required = entry['required']
+
+		if 'visible' in entry:
+			visible = entry['visible']
+
+		if 'human_name' in entry:
+			human_name = entry['human_name']
+
+		if 'calculated' in entry:
+			calculated = entry['calculated']
+
+		if 'foreign_key_project' in entry:
+			if foreign_key_project != entry['foreign_key_project']:
+				raise Exception('You aren\'t allowed to changed foreign keys')
+
+			#foreign_key_project = entry['foreign_key_project']
+
+		if 'type' in entry:
+			if field_type != entry['type']:
+				raise Exception('You aren\'t allowed to change column types')
+
+			#field_type = entry['type']
+
+		self.auth_manager.update_custom_field_definition(old_entity['compound_id'],parent_project_name, name, required, visible, human_name, calculated)
+
+	def _create_custom_field(self, changes, entity_pkey, project_name):
+		entity = changes[entity_pkey]
+
+		field_name = entity['compound_id']
+		type_name = entity['type']
+		human_name = entity['human_name']
+		required = entity['required']
+		visible = entity['visible']
+		calculated = entity['calculated']
+		foreign_key_project = entity['foreign_key_project']
+
+		parent_project_name = re.sub('/Custom Fields$','',project_name)
+
+		if type_name == 'foreign_key' and foreign_key_project is None:
+			raise Exception('You must set the point to project')
+
+		self.auth_manager.add_custom_field(parent_project_name, type_name, field_name, human_name, required, visible, calculated)
+
+		self.auth_manager.create_foreign_key(parent_project_name, field_name, foreign_key_project)
+
+	def _create_user_to_project(self, changes, entity_pkey):
+		entity = changes[entity_pkey]
+
+		username = entity['user_user_id']
+		project_name = entity['user_project_id']
+
+		entity['compound_id'] = username + ' to ' + project_name
+
+		self.auth_manager.add_user_to_project(username, project_name)
+
+	def _update_user_to_project(self, changes, entity_pkey):
+		entity = changes[entity_pkey]
+
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		username = old_entity['user_user_id']
+		project_name = old_entity['user_project_id']
+
+		update = False
+
+		if 'user_user_id' in entity:
+			update = True
+
+			username = entity['user_user_id']
+
+		if 'user_project_id' in entity:
+			update = True
+			project_name = entity['user_project_id']
+
+		if update:
+			entity['compound_id'] = username + ' to ' + project_name
+
+			self.auth_manager.remove_user_from_project(old_entity['user_user_id'], old_entity['user_project_id'])
+
+			self.auth_manager.add_user_to_project(username, project_name)
 
 	def _create_user(self, changes, entity_pkey):
 		first_name = None
@@ -720,7 +830,7 @@ class CompoundManager(object):
 
 	def delete_compound(self, username, id):
 		if self.auth_manager.has_compound_permission(username, id):
-			entity = self.fetch_manager.get_entity(id, True)
+			entity = self.fetch_manager.get_entity(id, False)
 
 			# Handle special delete projects call
 			if entity['project_name'] == 'Projects':
@@ -728,6 +838,9 @@ class CompoundManager(object):
 
 			if entity['project_name'] == 'Users':
 				self.auth_manager.delete_user(entity['compound_id'])
+
+			if entity['project_name'] == 'User to Project':
+				self.auth_manager.remove_user_from_project(entity['user_user_id'], entity['user_project_id'])
 
 			file_objs = self.fetch_manager.get_file_uploads(id)
 			for file_obj in file_objs:

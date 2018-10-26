@@ -328,6 +328,20 @@ class AuthenticationManager(object):
 			(project_id, name, type_id, required, visible, human_name, calculated)
 			values ($1, $2, $3, $4, $5, $6, $7)
 		''')
+
+		self.update_custom_field_cur = self.conn.cursor()
+		self.update_custom_field_cur.execute('''
+			prepare update_custom_field as
+			update custom_fields
+				set name=$3,
+				required=$4,
+				visible=$5,
+				human_name=$6,
+				calculated=$7
+			where
+				project_id = (select id from projects where project_name = $2) and
+				name = $1
+		''')
 		
 		self.fetch_custom_field_type_id_cur = self.conn.cursor()
 		self.fetch_custom_field_type_id_cur.execute(''' 
@@ -644,18 +658,21 @@ class AuthenticationManager(object):
 		''', (project_name, ))
 		
 	def delete_project(self, project_name):
-		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith('/Custom Row Buttons/Templates'):
+		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads') \
+				and not project_name.endswith('/Custom Row Buttons/Templates') and not project_name.endswith('/Custom Fields'):
 			self.delete_project(project_name + '/Custom Row Buttons')
 			
-			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History')  and not project_name.endswith('/Templates'):
+			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History')  and not project_name.endswith('/Templates') and not project_name.endswith('/Custom Fields'):
 				self.delete_project(project_name + '/Uploads')
 				self.delete_project(project_name + '/Search History')
 				self.delete_project(project_name + '/Templates')
+				self.delete_project(project_name + '/Custom Fields')
 		else:
-			if not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith('/Custom Row Buttons/Templates'):
+			if not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith('/Custom Row Buttons/Templates') and not project_name.endswith('/Custom Row Buttons/Custom Fields'):
 				self.delete_project(project_name + '/Uploads')
 
 				self.delete_project(project_name + '/Templates')
+				self.delete_project(project_name + '/Custom Fields')
 		
 		self.delete_project_entities(project_name)
 		self.delete_project_user_associations(project_name)
@@ -904,6 +921,35 @@ class AuthenticationManager(object):
 
 		self.conn.commit()
 
+	def create_custom_fields_project(self, parent_project_name):
+		project_name = parent_project_name + '/Custom Fields'
+
+		self.create_project(project_name, None, False)
+
+		self.update_project_configuration(
+			project_name=project_name,
+			enable_structure_field=False,
+			enable_attachment_field=False,
+			entity_name='Custom Field',
+			enable_addition=True
+		)
+
+		self.add_custom_field(project_name, 'foreign_key', 'type', 'Type', True, True, False)
+
+		self.create_foreign_key(project_name, 'type', 'Custom Field Types')
+
+		self.add_custom_field(project_name, 'foreign_key', 'foreign_key_project', 'Points to', False, True, False)
+
+		self.create_foreign_key(project_name, 'foreign_key_project', 'Projects')
+
+		self.add_custom_field(project_name, 'bool', 'required', 'Required', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'auto_convert_mol', 'Auto convert mol', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'visible', 'visible', True, True, False)
+		self.add_custom_field(project_name, 'varchar', 'human_name', 'Human Name', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'searchable', 'searchable', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'calculated', 'Calculated', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'before_update_function', 'Before update function', True, True, False)
+
 	def create_template_project(self, parent_project_name):
 		project_name = parent_project_name + '/Templates'
 
@@ -920,6 +966,8 @@ class AuthenticationManager(object):
 		self.add_custom_field(project_name, 'varchar', 'description', 'Description', True, True, False)
 		
 	def create_project_projects(self, parent_project_name):
+		self.create_custom_fields_project(parent_project_name)
+
 		self.create_template_project(parent_project_name)
 
 		project_name = parent_project_name + '/Uploads'
@@ -1336,6 +1384,10 @@ class AuthenticationManager(object):
 			self.custom_field_cursors[type_name].execute("execute custom_create_field_" + type_name + " (%s, %s, %s)",(project_name, field_name, self.transaction_id))
 		
 		self.conn.commit()
+
+	def update_custom_field_definition(self, old_name, project_name, name, required, visible, human_name, calculated):
+		self.update_custom_field_cur.execute('execute update_custom_field (%s,%s,%s,%s,%s,%s,%s)',(old_name, project_name, name,required,visible, human_name,calculated))
+
 		
 	def set_ss_search_field(self, project_name, field_name):
 		project_id = self.get_project_id(project_name)

@@ -2729,6 +2729,8 @@ function update_actions(){
                 enable = false;
             }else if(project_name.endsWith('/Settings')){
                 enable = false;
+            }else if(project_name.endsWith('/Custom Fields')){
+                enable = false;
             }
 
             if(enable){
@@ -2828,6 +2830,7 @@ function refresh_session(){
 								var upload_projects = [];
 								var search_projects = [];
 								var settings_projects = [];
+								var custom_field_projects = [];
 								var custom_buttons_projects = [];
 								
 								for(var i=0;i<projects.length;i++){
@@ -2840,9 +2843,20 @@ function refresh_session(){
 										search_projects.push(project);
 									}else if(project.indexOf('/Settings')>-1){
 										settings_projects.push(project);
+									}else if(project.indexOf('/Custom Fields') > -1){
+									    custom_field_projects.push(project);
 									}else{
+
 										real_projects.push(project);
 									}
+								}
+
+                                if(custom_field_projects.length > 0){
+								    if(real_projects.length > 0){
+								        real_projects.push(null);
+								    }
+
+								    real_projects= real_projects.concat(custom_field_projects);
 								}
 
 								if(upload_projects.length > 0){

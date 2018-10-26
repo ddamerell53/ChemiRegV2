@@ -1053,7 +1053,7 @@ class CompoundFetchManager(object):
 			if not minimal:
 				self.process_entity(entity)
 				
-			return entity 
+			return entity
 		
 	def get_entity_by_id(self, entity_id,  minimal = True):
 		self.fetch_entity_pkey.execute('execute fetch_entity_pkey (%s)', (entity_id,))
