@@ -395,7 +395,11 @@ class CompoundManager(object):
 						changes[entity_pkey]['batchable_id'] = False
 						changes[entity_pkey]['project_id'] = new_project_id
 						changes[entity_pkey]['upload_id'] = str(uuid.uuid4())
-						
+
+						if new_project_name == 'Users':
+							self._create_user(changes, entity_pkey)
+
+							changes[entity_pkey]['password'] = '<HIDDEN>'
 						
 						self.insert_entity(changes[entity_pkey], new_project_name, new_project_fields_by_type)
 						
@@ -403,6 +407,10 @@ class CompoundManager(object):
 			
 						if new_project_def['enable_structure_field']:
 							self.batch_insert_ss_table(new_project_name, changes[entity_pkey]['upload_id'] )
+
+						# Handle the special projects table
+						if new_project_name == 'Projects':
+							self._create_project(changes, entity_pkey)
 			
 						continue
 					
@@ -415,6 +423,12 @@ class CompoundManager(object):
 			#TODO: Bottle-neck if updating a lot compounds
 			self.fetch_project_name_cur.execute('execute fetch_project_name (%s)', (entity_pkey,))
 			project_name = self.fetch_project_name_cur.fetchone()[0]
+
+			# Update custom projects for real tables
+			if project_name == 'Projects':
+				self._update_project(changes, entity_pkey)
+			elif project_name == 'Users':
+				self._update_user(changes, entity_pkey)
 			
 			project_fields = self.auth_manager.get_custom_fields(project_name)
 			
@@ -543,6 +557,148 @@ class CompoundManager(object):
 
 		return updated_rows
 
+	def _create_user(self, changes, entity_pkey):
+		first_name = None
+		last_name = None
+		email = None
+		username = None
+		password = None
+		account_type = None
+
+		skip_external_check = False
+
+		entity = changes[entity_pkey]
+
+		if 'first_name' in entity:
+			first_name = entity['first_name']
+
+		if 'last_name' in entity:
+			last_name = entity['last_name']
+
+		if 'email' in entity:
+			email = entity['email']
+
+		if 'compound_id' in entity:
+			username = entity['compound_id'].lower()
+
+			if not self.auth_manager.validate_project_term(username):
+				raise Exception('Username ends with a reserved word!')
+
+		if 'password' in entity:
+			password = entity['password']
+
+		if 'account_type' in entity:
+			account_type = entity['account_type']
+
+		self.auth_manager.register_user(first_name, last_name, email, username, password, account_type, skip_external_check)
+
+
+
+	def _create_project(self, changes, entity_pkey):
+		id_group_name = None
+
+		if 'id_group_name' in changes[entity_pkey]:
+			id_group_name = changes[entity_pkey]['id_group_name']
+
+		row_project_name = changes[entity_pkey]['compound_id']
+
+		if not self.auth_manager.validate_project_term(row_project_name):
+			raise Exception('Project name ends with a reserved word!')
+
+		self.auth_manager.create_project(row_project_name, id_group_name)
+
+		self._update_project_configuration(changes, entity_pkey)
+
+		self.auth_manager.add_user_to_project('administrator', changes[entity_pkey]['compound_id'])
+
+	def _update_project(self, changes, entity_pkey):
+		old_entity = self.fetch_manager.get_entity(entity_pkey, True)
+
+		old_project_name = old_entity['compound_id']
+
+		if 'compound_id' in changes[entity_pkey]:
+			new_project_name = changes[entity_pkey]['compound_id']
+
+			if not self.auth_manager.validate_project_term(new_project_name):
+				raise Exception('Project name ends with a reserved word!')
+
+			self.auth_manager.rename_project(new_project_name, old_project_name)
+
+		self._update_project_configuration(changes, entity_pkey)
+
+	def _update_user(self, changes, entity_pkey):
+		entry = changes[entity_pkey]
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		original_username = old_entity['compound_id']
+
+		first_name = old_entity['first_name']
+		last_name = old_entity['last_name']
+		email = old_entity['email']
+		username = old_entity['compound_id']
+		password = old_entity['password']
+		account_type = old_entity['account_type']
+
+		if 'first_name' in entry:
+			first_name = entry['first_name']
+
+		if 'last_name' in entry:
+			last_name = entry['last_name']
+
+		if 'email' in entry:
+			email = entry['email']
+
+		if 'password' in entry:
+			password = entry['password']
+
+			entry['password'] = '<HIDDEN>'
+
+		if 'account_type' in entry:
+			account_type = entry['account_type']
+
+		if 'compound_id' in entry:
+			username = entry['compound_id'].lower()
+
+			if not self.auth_manager.validate_project_term(username):
+				raise Exception('Username ends with a reserved word!')
+
+		self.auth_manager.update_user(original_username, first_name, last_name, email, username, password, account_type)
+
+
+	def _update_project_configuration(self, changes, entity_pkey):
+		row_project_name = None
+
+		enable_structure_field = False
+		enable_attachment_field = False
+		entity_name = None
+		enable_addition = False
+
+		if 'compound_id' in changes[entity_pkey]:
+			row_project_name = changes[entity_pkey]['compound_id']
+		else:
+			old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+			row_project_name = old_entity['compound_id']
+
+			enable_structure_field = old_entity['enable_structure_field']
+			enable_attachment_field = old_entity['enable_attachment_field']
+			enable_addition = old_entity['enable_addition']
+			entity_name = old_entity['entity_name']
+
+		if 'enable_attachment_field' in changes[entity_pkey]:
+			enable_attachment_field = changes[entity_pkey]['enable_attachment_field']
+
+		if 'enable_structure_field' in changes[entity_pkey]:
+			enable_structure_field = changes[entity_pkey]['enable_structure_field']
+
+		if 'entity_name' in changes[entity_pkey]:
+			entity_name = changes[entity_pkey]['entity_name']
+
+		if 'enable_addition' in changes[entity_pkey]:
+			enable_addition = changes[entity_pkey]['enable_addition']
+
+		self.auth_manager.update_project_configuration(row_project_name, enable_structure_field, enable_attachment_field, entity_name, enable_addition)
+
+
 	def delete_file_upload(self, username, file_uuid):
 		self.fetch_compound_for_upload_cur.execute("execute fetch_compound_for_upload (%s)",(file_uuid,))
 		row = self.fetch_compound_for_upload_cur.fetchone()
@@ -564,6 +720,15 @@ class CompoundManager(object):
 
 	def delete_compound(self, username, id):
 		if self.auth_manager.has_compound_permission(username, id):
+			entity = self.fetch_manager.get_entity(id, True)
+
+			# Handle special delete projects call
+			if entity['project_name'] == 'Projects':
+				self.auth_manager.delete_project(entity['compound_id'])
+
+			if entity['project_name'] == 'Users':
+				self.auth_manager.delete_user(entity['compound_id'])
+
 			file_objs = self.fetch_manager.get_file_uploads(id)
 			for file_obj in file_objs:
 				file_path = file_obj['file_path']
@@ -574,6 +739,8 @@ class CompoundManager(object):
 			self.monotone_transaction_ids()
 			
 			self.conn.commit()
+
+
 		else:
 			raise authenticate.UnauthorisedException('User not authorised for compound ' + id)	
 

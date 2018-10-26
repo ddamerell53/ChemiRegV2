@@ -1152,10 +1152,10 @@ function add_row(compound_table_body, compound, replace_row){
 					var new_project = compound.project_name;
 
 					set_project(new_project, true, function(){
-						load_structure_in_editor(ctab);
+						load_structure_in_editor(ctab, false);
 					});
 				}else{
-					load_structure_in_editor(ctab);
+					load_structure_in_editor(ctab, false);
 				}
 			});
 			
@@ -1329,6 +1329,23 @@ function add_row(compound_table_body, compound, replace_row){
 						original_value: original_value
 					});
 				}
+			}else if(field_item.type_name == 'bool'){
+			    var checkbox = document.createElement('input');
+			    checkbox.setAttribute('type', 'checkbox');
+
+			    if(field_value){
+			        checkbox.setAttribute('checked', true);
+			    }else if(field_value === null || field_value === ''){
+			        on_field_change(field_item.field_name, true, compound.id, false, null);
+			    }
+
+			    checkbox.addEventListener('click', function(event){
+			       on_field_change_ui(event.target, field_item.field_name,  Reflect.field(compound, field_item.field_name), compound.id);
+			    })
+
+			    compound_row.appendChild(field_cell);
+
+			    field_cell.appendChild(checkbox);
 			}else{
 				if(field_item.type_name == 'float' && field_value != null && field_value != ''){
 					field_value = parseFloat(field_value).toPrecision(4);
@@ -1840,7 +1857,9 @@ function on_field_change(field_name, original_value, compound_id, new_value, tar
 			unsaved_changes.set(compound_id, new haxe.ds.StringMap());
 		}
 
-		target.classList.add('cell_modified');
+        if(target != null){
+            target.classList.add('cell_modified');
+        }
 
 		if(field_name == 'compound_id'){
 			for(var i=0;i<user_settings.length;i++){
@@ -1875,7 +1894,9 @@ function on_field_change(field_name, original_value, compound_id, new_value, tar
 			if(unsaved_changes.get(compound_id).exists(field_name)){
 				unsaved_changes.get(compound_id).remove(field_name);
 
-				target.classList.remove('cell_modified');
+				if(target != null){
+				    target.classList.remove('cell_modified');
+				}
 			}
 
 			if(!unsaved_changes.get(compound_id).keys().hasNext()){
@@ -2823,18 +2844,43 @@ function refresh_session(){
 										real_projects.push(project);
 									}
 								}
-								
-								real_projects.push(null);
-								real_projects= real_projects.concat(upload_projects);
-								real_projects.push(null);
-								real_projects = real_projects.concat(search_projects);
-								real_projects.push(null);
-								if(custom_buttons_projects.length > 0){
-									real_projects= real_projects.concat(custom_buttons_projects);
-									real_projects.push(null);
+
+								if(upload_projects.length > 0){
+								    if(real_projects.length > 0){
+								        real_projects.push(null);
+								    }
+
+								    real_projects= real_projects.concat(upload_projects);
 								}
-								real_projects = real_projects.concat(settings_projects);
-								real_projects.push(null);
+
+								if(search_projects.length > 0){
+								    if(real_projects.length > 0){
+								        real_projects.push(null);
+								    }
+
+								    real_projects = real_projects.concat(search_projects);
+								}
+
+								if(custom_buttons_projects.length > 0){
+								    if(real_projects.length > 0){
+								        real_projects.push(null);
+								    }
+
+								    real_projects= real_projects.concat(custom_buttons_projects);
+								}
+
+								if(settings_projects.length > 0){
+								    if(real_projects.length > 0){
+								        real_projects.push(null);
+								    }
+
+								    real_projects = real_projects.concat(settings_projects);
+								}
+
+								if(real_projects.length > 0){
+								    real_projects.push(null);
+								}
+
 								real_projects.push('Logout');
 								
 								projects = real_projects;
@@ -3176,8 +3222,19 @@ function delete_compound(compound_id, id){
 		}
 		
 		query_size = query_size - 1;
-		
-		fetch(true);
+
+		for(let i = 0; i < compounds.length; i++){
+		    const compound = compounds[i];
+		    if(compound.id == id){
+		        compounds.splice(i,1);
+		    }
+		}
+
+		update_compound_table(compounds);
+
+        query_row = compounds.length;
+
+        update_paging_panel();
 	}
 
 	if(id < 0){
@@ -3701,8 +3758,8 @@ function enable_addition(){
 	return enable_addition;
 }
 
-function load_structure_in_editor(ctab_content){
-    open_structure_window_for_search();
+function load_structure_in_editor(ctab_content, include_terms){
+    open_structure_window_for_search(include_terms);
 
 
 
@@ -3826,13 +3883,17 @@ function ctab_has_structure(ctab_content){
 	return ctab_real;
 }
 
-function search(){
+function search(include_terms){
     activity_panel.show();
 
-	var ctab_content = get_mol_file();
-	
-	var terms = search_control[0].selectize.items;
-	
+    var ctab_content = get_mol_file();
+
+	var terms = [];
+
+	if(include_terms){
+	    terms = search_control[0].selectize.items;
+	}
+
 	var wildcard_input = document.getElementById('wildcard_search');
 	
 	if(wildcard_input.checked){
@@ -3843,7 +3904,7 @@ function search(){
 
 	var ctab_real = ctab_has_structure(ctab_content);
 	
-	if(ctab_real){		
+	if(ctab_real && enable_structure_field()){
 		saturn.core.Util.getProvider().getByNamedQuery(
 				'saturn.db.provider.hooks.ExternalJsonHook:Fetch',
 				[{'action': 'as_svg', 'ctab_content': ctab_content}],
@@ -4430,7 +4491,7 @@ function open_structure_window(cb){
     structure_window.open();
 }
 
-function open_structure_window_for_search(){
+function open_structure_window_for_search(include_terms){
     open_structure_window(function(){
         var ctab_content = get_mol_file();
 	    var ctab_real = ctab_has_structure(ctab_content);
@@ -4438,7 +4499,7 @@ function open_structure_window_for_search(){
         if(ctab_real){
             activity_panel.show();
 
-            search();
+            search(include_terms);
         }
     });
 }

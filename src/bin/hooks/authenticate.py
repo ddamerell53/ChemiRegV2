@@ -119,6 +119,22 @@ class AuthenticationManager(object):
 			values($1,$2,$3,$4,$5, $6)
 		''')
 
+		self.update_user_cur = self.conn.cursor()
+		self.update_user_cur.execute('''
+			prepare update_user as
+			update
+				users
+			set
+				first_name = $2,
+				last_name = $3,
+				email = $4,
+				username = $5,
+				password_hash = $6,
+				account_type = $7
+			where
+				username = $1
+		''')
+
 		self.delete_user_cur = self.conn.cursor()
 		self.delete_user_cur.execute('''
 			prepare delete_user as
@@ -207,6 +223,22 @@ class AuthenticationManager(object):
 				user_id
 			)
 			values($1, $2)
+		''')
+
+		self.fetch_users_with_project_cur = self.conn.cursor()
+		self.fetch_users_with_project_cur.execute('''
+			prepare fetch_users_with_project as
+			select
+				c.username,
+				a.user_id
+			from
+				user_to_project a,
+				projects b,
+				users c
+			where
+				a.project_id = b.id and
+				b.project_name = $1 and
+				a.user_id = c.id
 		''')
 
 		self.remove_project_association_cur = self.conn.cursor()
@@ -473,6 +505,39 @@ class AuthenticationManager(object):
 			where
 				project_name= $4
 		''')
+
+		self.rename_project_cur = self.conn.cursor()
+		self.rename_project_cur.execute('''
+			prepare rename_project as
+			update
+				projects
+			set
+				project_name = $1
+			where
+				project_name = $2
+		''')
+
+		self.rename_child_projects_cur = self.conn.cursor()
+		self.rename_child_projects_cur.execute('''
+			prepare rename_child_projects as
+			update
+				projects
+			set
+				project_name = REGEXP_REPLACE(project_name, '^' || $1 || '/', $2 || '/')
+			where
+				project_name like $1 || '/%'
+		''')
+
+		self.rename_project_entity_cur = self.conn.cursor()
+		self.rename_project_entity_cur.execute('''
+			prepare rename_project_entity as
+			update
+				projects
+			set
+				entity_name = $2
+			where
+				project_name = $1
+		''')
 		
 		self.custom_field_cursors = {}
 		
@@ -546,6 +611,20 @@ class AuthenticationManager(object):
 				
 				
 				''')
+
+	def validate_project_term(self, term):
+		if term.endswith('/Settings') or term.endswith('/Uploads') or term.endswith('/Search History') or term.endswith('/Custom Row Buttons'):
+			return False
+		else:
+			return True
+
+	def rename_project(self, new_project_name, old_project_name):
+		self.rename_project_cur.execute('execute rename_project (%s,%s)',(new_project_name, old_project_name))
+
+		self.rename_child_projects_cur.execute('execute rename_child_projects (%s,%s)', (old_project_name, new_project_name))
+
+	def rename_project_entity(self, project_name, new_entity_name):
+		self.rename_project_entity_cur.execute('execute rename_child_projects (%s, %s)', (project_name, new_entity_name))
 				
 	def delete_project_entities(self, project_name):
 		self.conn.cursor().execute(
@@ -565,16 +644,18 @@ class AuthenticationManager(object):
 		''', (project_name, ))
 		
 	def delete_project(self, project_name):
-		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads'):
+		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith('/Custom Row Buttons/Templates'):
 			self.delete_project(project_name + '/Custom Row Buttons')
 			
-			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History'):
+			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History')  and not project_name.endswith('/Templates'):
 				self.delete_project(project_name + '/Uploads')
 				self.delete_project(project_name + '/Search History')
+				self.delete_project(project_name + '/Templates')
 		else:
-			if not project_name.endswith('/Custom Row Buttons/Uploads'):
+			if not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith('/Custom Row Buttons/Templates'):
 				self.delete_project(project_name + '/Uploads')
 
+				self.delete_project(project_name + '/Templates')
 		
 		self.delete_project_entities(project_name)
 		self.delete_project_user_associations(project_name)
@@ -687,10 +768,31 @@ class AuthenticationManager(object):
 			
 		if self.is_project(project_name + '/Search History'):
 			self.add_user_to_project(username, project_name + '/Search History')
+
+		if self.is_project(project_name + '/Templates'):
+			self.add_user_to_project(username, project_name + '/Templates')
 		
 		self.conn.commit()
+
+	def copy_user_permissions(self, source_project, destination_project):
+		user_names = self.get_users_with_project(source_project)
+
+		for user_name in user_names:
+			print('Adding user ' + user_name + ' to ' + destination_project)
+			self.add_user_to_project(user_name, destination_project)
+
+		self.conn.commit()
 		
-		
+	def get_users_with_project(self, project_name):
+		self.fetch_users_with_project_cur.execute('execute fetch_users_with_project (%s)', (project_name,))
+
+		user_names = []
+
+		for row in self.fetch_users_with_project_cur:
+			user_names.append(row[0])
+
+		return user_names
+
 	def set_default_user_project(self, username, project_name):
 		project_id = self.get_project_id(project_name)
 
@@ -924,6 +1026,32 @@ class AuthenticationManager(object):
 			self.conn.commit()
 		else:
 			raise InvalidUserException('User ' + username + ' doesn\'t exit')
+
+	def update_user(self, original_username, first_name, last_name, email, username, password, account_type):
+		if original_username != username and self.is_user(username):
+			raise UserRegistrationException('User already exists')
+
+		if account_type != 'scarab' and not self.password_passes(password, [first_name, last_name, email, username]):
+			raise InsecurePasswordException('Insecure password, please try another')
+
+		password_hash = None
+
+		if account_type == 'internal':
+			password_hash = self.pwd_context.hash(password)
+		else:
+			password_hash = None
+
+		self.update_user_cur.execute("execute update_user (%s,%s,%s,%s,%s,%s,%s)", (
+			original_username,
+			first_name,
+			last_name,
+			email,
+			username,
+			password_hash,
+			account_type
+		))
+
+		self.rename_project(username + '/Settings', original_username + '/Settings')
 
 	def register_user(self, first_name, last_name, email, username, password, account_type = 'internal', skip_external_check = False):
 		if not self.user_registration_enabled and account_type != 'scarab':
