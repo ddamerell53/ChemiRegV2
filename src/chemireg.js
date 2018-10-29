@@ -1,11 +1,3 @@
-/* Haxe portion is MIT and SATurn portion is CC0
- * ChemiReg - web-based compound registration platform
- * Written in 2017 by David Damerell <david.damerell@sgc.ox.ac.uk>, Brian Marsden <brian.marsden@sgc.ox.ac.uk>
- * 
- * To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
- * You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-*/
-	
 (function (console, $hx_exports, $global) { "use strict";
 $hx_exports.saturn = $hx_exports.saturn || {};
 $hx_exports.saturn.core = $hx_exports.saturn.core || {};
@@ -1832,6 +1824,7 @@ saturn_app_SaturnServer.prototype = {
 	,socketPlugins: null
 	,plugins: null
 	,redisClient: null
+	,authPlugin: null
 	,getRedisPort: function() {
 		return this.redisPort;
 	}
@@ -1839,7 +1832,7 @@ saturn_app_SaturnServer.prototype = {
 		return this.port;
 	}
 	,getHostname: function() {
-		return "127.0.0.1";
+		return this.getServerConfig().hostname;
 	}
 	,getServerConfig: function() {
 		return this.localServerConfig;
@@ -1853,10 +1846,11 @@ saturn_app_SaturnServer.prototype = {
 			saturn_core_Util.debug(saturn_core_Util.string(http_config));
 		}
 		this.server = this.restify.createServer(http_config);
-		this.server["use"](this.restify.bodyParser({ mapParams : true}));
+		this.server["use"](this.restify.plugins.queryParser({ mapParams : true}));
+		this.server["use"](this.restify.plugins.bodyParser({ mapParams : true}));
 		this.installPlugins();
 		this.installSocketPlugins();
-		this.server.get(/static\/.*/,this.restify.serveStatic({ directory : "./public"}));
+		this.server.get(/static\/.*/,this.restify.plugins.serveStatic({ directory : "./public"}));
 		this.server.get("/",function(req,res,next) {
 			res.header("Location",index_page);
 			res.send(302);
@@ -1864,7 +1858,7 @@ saturn_app_SaturnServer.prototype = {
 		});
 		this.configureRedisClient();
 		if(saturn_app_SaturnServer.beforeListen != null) saturn_app_SaturnServer.beforeListen();
-		this.server.listen(this.port,function() {
+		this.server.listen(this.port,serverConfig.hostname,function() {
 			_g.debug("Server listening at " + Std.string(_g.server.url));
 		});
 		if(saturn_app_SaturnServer.afterListen != null) saturn_app_SaturnServer.afterListen();
@@ -1991,9 +1985,7 @@ saturn_app_SaturnServer.prototype = {
 		return socket.decoded_token;
 	}
 	,isUserAuthenticated: function(user,cb) {
-		if(user == null) cb(null); else this.redisClient.get(user.uuid,function(err,reply) {
-			if(err || reply == null) cb(null); else cb(user);
-		});
+		this.getAuthenticationPlugin().isUserAuthenticated(user,cb);
 	}
 	,configureRedisClient: function() {
 		var _g = this;
@@ -2006,6 +1998,12 @@ saturn_app_SaturnServer.prototype = {
 	}
 	,getRedisClient: function() {
 		return this.redisClient;
+	}
+	,setAuthenticationPlugin: function(authPlugin) {
+		this.authPlugin = authPlugin;
+	}
+	,getAuthenticationPlugin: function() {
+		return this.authPlugin;
 	}
 	,__class__: saturn_app_SaturnServer
 };
@@ -2226,6 +2224,9 @@ saturn_core_molecule_Molecule.prototype = {
 	,allowStar: null
 	,parent: null
 	,linked: null
+	,getValue: function() {
+		return this.getSequence();
+	}
 	,isLinked: function() {
 		return this.linked;
 	}
@@ -2420,6 +2421,9 @@ saturn_core_molecule_Molecule.prototype = {
 		if(this.floatAttributes.exists(attributeName)) return this.floatAttributes.get(attributeName);
 		return null;
 	}
+	,setValue: function(value) {
+		this.setSequence(value);
+	}
 	,_setFloatAttribute: function(attributeName,val) {
 		this.floatAttributes.set(attributeName,val);
 	}
@@ -2543,31 +2547,50 @@ saturn_core_molecule_Molecule.prototype = {
 };
 var saturn_core_DNA = function(seq) {
 	this.reg_tReplace = new EReg("T","g");
+	this.proteins = new haxe_ds_StringMap();
 	saturn_core_molecule_Molecule.call(this,seq);
 };
 $hxClasses["saturn.core.DNA"] = saturn_core_DNA;
 saturn_core_DNA.__name__ = ["saturn","core","DNA"];
+saturn_core_DNA.isDNA = function(sequence) {
+	var seqLen = sequence.length;
+	var valid_nucs;
+	var _g = new haxe_ds_StringMap();
+	if(__map_reserved.A != null) _g.setReserved("A",true); else _g.h["A"] = true;
+	if(__map_reserved.T != null) _g.setReserved("T",true); else _g.h["T"] = true;
+	if(__map_reserved.G != null) _g.setReserved("G",true); else _g.h["G"] = true;
+	if(__map_reserved.C != null) _g.setReserved("C",true); else _g.h["C"] = true;
+	if(__map_reserved.U != null) _g.setReserved("U",true); else _g.h["U"] = true;
+	valid_nucs = _g;
+	var _g1 = 0;
+	while(_g1 < seqLen) {
+		var i = _g1++;
+		var nuc = sequence.charAt(i).toUpperCase();
+		if(!((__map_reserved[nuc] != null?valid_nucs.existsReserved(nuc):valid_nucs.h.hasOwnProperty(nuc)) && (__map_reserved[nuc] != null?valid_nucs.getReserved(nuc):valid_nucs.h[nuc]))) return false;
+	}
+	return true;
+};
 saturn_core_DNA.__super__ = saturn_core_molecule_Molecule;
 saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	protein: null
-	,getProtein: function() {
-		return this.protein;
+	,proteins: null
+	,addProtein: function(name,protein) {
+		if(protein != null) this.proteins.set(name,protein);
 	}
-	,setProtein: function(prot) {
-		if(this.protein != null) {
-			this.protein.dna.setParent(null);
-			this.protein.dna = null;
-			this.protein.setParent(null);
-			this.protein.linked = false;
+	,removeProtein: function(name) {
+		this.proteins.remove(name);
+	}
+	,getProtein: function(name) {
+		return this.proteins.get(name);
+	}
+	,getProteinNames: function() {
+		var names = [];
+		var $it0 = this.proteins.keys();
+		while( $it0.hasNext() ) {
+			var name = $it0.next();
+			names.push(name);
 		}
-		this.protein = prot;
-		if(this.protein != null) {
-			this.protein.linked = true;
-			this.protein.dna = this;
-			this.protein.setParent(this);
-			this.linked = true;
-			if(prot.getMoleculeName() == null || prot.getMoleculeName() == "") prot.setMoleculeName(this.getMoleculeName() + " (Protein)");
-		} else this.linked = false;
+		return names;
 	}
 	,getGCFraction: function() {
 		var dnaComposition = this.getComposition();
@@ -3266,7 +3289,7 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 									var dna = new saturn_core_DNA(null);
 									var name = parts[0];
 									dna.setMoleculeName(name);
-									dna.setProtein(protein);
+									dna.addProtein("default",protein);
 									protein.setReferenceCoordinates(parts[1]);
 								}
 							}
@@ -3432,7 +3455,15 @@ saturn_core_FileShim.prototype = {
 		return window.atob(this.base64);
 	}
 	,getAsArrayBuffer: function() {
-		return null;
+		var bstr = window.atob(this.base64);
+		var buffer = new Uint8Array(bstr.length);
+		var _g1 = 0;
+		var _g = bstr.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			buffer[i] = HxOverrides.cca(bstr,i);
+		}
+		return buffer;
 	}
 	,__class__: saturn_core_FileShim
 };
@@ -3530,6 +3561,48 @@ saturn_core_LocusPosition.prototype = {
 	,__class__: saturn_core_LocusPosition
 };
 var saturn_core_Protein = function(seq) {
+	this.max_pH = 13;
+	this.min_pH = 3;
+	this.threshold = 0.1;
+	this.lu_extinction = (function($this) {
+		var $r;
+		var _g = new haxe_ds_StringMap();
+		if(__map_reserved.Y != null) _g.setReserved("Y",1490); else _g.h["Y"] = 1490;
+		if(__map_reserved.W != null) _g.setReserved("W",5500); else _g.h["W"] = 5500;
+		if(__map_reserved.C != null) _g.setReserved("C",125); else _g.h["C"] = 125;
+		$r = _g;
+		return $r;
+	}(this));
+	this.lu_charge = (function($this) {
+		var $r;
+		var _g = new haxe_ds_StringMap();
+		if(__map_reserved.D != null) _g.setReserved("D",-1); else _g.h["D"] = -1;
+		if(__map_reserved.E != null) _g.setReserved("E",-1); else _g.h["E"] = -1;
+		if(__map_reserved.H != null) _g.setReserved("H",1); else _g.h["H"] = 1;
+		if(__map_reserved.Y != null) _g.setReserved("Y",-1); else _g.h["Y"] = -1;
+		if(__map_reserved.K != null) _g.setReserved("K",1); else _g.h["K"] = 1;
+		if(__map_reserved.R != null) _g.setReserved("R",1); else _g.h["R"] = 1;
+		if(__map_reserved.C != null) _g.setReserved("C",-1); else _g.h["C"] = -1;
+		if(__map_reserved["N-Term"] != null) _g.setReserved("N-Term",1); else _g.h["N-Term"] = 1;
+		if(__map_reserved["C-Term"] != null) _g.setReserved("C-Term",-1); else _g.h["C-Term"] = -1;
+		$r = _g;
+		return $r;
+	}(this));
+	this.lu_pKa = (function($this) {
+		var $r;
+		var _g = new haxe_ds_StringMap();
+		if(__map_reserved.D != null) _g.setReserved("D",4.05); else _g.h["D"] = 4.05;
+		if(__map_reserved.E != null) _g.setReserved("E",4.45); else _g.h["E"] = 4.45;
+		if(__map_reserved.H != null) _g.setReserved("H",5.98); else _g.h["H"] = 5.98;
+		if(__map_reserved.Y != null) _g.setReserved("Y",10); else _g.h["Y"] = 10;
+		if(__map_reserved.K != null) _g.setReserved("K",10.4); else _g.h["K"] = 10.4;
+		if(__map_reserved.R != null) _g.setReserved("R",12.5); else _g.h["R"] = 12.5;
+		if(__map_reserved.C != null) _g.setReserved("C",9); else _g.h["C"] = 9;
+		if(__map_reserved["N-Term"] != null) _g.setReserved("N-Term",8); else _g.h["N-Term"] = 8;
+		if(__map_reserved["C-Term"] != null) _g.setReserved("C-Term",3.55); else _g.h["C-Term"] = 3.55;
+		$r = _g;
+		return $r;
+	}(this));
 	this.hydrophobicityLookUp = (function($this) {
 		var $r;
 		var _g = new haxe_ds_StringMap();
@@ -3640,11 +3713,28 @@ saturn_core_Protein.insertTranslation = function(dnaId,dnaAltName,dnaSeq,dnaSour
 		}
 	});
 };
+saturn_core_Protein.isProtein = function(sequence) {
+	var seqLen = sequence.length;
+	var valid_res = saturn_core_GeneticCodeRegistry.getDefault().getAAToCodonTable();
+	var _g = 0;
+	while(_g < seqLen) {
+		var i = _g++;
+		var res = sequence.charAt(i).toUpperCase();
+		if(!(__map_reserved[res] != null?valid_res.existsReserved(res):valid_res.h.hasOwnProperty(res))) return false;
+	}
+	return true;
+};
 saturn_core_Protein.__super__ = saturn_core_molecule_Molecule;
 saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	dna: null
 	,coordinates: null
 	,hydrophobicityLookUp: null
+	,lu_pKa: null
+	,lu_charge: null
+	,lu_extinction: null
+	,threshold: null
+	,min_pH: null
+	,max_pH: null
 	,setSequence: function(sequence) {
 		saturn_core_molecule_Molecule.prototype.setSequence.call(this,sequence);
 		if(sequence != null) {
@@ -3683,20 +3773,7 @@ saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,
 		return averageGravy;
 	}
 	,setDNA: function(dna) {
-		if(this.dna != null) {
-			this.dna.protein.setParent(null);
-			this.dna.protein = null;
-			this.dna.linked = false;
-			this.dna.setParent(null);
-		}
 		this.dna = dna;
-		if(this.dna != null) {
-			this.dna.linked = true;
-			this.dna.protein = this;
-			this.dna.setParent(this);
-			this.linked = true;
-			if(dna.getMoleculeName() == null || dna.getMoleculeName() == "") dna.setMoleculeName(this.getMoleculeName() + " (DNA)");
-		} else this.linked = false;
 	}
 	,dnaSequenceUpdated: function(sequence) {
 	}
@@ -3708,6 +3785,66 @@ saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,
 	}
 	,getReferenceCoordinates: function() {
 		return this.coordinates;
+	}
+	,getAminoAcidCharge: function(aa,mid_pH) {
+		var aminoAcid = aa;
+		var pH = mid_pH;
+		var ratio = 1 / (1 + Math.pow(10,pH - this.lu_pKa.get(aminoAcid)));
+		if(this.lu_charge.get(aminoAcid) == 1) return ratio; else return ratio - 1;
+	}
+	,getProteinCharge: function(mid_pH) {
+		var seqLength = this.sequence.length;
+		var proteinSequence = this.sequence;
+		var aa = "N-Term";
+		var proteinCharge = this.getAminoAcidCharge(aa,mid_pH);
+		aa = "C-Term";
+		proteinCharge += this.getAminoAcidCharge(aa,mid_pH);
+		var _g = 0;
+		while(_g < seqLength) {
+			var i = _g++;
+			aa = HxOverrides.substr(proteinSequence,i,1);
+			if(this.lu_pKa.exists(aa)) proteinCharge += this.getAminoAcidCharge(aa,mid_pH);
+		}
+		return proteinCharge;
+	}
+	,getpI: function() {
+		var proteinSequence = this.sequence;
+		while(true) {
+			var mid_pH = 0.5 * (this.max_pH + this.min_pH);
+			var proteinCharge = this.getProteinCharge(mid_pH);
+			if(proteinCharge > this.threshold) this.min_pH = mid_pH; else if(proteinCharge < -this.threshold) this.max_pH = mid_pH; else return mid_pH;
+		}
+	}
+	,getExtinctionNonReduced: function() {
+		var proteinSequence = this.sequence;
+		var seqLength = this.sequence.length;
+		var aa;
+		var extinctionNonReduced = 0.0;
+		var numberCysteines = 0.0;
+		var pairsCysteins = 0.0;
+		var _g = 0;
+		while(_g < seqLength) {
+			var i = _g++;
+			aa = HxOverrides.substr(proteinSequence,i,1);
+			if(this.lu_extinction.exists(aa) && aa != "C") extinctionNonReduced += this.lu_extinction.get(aa);
+			if(aa == "C") numberCysteines += 1;
+		}
+		if(numberCysteines % 2 == 0) pairsCysteins = numberCysteines / 2; else pairsCysteins = numberCysteines / 2 - 0.5;
+		extinctionNonReduced += pairsCysteins * this.lu_extinction.get("C");
+		return extinctionNonReduced;
+	}
+	,getExtinctionReduced: function() {
+		var proteinSequence = this.sequence;
+		var seqLength = this.sequence.length;
+		var aa;
+		var extinctionReduced = 0.0;
+		var _g = 0;
+		while(_g < seqLength) {
+			var i = _g++;
+			aa = HxOverrides.substr(proteinSequence,i,1);
+			if(this.lu_extinction.exists(aa) && aa != "C") extinctionReduced += this.lu_extinction.get(aa);
+		}
+		return extinctionReduced;
 	}
 	,__class__: saturn_core_Protein
 });
@@ -3980,8 +4117,14 @@ saturn_core_Util.exec = function(program,args,cb) {
 		saturn_core_Util.debug(msg.toString("utf8"));
 	});
 	proc.on("close",function(code) {
+		saturn_core_Util.debug("Closed");
 		cb(code);
 	});
+	proc.on("error",function(error1) {
+		saturn_core_Util.debug(error1);
+		cb(-1);
+	});
+	saturn_core_Util.debug("Hello X");
 };
 saturn_core_Util.getNewExternalProcess = function(cb) {
 };
@@ -4276,14 +4419,20 @@ saturn_core_domain_SgcAllele.prototype = $extend(saturn_core_DNA.prototype,{
 	,alleleStatus: null
 	,forwardPrimer: null
 	,reversePrimer: null
+	,proteinSequenceObj: null
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
-		this.linkedOriginField = "proteinSeq";
 		this.sequenceField = "dnaSeq";
-		this.setProtein(new saturn_core_Protein(this.proteinSeq));
+		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn_core_Protein(null);
+		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,getMoleculeName: function() {
 		return this.alleleId;
+	}
+	,loadProtein: function(cb) {
+		this.proteinSequenceObj.setName(this.alleleId + " (Protein)");
+		this.proteinSequenceObj.setDNA(this);
+		cb(this.proteinSequenceObj);
 	}
 	,setSequence: function(sequence) {
 		saturn_core_DNA.prototype.setSequence.call(this,sequence);
@@ -4300,6 +4449,8 @@ saturn_core_domain_SgcAllelePlate.prototype = {
 	,id: null
 	,elnRef: null
 	,setup: function() {
+	}
+	,loadPlate: function(cb) {
 	}
 	,__class__: saturn_core_domain_SgcAllelePlate
 };
@@ -4319,19 +4470,24 @@ saturn_core_domain_SgcEntryClone.prototype = $extend(saturn_core_DNA.prototype,{
 	,sourceId: null
 	,sequenceConfirmed: null
 	,elnId: null
+	,proteinSequenceObj: null
 	,getMoleculeName: function() {
 		return this.entryCloneId;
 	}
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
-		this.setProtein(new saturn_core_Protein(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE)));
+		if(this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj = new saturn_core_Protein(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE)); else this.proteinSequenceObj = new saturn_core_Protein(null);
+		this.proteinSequenceObj.setDNA(this);
+		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,setSequence: function(sequence) {
 		saturn_core_DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSeq = sequence;
-		this.setProtein(new saturn_core_Protein(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE)));
+		if(this.proteinSequenceObj != null && this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj.setSequence(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE));
 	}
-	,loadTranslation: function() {
+	,loadTranslation: function(cb) {
+		this.proteinSequenceObj.setName(this.entryCloneId + " (Protein)");
+		cb(this.proteinSequenceObj);
 	}
 	,__class__: saturn_core_domain_SgcEntryClone
 });
@@ -4381,23 +4537,6 @@ saturn_core_domain_SgcReversePrimer.prototype = $extend(saturn_core_DNA.prototyp
 	}
 	,__class__: saturn_core_domain_SgcReversePrimer
 });
-var saturn_core_domain_SgcSeqData = function() {
-};
-$hxClasses["saturn.core.domain.SgcSeqData"] = saturn_core_domain_SgcSeqData;
-saturn_core_domain_SgcSeqData.__name__ = ["saturn","core","domain","SgcSeqData"];
-saturn_core_domain_SgcSeqData.prototype = {
-	id: null
-	,type: null
-	,sequence: null
-	,version: null
-	,targetId: null
-	,target: null
-	,crc: null
-	,setup: function() {
-		if(this.sequence != null) this.crc = haxe_crypto_Md5.encode(this.sequence); else this.crc = "";
-	}
-	,__class__: saturn_core_domain_SgcSeqData
-};
 var saturn_core_domain_SgcTarget = function() {
 	saturn_core_DNA.call(this,null);
 	this.setup();
@@ -4411,21 +4550,17 @@ saturn_core_domain_SgcTarget.prototype = $extend(saturn_core_DNA.prototype,{
 	,gi: null
 	,dnaSeq: null
 	,proteinSeq: null
-	,dnaSequence: null
 	,geneId: null
 	,activeStatus: null
 	,pi: null
 	,comments: null
+	,proteinSequenceObj: null
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
 		this.setName(this.targetId);
-		this.linkedOriginField = "proteinSeq";
 		this.sequenceField = "dnaSeq";
-		this.setProtein(new saturn_core_Protein(this.proteinSeq));
-	}
-	,setProtein: function(prot) {
-		saturn_core_DNA.prototype.setProtein.call(this,prot);
-		if(prot == null) this.proteinSeq = null; else this.proteinSeq = prot.getSequence();
+		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn_core_Protein(null);
+		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,proteinSequenceUpdated: function(sequence) {
 		this.proteinSeq = sequence;
@@ -4433,8 +4568,6 @@ saturn_core_domain_SgcTarget.prototype = $extend(saturn_core_DNA.prototype,{
 	,setSequence: function(sequence) {
 		saturn_core_DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSeq = sequence;
-		if(this.dnaSequence == null) this.dnaSequence = new saturn_core_domain_SgcSeqData();
-		this.dnaSequence.sequence = this.dnaSeq;
 	}
 	,loadWonka: function() {
 	}
@@ -4797,6 +4930,7 @@ saturn_db_Provider.prototype = {
 	,setName: null
 	,getName: null
 	,getConfig: null
+	,setConfig: null
 	,evictObject: null
 	,getByExample: null
 	,query: null
@@ -4805,6 +4939,7 @@ saturn_db_Provider.prototype = {
 	,getModelByStringName: null
 	,getConnection: null
 	,uploadFile: null
+	,addHook: null
 	,__class__: saturn_db_Provider
 };
 var saturn_db_DefaultProvider = function(binding_map,config,autoClose) {
@@ -4850,12 +4985,17 @@ saturn_db_DefaultProvider.prototype = {
 	,regexs: null
 	,platform: null
 	,setPlatform: function() {
+		null;
+		return;
 	}
 	,generateQualifiedName: function(schemaName,tableName) {
 		return null;
 	}
 	,getConfig: function() {
 		return this.config;
+	}
+	,setConfig: function(config) {
+		this.config = config;
 	}
 	,setName: function(name) {
 		this.name = name;
@@ -4891,6 +5031,9 @@ saturn_db_DefaultProvider.prototype = {
 		provider.winConversions = this.winConversions;
 		provider.conversions = this.conversions;
 		provider.regexs = this.regexs;
+		provider.namedQueryHookConfigs = this.namedQueryHookConfigs;
+		provider.config = this.config;
+		provider.objectCache = new haxe_ds_StringMap();
 		return provider;
 	}
 	,enableCache: function(cached) {
@@ -4951,6 +5094,7 @@ saturn_db_DefaultProvider.prototype = {
 			var d = this.theBindingMap.get(class_name);
 			var value = this.getName();
 			d.set("provider_name",value);
+			saturn_core_Util.debug(class_name + " on " + this.getName());
 		}
 		if(this.isModel(saturn_core_domain_FileProxy)) {
 			var this1 = this.getModel(saturn_core_domain_FileProxy).getOptions();
@@ -4983,35 +5127,37 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,resetCache: function() {
 		this.objectCache = new haxe_ds_StringMap();
-		var $it0 = this.theBindingMap.keys();
-		while( $it0.hasNext() ) {
-			var className = $it0.next();
-			var this1 = this.theBindingMap.get(className);
-			var value = new haxe_ds_StringMap();
-			this1.set("statements",value);
-			var value1 = new haxe_ds_StringMap();
-			this.objectCache.set(className,value1);
-			if((function($this) {
-				var $r;
-				var this2 = $this.theBindingMap.get(className);
-				$r = this2.exists("indexes");
-				return $r;
-			}(this))) {
-				var $it1 = (function($this) {
+		if(this.theBindingMap != null) {
+			var $it0 = this.theBindingMap.keys();
+			while( $it0.hasNext() ) {
+				var className = $it0.next();
+				var this1 = this.theBindingMap.get(className);
+				var value = new haxe_ds_StringMap();
+				this1.set("statements",value);
+				var value1 = new haxe_ds_StringMap();
+				this.objectCache.set(className,value1);
+				if((function($this) {
 					var $r;
-					var this3;
-					{
-						var this4 = $this.theBindingMap.get(className);
-						this3 = this4.get("indexes");
-					}
-					$r = this3.keys();
+					var this2 = $this.theBindingMap.get(className);
+					$r = this2.exists("indexes");
 					return $r;
-				}(this));
-				while( $it1.hasNext() ) {
-					var field = $it1.next();
-					var this5 = this.objectCache.get(className);
-					var value2 = new haxe_ds_StringMap();
-					this5.set(field,value2);
+				}(this))) {
+					var $it1 = (function($this) {
+						var $r;
+						var this3;
+						{
+							var this4 = $this.theBindingMap.get(className);
+							this3 = this4.get("indexes");
+						}
+						$r = this3.keys();
+						return $r;
+					}(this));
+					while( $it1.hasNext() ) {
+						var field = $it1.next();
+						var this5 = this.objectCache.get(className);
+						var value2 = new haxe_ds_StringMap();
+						this5.set(field,value2);
+					}
 				}
 			}
 		}
@@ -5171,7 +5317,9 @@ saturn_db_DefaultProvider.prototype = {
 		var _g = this;
 		var prefetched = null;
 		var idsToFetch = null;
+		saturn_core_Util.debug("Using cache " + Std.string(this.useCache));
 		if(this.useCache) {
+			saturn_core_Util.debug("Using cache " + Std.string(this.useCache));
 			var model = this.getModel(clazz);
 			if(model != null) {
 				prefetched = [];
@@ -5246,40 +5394,31 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,getByNamedQuery: function(queryId,parameters,clazz,cache,callBack) {
 		var _g = this;
-		saturn_core_Util.debug("In getByNamedQuery");
+		saturn_core_Util.debug("In getByNamedQuery " + (cache == null?"null":"" + cache));
 		try {
-			var isCached = false;
-			if(cache && this.namedQueryCache.exists(queryId)) {
-				var qResults = null;
+			if(cache) {
+				saturn_core_Util.debug("Looking for cached result");
 				var queries = this.namedQueryCache.get(queryId);
-				var _g1 = 0;
-				while(_g1 < queries.length) {
-					var query = queries[_g1];
-					++_g1;
-					saturn_core_Util.debug("Checking for existing results");
-					var serialParamString = haxe_Serializer.run(parameters);
-					if(query.queryParamSerial == serialParamString) {
-						qResults = query.queryResults;
-						break;
-					}
-				}
-				if(qResults != null) {
+				var serialParamString = haxe_Serializer.run(parameters);
+				var crc1 = haxe_crypto_Md5.encode(queryId + "/" + serialParamString);
+				if(this.namedQueryCache.exists(crc1)) {
+					var qResults = this.namedQueryCache.get(crc1).queryResults;
+					saturn_core_Util.debug("Use cached result");
 					callBack(qResults,null);
 					return;
 				}
-			} else {
-				var value = [];
-				this.namedQueryCache.set(queryId,value);
 			}
 			var privateCB = function(toBind,exception) {
 				if(toBind == null) callBack(toBind,exception); else _g.initialiseObjects([],toBind,[],exception,function(objs,err) {
-					if(isCached == false && _g.useCache) {
+					if(_g.useCache) {
+						saturn_core_Util.debug("Caching result");
 						var namedQuery = new saturn_db_NamedQueryCache();
 						namedQuery.queryName = queryId;
 						namedQuery.queryParams = parameters;
 						namedQuery.queryParamSerial = haxe_Serializer.run(parameters);
 						namedQuery.queryResults = objs;
-						_g.namedQueryCache.get(queryId).push(namedQuery);
+						var crc = haxe_crypto_Md5.encode(queryId + "/" + namedQuery.queryParamSerial);
+						_g.namedQueryCache.set(crc,namedQuery);
 					}
 					callBack(objs,err);
 				},clazz,null,cache);
@@ -5324,53 +5463,35 @@ saturn_db_DefaultProvider.prototype = {
 			this.namedQueryHookConfigs.set(name,value);
 		}
 	}
+	,addHook: function(hook,name) {
+		var value = hook;
+		this.namedQueryHooks.set(name,value);
+	}
 	,_getByNamedQuery: function(queryId,parameters,clazz,callBack) {
 	}
 	,getByIdStartsWith: function(id,field,clazz,limit,callBack) {
 		var _g = this;
+		saturn_core_Util.debug("Starts with using cache " + Std.string(this.useCache));
 		var queryId = "__STARTSWITH_" + Type.getClassName(clazz);
 		var parameters = [];
 		parameters.push(field);
 		parameters.push(id);
-		var isCached = false;
-		if(this.namedQueryCache.exists(queryId)) {
-			var qResults = null;
-			var queries = this.namedQueryCache.get(queryId);
-			var _g1 = 0;
-			while(_g1 < queries.length) {
-				var query = queries[_g1];
-				++_g1;
-				var qParams = query.queryParams;
-				if(qParams.length != parameters.length) continue; else {
-					var matched = true;
-					var _g2 = 0;
-					var _g11 = qParams.length;
-					while(_g2 < _g11) {
-						var i = _g2++;
-						if(qParams[i] != parameters[i]) matched = false;
-					}
-					if(matched) {
-						qResults = query.queryResults;
-						break;
-					}
-				}
-			}
-			if(qResults != null) {
-				callBack(qResults,null);
+		var crc = null;
+		if(this.useCache) {
+			var crc1 = haxe_crypto_Md5.encode(queryId + "/" + haxe_Serializer.run(parameters));
+			if(this.namedQueryCache.exists(crc1)) {
+				callBack(this.namedQueryCache.get(crc1).queryResults,null);
 				return;
 			}
-		} else {
-			var value = [];
-			this.namedQueryCache.set(queryId,value);
 		}
 		this._getByIdStartsWith(id,field,clazz,limit,function(toBind,exception) {
 			if(toBind == null) callBack(toBind,exception); else _g.initialiseObjects([],toBind,[],exception,function(objs,err) {
-				if(isCached == false && _g.useCache) {
+				if(_g.useCache) {
 					var namedQuery = new saturn_db_NamedQueryCache();
 					namedQuery.queryName = queryId;
 					namedQuery.queryParams = parameters;
 					namedQuery.queryResults = objs;
-					_g.namedQueryCache.get(queryId).push(namedQuery);
+					_g.namedQueryCache.set(crc,namedQuery);
 				}
 				callBack(objs,err);
 			},clazz,null,false,false);
@@ -5446,30 +5567,8 @@ saturn_db_DefaultProvider.prototype = {
 		}
 	}
 	,evictNamedQuery: function(queryId,parameters) {
-		if(this.namedQueryCache.exists(queryId)) {
-			var qResults = null;
-			var queries = this.namedQueryCache.get(queryId);
-			var _g = 0;
-			while(_g < queries.length) {
-				var query = queries[_g];
-				++_g;
-				var qParams = query.queryParams;
-				if(qParams.length != parameters.length) continue; else {
-					var matched = true;
-					var _g2 = 0;
-					var _g1 = qParams.length;
-					while(_g2 < _g1) {
-						var i = _g2++;
-						if(qParams[i] != parameters[i]) matched = false;
-					}
-					if(matched) {
-						HxOverrides.remove(queries,query);
-						break;
-					}
-				}
-			}
-			if(queries.length > 0) this.namedQueryCache.remove(queryId); else this.namedQueryCache.set(queryId,queries);
-		}
+		var crc = haxe_crypto_Md5.encode(queryId + "/" + haxe_Serializer.run(parameters));
+		if(this.namedQueryCache.exists(crc)) this.namedQueryCache.remove(crc);
 	}
 	,updateObjects: function(objs,callBack) {
 		this.synchronizeInternalLinks(objs);
@@ -5705,10 +5804,15 @@ saturn_db_DefaultProvider.prototype = {
 					var $it0 = synthFields.keys();
 					while( $it0.hasNext() ) {
 						var synthFieldName = $it0.next();
-						var synthVal = Reflect.field(object,synthFieldName);
-						if(synthVal != null) continue;
 						var synthInfo;
 						synthInfo = __map_reserved[synthFieldName] != null?synthFields.getReserved(synthFieldName):synthFields.h[synthFieldName];
+						var fkField = synthInfo.get("fk_field");
+						if(fkField == null) {
+							Reflect.setField(object,synthFieldName,Type.createInstance(Type.resolveClass(synthInfo.get("class")),[Reflect.field(object,synthInfo.get("field"))]));
+							continue;
+						}
+						var synthVal = Reflect.field(object,synthFieldName);
+						if(synthVal != null) continue;
 						var isPolymorphic = synthInfo.exists("selector_field");
 						var synthClass;
 						if(isPolymorphic) {
@@ -5721,7 +5825,6 @@ saturn_db_DefaultProvider.prototype = {
 						var field = synthInfo.get("field");
 						var val = Reflect.field(object,field);
 						if(val == null || val == "" && !((val | 0) === val)) object[synthFieldName] = null; else {
-							var fkField = synthInfo.get("fk_field");
 							var cacheObj = this.getObjectFromCache(Type.resolveClass(synthClass),fkField,val);
 							if(cacheObj == null) {
 								objectsToFetch++;
@@ -5844,15 +5947,14 @@ saturn_db_DefaultProvider.prototype = {
 						var field2 = _g31[_g21];
 						++_g21;
 						var val2 = Reflect.field(object2,field2);
-						if(val2 != null && val2 != "" && !((val2 | 0) === val2) && !(typeof(val2) == "number") && !(typeof(val2) == "string") && !(typeof(val2) == "boolean")) {
-							var objs = Reflect.field(object2,field2);
-							if(!((objs instanceof Array) && objs.__enum__ == null)) objs = [objs];
-							var _g4 = 0;
-							while(_g4 < objs.length) {
-								var newObject = objs[_g4];
-								++_g4;
-								newObjList.push(newObject);
-							}
+						if(!model.isSyntheticallyBound(field2) || val2 == null) continue;
+						var objs = Reflect.field(object2,field2);
+						if(!((objs instanceof Array) && objs.__enum__ == null)) objs = [objs];
+						var _g4 = 0;
+						while(_g4 < objs.length) {
+							var newObject = objs[_g4];
+							++_g4;
+							newObjList.push(newObject);
 						}
 					}
 				}
@@ -5934,6 +6036,7 @@ saturn_db_DefaultProvider.prototype = {
 		var $it0 = this.theBindingMap.keys();
 		while( $it0.hasNext() ) {
 			var classStr = $it0.next();
+			saturn_core_Util.debug(classStr);
 			var clazz = Type.resolveClass(classStr);
 			if(clazz != null) this.modelClasses.push(this.getModel(clazz));
 		}
@@ -6202,7 +6305,7 @@ saturn_db_DefaultProvider.prototype = {
 			var obj = objs[_g];
 			++_g;
 			var clazz = Type.getClass(obj);
-			var model = this.getModel(obj);
+			var model = this.getModel(clazz);
 			var synthFields = model.getSynthenticFields();
 			if(synthFields != null) {
 				var $it0 = synthFields.keys();
@@ -6214,8 +6317,10 @@ saturn_db_DefaultProvider.prototype = {
 					var field = synthField.get("field");
 					var fkField = synthField.get("fk_field");
 					if(synthObj != null) {
-						Reflect.setField(obj,field,Reflect.field(synthObj,fkField));
-						this.synchronizeInternalLinks([synthObj]);
+						if(fkField == null) Reflect.setField(obj,field,synthObj.getValue()); else {
+							Reflect.setField(obj,field,Reflect.field(synthObj,fkField));
+							this.synchronizeInternalLinks([synthObj]);
+						}
 					}
 				}
 			}
@@ -6227,7 +6332,7 @@ saturn_db_DefaultProvider.prototype = {
 			var obj = [objs[_g]];
 			++_g;
 			var clazz = Type.getClass(obj[0]);
-			var model = this.getModel(obj[0]);
+			var model = this.getModel(clazz);
 			var priField = [model.getPrimaryKey()];
 			var secField = model.getFirstKey();
 			if(Reflect.field(obj[0],priField[0]) == null || Reflect.field(obj[0],priField[0]) == "") {
@@ -6397,6 +6502,7 @@ var saturn_db_Model = function(model,name) {
 		if(__map_reserved.strip_id_prefix != null?options.existsReserved("strip_id_prefix"):options.h.hasOwnProperty("strip_id_prefix")) this.stripIdPrefix = __map_reserved.strip_id_prefix != null?options.getReserved("strip_id_prefix"):options.h["strip_id_prefix"];
 		if(__map_reserved.alias != null?options.existsReserved("alias"):options.h.hasOwnProperty("alias")) this.alias = __map_reserved.alias != null?options.getReserved("alias"):options.h["alias"];
 		if(__map_reserved.flags != null?options.existsReserved("flags"):options.h.hasOwnProperty("flags")) this.flags = __map_reserved.flags != null?options.getReserved("flags"):options.h["flags"]; else this.flags = new haxe_ds_StringMap();
+		if(__map_reserved["file.new.label"] != null?options.existsReserved("file.new.label"):options.h.hasOwnProperty("file.new.label")) this.file_new_label = __map_reserved["file.new.label"] != null?options.getReserved("file.new.label"):options.h["file.new.label"];
 		if(__map_reserved.auto_activate != null?options.existsReserved("auto_activate"):options.h.hasOwnProperty("auto_activate")) this.autoActivate = Std.parseInt(__map_reserved.auto_activate != null?options.getReserved("auto_activate"):options.h["auto_activate"]);
 		if(__map_reserved.actions != null?options.existsReserved("actions"):options.h.hasOwnProperty("actions")) {
 			var actionTypeMap;
@@ -6569,6 +6675,7 @@ saturn_db_Model.prototype = {
 	,priColKey: null
 	,idRegEx: null
 	,stripIdPrefix: null
+	,file_new_label: null
 	,searchMap: null
 	,ftsColumns: null
 	,alias: null
@@ -6580,6 +6687,9 @@ saturn_db_Model.prototype = {
 	,publicConstraintField: null
 	,userConstraintField: null
 	,customSearchFunctionPath: null
+	,getFileNewLabel: function() {
+		return this.file_new_label;
+	}
 	,isProgramSaveAs: function(clazzName) {
 		if(this.theModel.exists("programs") && (function($this) {
 			var $r;
@@ -6844,10 +6954,12 @@ saturn_db_Model.prototype = {
 	}
 	,isSyntheticallyBound: function(fieldName) {
 		var synthFields = this.theModel.get("fields.synthetic");
-		var $it0 = synthFields.keys();
-		while( $it0.hasNext() ) {
-			var syntheticFieldName = $it0.next();
-			if((__map_reserved[syntheticFieldName] != null?synthFields.getReserved(syntheticFieldName):synthFields.h[syntheticFieldName]).get("field") == fieldName) return true;
+		if(synthFields != null) {
+			var $it0 = synthFields.keys();
+			while( $it0.hasNext() ) {
+				var syntheticFieldName = $it0.next();
+				if((__map_reserved[syntheticFieldName] != null?synthFields.getReserved(syntheticFieldName):synthFields.h[syntheticFieldName]).get("field") == fieldName) return true;
+			}
 		}
 		return false;
 	}
@@ -6856,6 +6968,34 @@ saturn_db_Model.prototype = {
 			var this1 = this.theModel.get("fields.synthetic");
 			return this1.exists(fieldName);
 		} else return false;
+	}
+	,getPseudoSyntheticObjectName: function(fieldName) {
+		if(this.theModel.exists("fields.synthetic")) {
+			var $it0 = (function($this) {
+				var $r;
+				var this1 = $this.theModel.get("fields.synthetic");
+				$r = this1.keys();
+				return $r;
+			}(this));
+			while( $it0.hasNext() ) {
+				var objName = $it0.next();
+				if(((function($this) {
+					var $r;
+					var this2 = $this.theModel.get("fields.synthetic");
+					$r = this2.get(objName);
+					return $r;
+				}(this))).get("fk_field") == null) {
+					var boundField = ((function($this) {
+						var $r;
+						var this3 = $this.theModel.get("fields.synthetic");
+						$r = this3.get(objName);
+						return $r;
+					}(this))).get("field");
+					if(fieldName == boundField) return objName;
+				}
+			}
+		}
+		return null;
 	}
 	,getSyntheticallyBoundField: function(syntheticFieldName) {
 		if(this.theModel.exists("fields.synthetic")) {
@@ -7193,9 +7333,10 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 			};
 			this.getColumns(connection,schemaName,tableName,func);
 		} else if(modelClazzes.length == 0 && this.modelsToProcess == 1) {
+			this.postConfigureModels();
 			this.closeConnection(connection);
 			if(cb != null) {
-				this.debug("All Models have been processed (handing back control to caller callback)");
+				this.debug("All Models have been processed (handing back control to caller callback2)");
 				cb(null);
 			}
 		} else {
@@ -7260,7 +7401,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 		if(selectorSQL != "") selectorSQL = " AND " + selectorSQL;
 		this.getConnection(this.config,function(err,connection) {
 			if(err != null) callBack(null,err); else {
-				var sql = selectClause + "  WHERE UPPER(" + _g.columnToStringCommand(keyCol) + ") " + _g.buildSqlInClause(ids.length) + " " + selectorSQL;
+				var sql = selectClause + "  WHERE UPPER(" + _g.columnToStringCommand(keyCol) + ") " + _g.buildSqlInClause(ids.length,0,"upper") + " " + selectorSQL;
 				var additionalSQL = _g.generateUserConstraintSQL(clazz);
 				if(additionalSQL != null) sql += " AND " + additionalSQL;
 				sql += " ORDER BY " + keyCol;
@@ -7456,7 +7597,6 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 				_g.debug("startswith" + sql);
 				try {
 					connection.execute(sql,[id],function(err1,results) {
-						_g.debug("startswith" + err1);
 						if(err1 != null) callBack(null,err1); else callBack(results,null);
 						_g.closeConnection(connection);
 					});
@@ -9289,7 +9429,7 @@ var saturn_server_plugins_core_AuthenticationPlugin = function(server,config) {
 	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
 	this.configureAuthenticationManager();
 	this.installAuth();
-	if(config.password_in_token) this.debug("Warning storing user passwords in tokens is probably a very bad idea!!!!!!!!!!!");
+	if(config.password_in_token) this.debug("Warning passwords will be stored in JSON web tokens using AES encryption.  " + "To disable set password_in_token to false in your confirguation file");
 };
 $hxClasses["saturn.server.plugins.core.AuthenticationPlugin"] = saturn_server_plugins_core_AuthenticationPlugin;
 saturn_server_plugins_core_AuthenticationPlugin.__name__ = ["saturn","server","plugins","core","AuthenticationPlugin"];
@@ -9300,20 +9440,25 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 		var _g = this;
 		var jwt = js_Node.require("jsonwebtoken");
 		var uuid = js_Node.require("node-uuid");
+		var crypto = js_Node.require("crypto");
 		this.saturn.getServer().post("/login",function(req,res,next) {
 			var username = req.params.username;
 			var password = req.params.password;
 			_g.authManager.authenticate(username,password,function(user) {
+				var db = _g.saturn.getRedisClient();
 				user.uuid = uuid.v4();
 				user.username = username;
 				if(_g.config.password_in_token) {
-					saturn_core_Util.debug("Storing password in token!!!!");
-					user.password = password;
+					saturn_core_Util.debug("Warning storing password in token is insecure");
+					var iv = crypto.randomBytes(_g.config.encrypt_iv_length);
+					var cipher = crypto.createCipheriv(_g.config.algorithm,new Buffer(_g.config.encrypt_password),iv);
+					var crypted = cipher.update(password,"utf8","hex");
+					crypted += cipher["final"]("hex");
+					password = crypted;
+					user.password = iv.toString("hex") + ":" + password;
 				}
-				var db = _g.saturn.getRedisClient();
-				db.set(user.uuid,user.username);
-				saturn_core_Util.debug("a");
-				var token = jwt.sign(user,_g.config.jwt_secret,{ expiresIn : Std.string(_g.config.jwt_timeout) + "m"});
+				db.set("USER_UUID: " + user.uuid,user.username);
+				var token = jwt.sign({ firstname : user.firstname, lastname : user.lastname, email : user.email, uuid : user.uuid, username : user.username, password : user.password},_g.config.jwt_secret,{ expiresIn : Std.string(_g.config.jwt_timeout) + "m"});
 				res.send(200,{ token : token, full_name : user.firstname + " " + user.lastname, email : user.email, 'projects' : user.projects});
 				next();
 			},function(err) {
@@ -9326,33 +9471,48 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 			socket.on("logout",function(data) {
 				_g.saturn.getSocketUser(socket,function(authUser) {
 					if(authUser != null) {
-						js_Node.console.log("Logging " + authUser.username + " out");
 						var db1 = _g.saturn.getRedisClient();
-						db1.del(authUser.uuid);
+						db1.del("USER_UUID: " + authUser.uuid);
 						_g.saturn.setUser(socket,null);
 					}
 				});
 			});
 		});
+		this.saturn.setAuthenticationPlugin(this);
 	}
 	,configureAuthenticationManager: function() {
 		var clazzStr = this.config.authentication_manager.clazz;
 		var clazz = Type.resolveClass(clazzStr);
-		this.authManager = Type.createInstance(clazz,[this.config.authentication_manager]);
+		this.authManager = Type.createInstance(clazz,[this.config.authentication_manager,this]);
 		if(!js_Boot.__instanceof(this.authManager,saturn_server_plugins_core_AuthenticationManager)) throw new js__$Boot_HaxeError("Unable to setup authentication manager\n" + clazzStr + " should implement " + Std.string(saturn_server_plugins_core_AuthenticationManager));
 	}
 	,additionalAuth: function(user,onSuccess,onFailure) {
-		var _g = this;
-		js_Node.console.log("Validating jwt token is current");
 		var db = this.saturn.getRedisClient();
-		this.debug("Got redis");
 		this.saturn.isUserAuthenticated(user,function(authUser) {
-			_g.debug("here");
-			if(authUser != null) onSuccess(); else {
-				_g.debug("Returning failure");
-				onFailure("On Error","invalid_token");
-			}
+			if(authUser != null) onSuccess(); else onFailure("On Error","invalid_token");
 		});
+	}
+	,decryptUserPassword: function(user,cb) {
+		var crypto = js_Node.require("crypto");
+		var dBuffer = Buffer;
+		var parts = user.password.split(":");
+		var decipher = crypto.createDecipheriv(this.config.algorithm,new Buffer(this.config.encrypt_password),dBuffer.from(parts[0],"hex"));
+		var dec = decipher.update(parts[1],"hex","utf8");
+		dec += decipher["final"]("utf8");
+		var userClone = new saturn_core_User();
+		userClone.firstname = user.firstname;
+		userClone.lastname = user.lastname;
+		userClone.password = dec;
+		userClone.username = user.username;
+		cb(null,userClone);
+	}
+	,isUserAuthenticated: function(user,cb) {
+		if(user == null) cb(null); else {
+			var db = this.saturn.getRedisClient();
+			db.get("USER_UUID: " + user.uuid,function(err,reply) {
+				if(err || reply == null) cb(null); else cb(user);
+			});
+		}
 	}
 	,__class__: saturn_server_plugins_core_AuthenticationPlugin
 });
@@ -9409,14 +9569,14 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 					cb(err,provider);
 					_g.debug(err);
 				});
-				provider.enableCache(false);
+				provider.enableCache(_g.config.enable_cache);
 			},function(resource) {
 			});
 			saturn_client_core_CommonCore.setPool(this.config.name,pool,this.config.default_provider);
 		} else {
 			this.debug("Configuring provider");
 			var provider1 = Type.createInstance(clazz,[models,this.config.connection,false]);
-			provider1.enableCache(false);
+			provider1.enableCache(this.config.enable_cache);
 			provider1.dataBinding(false);
 			provider1.readModels(function(err1) {
 				if(err1 != null) {
@@ -9457,14 +9617,14 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 					cb(err,provider);
 					_g.debug(err);
 				});
-				provider.enableCache(false);
+				provider.enableCache(config.enable_cache);
 			},function(resource) {
 			});
 			saturn_client_core_CommonCore.setPool(config.name,pool,config.default_provider);
 		} else {
 			this.debug("Configuring provider");
 			var provider1 = Type.createInstance(clazz,[models,config,false]);
-			provider1.enableCache(false);
+			provider1.enableCache(config.enable_cache);
 			provider1.dataBinding(false);
 			provider1.setName(config.name);
 			provider1.readModels(function(err1) {
@@ -9523,6 +9683,7 @@ saturn_server_plugins_core_MySQLAuthPlugin.prototype = {
 	config: null
 	,authenticate: function(username,password,onSuccess,onFailure,src) {
 		var mysql = js_Node.require("mysql2");
+		saturn_core_Util.debug("Connecting as " + username);
 		var connection = mysql.createConnection({ host : this.config.hostname, user : username, password : password, database : username});
 		connection.on("connect",function(connect) {
 			if(connect) connection.query("\r\n                    SELECT\r\n                     *\r\n                    FROM\r\n                        icmdb_page_secure.V_USERS\r\n                    WHERE\r\n                        Name=?\r\n                ",[username],function(err,res) {
@@ -9579,10 +9740,9 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
             timeout: 600000,
             keepAliveTimeout: 300000 // free socket keepalive for 30 seconds
         });
-		this.proxy = httpProxy.createProxyServer({ agent : agent});
+		this.proxy = httpProxy.createProxyServer({ agent : agent, changeOrigin : true});
 		var server = this.getSaturnServer().getServer();
 		var restify = js_Node.require("restify");
-		server["use"](this.wrapMiddleware(restify.bodyParser({ mapParams : true})));
 		var _g = 0;
 		var _g1 = Reflect.fields(this.config.routes);
 		while(_g < _g1.length) {
@@ -9590,6 +9750,24 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 			++_g;
 			var routeConfig = [Reflect.field(this.config.routes,route)];
 			this.debug("Routing " + route + " to " + routeConfig[0].target);
+			if(routeConfig[0].prestart != null) {
+				var proc = js_Node.require("child_process").spawn(routeConfig[0].prestart,routeConfig[0].args,{ env : js_Node.process.env, cwd : routeConfig[0].cwd});
+				proc.stderr.on("data",(function() {
+					return function(error) {
+						_g2.debug(error);
+					};
+				})());
+				proc.stdout.on("data",(function() {
+					return function(error1) {
+						_g2.debug(error1);
+					};
+				})());
+				proc.on("exit",(function() {
+					return function() {
+						_g2.debug("Exited");
+					};
+				})());
+			}
 			if(routeConfig[0].GET) {
 				this.debug("Adding GET proxy");
 				server.get(route,(function(routeConfig) {
@@ -9608,11 +9786,11 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 				})(routeConfig));
 			}
 		}
-		this.proxy.on("error",function(error,req2,res2) {
+		this.proxy.on("error",function(error2,req2,res2) {
 			var json;
-			_g2.debug("proxy error",error);
+			_g2.debug("proxy error",error2);
 			if(!res2.headersSent) res2.writeHead(500,{ 'content-type' : "application/json"});
-			json = { error : "proxy_error", reason : error.message};
+			json = { error : "proxy_error", reason : error2.message};
 			res2.end(haxe_Json.stringify(json,null,null));
 		});
 	}
@@ -9620,10 +9798,17 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 		this.proxy.web(req,res,{ target : target});
 	}
 	,wrapMiddleware: function(middleware) {
+		var _g = this;
 		return function(req,res,next) {
-			if(StringTools.startsWith(req.path(),"/GlycanBuilder")) next(); else if((middleware instanceof Array) && middleware.__enum__ == null) middleware[0](req,res,function() {
-				middleware[1](req,res,next);
-			}); else middleware(req,res,next);
+			if(StringTools.startsWith(req.path(),"/GlycanBuilder")) {
+				_g.debug("Skipping " + req.getPath());
+				next();
+			} else {
+				_g.debug("Playing " + req.getPath());
+				if((middleware instanceof Array) && middleware.__enum__ == null) middleware[0](req,res,function() {
+					middleware[1](req,res,next);
+				}); else middleware(req,res,next);
+			}
 		};
 	}
 	,__class__: saturn_server_plugins_core_ProxyPlugin
@@ -9727,7 +9912,7 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 				if(Object.prototype.hasOwnProperty.call(this.config.authentication,message)) auth = true;
 			}
 		}
-		if(auth || message == "_data_request_objects_namedquery") {
+		if(auth) {
 			this.debug("AUTH_REQUIRED: " + message);
 			wrapperCb = function(obj,socket) {
 				if(message == "_data_request_objects_namedquery") {
@@ -9745,7 +9930,10 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 								return;
 							} else _g.debug("Role is not public");
 						} else _g.debug("Missing query configuration");
-					} else cb(obj,socket);
+					} else {
+						cb(obj,socket);
+						return;
+					}
 				}
 				_g.saturn.isSocketAuthenticated(socket,function(user) {
 					if(user != null) {
@@ -9907,26 +10095,41 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 					var connectAsUser = "";
 					var config = provider.getConfig();
 					if(config != null) connectAsUser = config.connect_as_user;
+					_g.debug("Connect as user is: " + connectAsUser);
 					if(command != "_request_models" && (connectAsUser == "preferred" || connectAsUser == "force")) {
-						_g.debug("Connect as user is: " + connectAsUser);
 						if(user == null) {
 							if(connectAsUser == "force") {
 								_g.debug("Connect as user is forced but user is not logged in to " + providerName + " " + command);
 								_g.handleError(data,"You must be logged in to use this provider");
 								return;
+							} else {
+								_g.debug("Calling method on Provider");
+								cb(data,provider,user,function() {
+									if(disconnectOnEnd) provider._closeConnection();
+								});
 							}
 						} else {
 							_g.debug("Connecting as user");
-							provider = provider.generatedLinkedClone();
-							provider.setConnectAsUser(true);
-							provider.setUser(user);
+							var original_provider = provider;
+							var userProvider = provider.generatedLinkedClone();
+							userProvider.setConnectAsUser(true);
 							disconnectOnEnd = true;
+							_g.getSaturnServer().getAuthenticationPlugin().decryptUserPassword(user,function(err1,user1) {
+								userProvider.setUser(user1);
+								if(err1 != null) _g.handleError(data,err1); else {
+									_g.debug("Calling method on Provider");
+									cb(data,userProvider,user1,function() {
+										if(disconnectOnEnd) userProvider._closeConnection();
+									});
+								}
+							});
 						}
+					} else {
+						_g.debug("Calling method on Provider");
+						cb(data,provider,user,function() {
+							if(disconnectOnEnd) provider._closeConnection();
+						});
 					}
-					_g.debug("Calling method on Provider");
-					cb(data,provider,user,function() {
-						if(disconnectOnEnd) provider._closeConnection();
-					});
 				}
 			},providerName);
 		});
@@ -9972,7 +10175,6 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		} catch( e ) {
 			if (e instanceof js__$Boot_HaxeError) e = e.val;
 			saturn_client_core_CommonCore.releaseResource(provider);
-			saturn_core_Util.debug("RETURN ERROR");
 			saturn_core_Util.debug(e);
 			this.handleError(data,e);
 			cb();
@@ -10060,7 +10262,7 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 			params = this.autoCompleteFields(params,user);
 			var clazz = null;
 			if(data.class_name != null) clazz = Type.resolveClass(data.class_name);
-			provider.getByNamedQuery(data.queryId,params,clazz,false,function(objs,err) {
+			provider.getByNamedQuery(data.queryId,params,clazz,provider.getConfig().enable_cache,function(objs,err) {
 				var json = { };
 				saturn_client_core_CommonCore.releaseResource(provider);
 				json.error = err;
@@ -10077,23 +10279,25 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 	}
 	,autoCompleteFields: function(params,user) {
 		var retParams = [];
-		var _g = 0;
-		while(_g < params.length) {
-			var paramSet = params[_g];
-			++_g;
-			var _g1 = 0;
-			var _g2 = Reflect.fields(paramSet);
-			while(_g1 < _g2.length) {
-				var field = _g2[_g1];
-				++_g1;
-				if(field == "_username") {
-					saturn_core_Util.debug("Setting username to " + user.username);
-					paramSet._username = user.username;
+		if((params instanceof Array) && params.__enum__ == null) {
+			var _g = 0;
+			while(_g < params.length) {
+				var paramSet = params[_g];
+				++_g;
+				var _g1 = 0;
+				var _g2 = Reflect.fields(paramSet);
+				while(_g1 < _g2.length) {
+					var field = _g2[_g1];
+					++_g1;
+					if(field == "_username") {
+						saturn_core_Util.debug("Setting username to " + user.username);
+						paramSet._username = user.username;
+					}
 				}
+				retParams.push(paramSet);
 			}
-			retParams.push(paramSet);
-		}
-		return retParams;
+			return retParams;
+		} else return params;
 	}
 	,'delete': function(data,provider,user,cb) {
 		var _g = this;

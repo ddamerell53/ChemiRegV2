@@ -2589,11 +2589,13 @@ function login(){
 function _login(username, password){
 	switch_screen('login_progress');
 
-        clientCore.login(username, password, function(err){
-		if(err != null){
-                        switch_screen('login');
+    clientCore.login(username, password, function(err){
+	    if(err != null){
+            switch_screen('login');
 
 			show_message('Login Failed', 'Please try again with valid credentials ' + err);
+		}else{
+		    //switch_screen('search');
 		}
 	});
 }

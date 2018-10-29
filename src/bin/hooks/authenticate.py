@@ -34,6 +34,7 @@ from zxcvbn import zxcvbn
 from email_manager import EmailManager
 from connection_manager import ConnectionManager
 import sdf_register
+import re
 
 class AuthenticationManager(object):
 	def __init__(self, conn=None, fetch_manager = None, crud_manager=None):
@@ -489,7 +490,13 @@ class AuthenticationManager(object):
 			where
 				project_name = $1	
 		''')
-		
+
+		self.delete_custom_field_cur = self.conn.cursor()
+		self.delete_custom_field_cur.execute('''
+			prepare delete_custom_field as
+			delete from custom_fields where project_id=(select id from projects where project_name = $1) and name = $2
+		''')
+
 		self.is_user_administrator_cur = self.conn.cursor()
 		self.is_user_administrator_cur.execute(''' 
 			prepare is_user_administrator as
@@ -659,7 +666,7 @@ class AuthenticationManager(object):
 		
 	def delete_project(self, project_name):
 		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads') \
-				and not project_name.endswith('/Custom Row Buttons/Templates') and not project_name.endswith('/Custom Fields'):
+				and not project_name.endswith('/Custom Row Buttons/Templates') and not project_name.endswith('/Custom Row Buttons/Custom Fields'):
 			self.delete_project(project_name + '/Custom Row Buttons')
 			
 			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History')  and not project_name.endswith('/Templates') and not project_name.endswith('/Custom Fields'):
@@ -948,7 +955,7 @@ class AuthenticationManager(object):
 		self.add_custom_field(project_name, 'varchar', 'human_name', 'Human Name', True, True, False)
 		self.add_custom_field(project_name, 'bool', 'searchable', 'searchable', True, True, False)
 		self.add_custom_field(project_name, 'bool', 'calculated', 'Calculated', True, True, False)
-		self.add_custom_field(project_name, 'bool', 'before_update_function', 'Before update function', True, True, False)
+		self.add_custom_field(project_name, 'varchar', 'before_update_function', 'Before update function', False, True, False)
 
 	def create_template_project(self, parent_project_name):
 		project_name = parent_project_name + '/Templates'
@@ -1074,6 +1081,13 @@ class AuthenticationManager(object):
 			self.conn.commit()
 		else:
 			raise InvalidUserException('User ' + username + ' doesn\'t exit')
+
+	def delete_custom_field(self, id):
+		entity = self.fetch_manager.get_entity(id, False)
+
+		parent_project_name = re.sub('/Custom Fields$', '', entity['project_name'])
+
+		self.delete_custom_field_cur.execute('execute delete_custom_field (%s,%s)', (parent_project_name, entity['compound_id']))
 
 	def update_user(self, original_username, first_name, last_name, email, username, password, account_type):
 		if original_username != username and self.is_user(username):
@@ -1746,7 +1760,6 @@ class AuthenticationManager(object):
 			
 			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)
 
-
 	def update_project_view(self, project_name):
 		custom_fields = self.get_custom_fields(project_name)
 
@@ -1790,6 +1803,8 @@ class AuthenticationManager(object):
 		self.conn.cursor().execute(view_sql)
 
 		print('Created view ' + corrected_project_name)
+
+
 
 
 class InsecurePasswordException(Exception):

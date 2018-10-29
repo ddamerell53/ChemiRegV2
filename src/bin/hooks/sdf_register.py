@@ -396,12 +396,12 @@ class CompoundManager(object):
 						changes[entity_pkey]['project_id'] = new_project_id
 						changes[entity_pkey]['upload_id'] = str(uuid.uuid4())
 
-						if new_project_name == 'Users':
+						if new_project_name == 'Users' and not 'bypass' in changes[entity_pkey]:
 							self._create_user(changes, entity_pkey)
 
 							changes[entity_pkey]['password'] = '<HIDDEN>'
 
-						if new_project_name == 'User to Project':
+						if new_project_name == 'User to Project' and not 'bypass' in changes[entity_pkey]:
 							self._create_user_to_project(changes, entity_pkey)
 
 						if new_project_name.endswith('/Custom Fields'):
@@ -415,7 +415,7 @@ class CompoundManager(object):
 							self.batch_insert_ss_table(new_project_name, changes[entity_pkey]['upload_id'] )
 
 						# Handle the special projects table
-						if new_project_name == 'Projects':
+						if new_project_name == 'Projects' and not 'bypass' in changes[entity_pkey]:
 							self._create_project(changes, entity_pkey)
 			
 						continue
@@ -431,13 +431,13 @@ class CompoundManager(object):
 			project_name = self.fetch_project_name_cur.fetchone()[0]
 
 			# Update custom projects for real tables
-			if project_name == 'Projects':
+			if project_name == 'Projects' and not 'bypass' in changes[entity_pkey]:
 				self._update_project(changes, entity_pkey)
-			elif project_name == 'Users':
+			elif project_name == 'Users' and not 'bypass' in changes[entity_pkey]:
 				self._update_user(changes, entity_pkey)
-			elif project_name == 'User to Project':
+			elif project_name == 'User to Project' and not 'bypass' in changes[entity_pkey]:
 				self._update_user_to_project(changes, entity_pkey)
-			elif project_name.endswith('/Custom Fields'):
+			elif project_name.endswith('/Custom Fields') and not 'bypass' in changes[entity_pkey]:
 				self._update_custom_field(changes, entity_pkey, new_project_name)
 			
 			project_fields = self.auth_manager.get_custom_fields(project_name)
@@ -620,7 +620,9 @@ class CompoundManager(object):
 		required = entity['required']
 		visible = entity['visible']
 		calculated = entity['calculated']
-		foreign_key_project = entity['foreign_key_project']
+
+		if 'foreign_key_project' in entity:
+			foreign_key_project = entity['foreign_key_project']
 
 		parent_project_name = re.sub('/Custom Fields$','',project_name)
 
@@ -629,7 +631,8 @@ class CompoundManager(object):
 
 		self.auth_manager.add_custom_field(parent_project_name, type_name, field_name, human_name, required, visible, calculated)
 
-		self.auth_manager.create_foreign_key(parent_project_name, field_name, foreign_key_project)
+		if 'foreign_key_project' in entity:
+			self.auth_manager.create_foreign_key(parent_project_name, field_name, foreign_key_project)
 
 	def _create_user_to_project(self, changes, entity_pkey):
 		entity = changes[entity_pkey]
@@ -841,6 +844,9 @@ class CompoundManager(object):
 
 			if entity['project_name'] == 'User to Project':
 				self.auth_manager.remove_user_from_project(entity['user_user_id'], entity['user_project_id'])
+
+			if entity['project_name'].endswith('/Custom Fields'):
+				self.auth_manager.delete_custom_field(id)
 
 			file_objs = self.fetch_manager.get_file_uploads(id)
 			for file_obj in file_objs:
@@ -2000,6 +2006,20 @@ class CompoundManager(object):
 		cur.execute('update compounds set insert_transaction_id=%s where insert_transaction_id=%s', (new_transaction_id, self.transaction_id))
 		cur.execute('update compounds set update_transaction_id=%s where update_transaction_id=%s', (new_transaction_id, self.transaction_id))
 		cur.execute('update compounds set archived_transaction_id=%s where archived_transaction_id=%s', (new_transaction_id, self.transaction_id))
+
+	#def import_core_projects(self):
+#		cur = self.conn.cursor()#
+		#cur.execute('''
+		#	select
+		#		project_name, entity_name, enable_structure_field, enable_attachment_field, id_group_name, enable_addition)
+		#	from
+		#		projects
+#
+#		''')
+
+
+
+
 
 class ValueToLongException(Exception):
 	def __init__(self, value):
