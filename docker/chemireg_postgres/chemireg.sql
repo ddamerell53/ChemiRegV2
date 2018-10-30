@@ -89,6 +89,12 @@ create table user_to_project (
 
 alter table user_to_project add constraint useR_project_idx UNIQUE (project_id, user_id);
 
+create table error_log (
+	id SERIAL primary key,
+	error_uuid char(55),
+	error_description text
+)
+
 create table compounds (
   id SERIAL primary key,
   compound_id varchar(200),

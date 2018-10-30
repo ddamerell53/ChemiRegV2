@@ -692,7 +692,8 @@ class CompoundManager(object):
 			email = entity['email']
 
 		if 'compound_id' in entity:
-			username = entity['compound_id'].lower()
+			entity['compound_id'] = entity['compound_id'].lower()
+			username = entity['compound_id']
 
 			if not self.auth_manager.validate_project_term(username):
 				raise Exception('Username ends with a reserved word!')
@@ -833,19 +834,18 @@ class CompoundManager(object):
 
 	def delete_compound(self, username, id):
 		if self.auth_manager.has_compound_permission(username, id):
+			uuid_str = str(uuid.uuid4())
+
 			entity = self.fetch_manager.get_entity(id, False)
 
-			# Handle special delete projects call
-			if entity['project_name'] == 'Projects':
-				self.auth_manager.delete_project(entity['compound_id'])
-
 			if entity['project_name'] == 'Users':
-				self.auth_manager.delete_user(entity['compound_id'])
+				self.auth_manager.delete_user(entity['compound_id'], uuid_str)
 
 			if entity['project_name'] == 'User to Project':
 				self.auth_manager.remove_user_from_project(entity['user_user_id'], entity['user_project_id'])
 
 			if entity['project_name'].endswith('/Custom Fields'):
+				# This should be archive custom fields
 				self.auth_manager.delete_custom_field(id)
 
 			file_objs = self.fetch_manager.get_file_uploads(id)
@@ -853,28 +853,84 @@ class CompoundManager(object):
 				file_path = file_obj['file_path']
 				os.unlink(file_path)
 
-			self.archive_compound_cur.execute("execute archive_compound (%s,%s,%s)",(id,self.transaction_id,str(uuid.uuid4())))
+			if entity['project_name'] == 'Projects':
+				self.auth_manager.delete_project(entity['compound_id'], uuid_str)
+
+			if entity['project_name'] == 'Users':
+				self.conn.cursor().execute('''
+					update
+						compounds
+					set
+						archived_transaction_id = %s
+					where
+						id = %s
+				''',(id, self.transaction_id))
+			else:
+				self.archive_compound_cur.execute("execute archive_compound (%s,%s,%s)",(id,self.transaction_id,uuid_str))
 			
 			self.monotone_transaction_ids()
 			
 			self.conn.commit()
-
-
 		else:
-			raise authenticate.UnauthorisedException('User not authorised for compound ' + id)	
+			raise authenticate.UnauthorisedException('User not authorised for compound ' + id)
+
+	def archive_all(self, project_name, on_update_cascade = False, uuid_str = str(uuid.uuid4())):
+		# When a project gets deleted all pointers to that project need to be archived
+		self.conn.cursor().execute('''set constraints custom_foreign_key_field_parent_project_id_fkey1 deferred''')
+
+		# All rows in project project_name are archived
+		self.conn.cursor().execute('''
+			update
+				compounds
+			set
+				compound_id = compound_id || '_archived_' || %s,
+				archived_transaction_id = %s
+			where
+				project_id = (select id from projects where project_name=%s)
+		''',(uuid_str,self.transaction_id, project_name))
+
+		if on_update_cascade:
+			# All rows pointing at rows from project project_name are archived
+			self.conn.cursor().execute('''
+				update
+					custom_foreign_key_field
+				set
+					custom_field_value = custom_field_value || '_archived_' || %s,
+					archived_transaction_id = %s
+				where
+					parent_project_id = (select id from projects where project_name=%s)
+			''', (uuid_str, self.transaction_id, project_name))
+
+			# Remove custom fields which reference the removed project
+			self.conn.cursor().execute('''
+				update
+					compounds
+				set
+					compound_id = compound_id || '_archived_' || %s,
+					archived_transaction_id = %s
+				where
+					id = any(
+						select
+							entity_id
+						from
+							custom_foreign_key_field
+						where
+							parent_project_id = (select id from projects where project_name = %s)
+					) and
+					project_id = any(select id from projects where project_name like %s)
+			''',(uuid_str, self.transaction_id, project_name, '%/Custom Fields'))
+
+		self.monotone_transaction_ids()
 
 	def add_salt(self, salt_code, salt_mol, salt_description):
 		salt_str = codecs.encode(salt_mol, 'base64').decode('ascii').rstrip()
 		self.insert_salt_cur.execute("execute insert_salt (%s,%s,%s)", (salt_code, salt_str, salt_description))
-		
-	
+
 	def add_salts(self, salts):
 		for salt in salts:
 			self.add_salt(salt['salt_code'], salt['salt_mol'], salt['salt_description'])
 
 		self.conn.commit()
-
-	
 
 	def create_prefix(self, prefix_code, description):
 		self.insert_prefix_code_cur.execute("execute insert_prefix_code (%s, %s)",(prefix_code, description))
