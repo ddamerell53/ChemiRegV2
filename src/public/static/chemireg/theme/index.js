@@ -2247,9 +2247,13 @@ function rerun(msgId){
 }
 
 function set_project(project, signal_change, cb){
-	document.getElementById('project_selection').value = project;
+	__set_project(project);
 
 	_set_project(project, signal_change, cb);
+}
+
+function __set_project(project){
+    document.getElementById('project_selection').value = project;
 }
 
 function _set_project(project, signal_change, cb){
@@ -2781,11 +2785,16 @@ function clear_project_selection(){
 }
 
 
-function refresh_session(){
-    switch_screen('session_loading_screen');
+function refresh_session(user, refresh_project_list_only = false){
+    if(!refresh_project_list_only){
+        switch_screen('session_loading_screen');
 
-	reset_paging_panel();
-	clear_results_table();
+        reset_paging_panel();
+        clear_results_table();
+    }
+
+    var _current_project = get_project();
+
 
 	var projectSelection = document.getElementById('project_selection');
 
@@ -2802,7 +2811,6 @@ function refresh_session(){
 						'mode': 'project_list',
 						'_username': null
 				};
-				
 
 
 				saturn.core.Util.getProvider().getByNamedQuery(
@@ -2940,24 +2948,30 @@ function refresh_session(){
 									upload_section.innerText = 'Select (Excel, CSV, Txt)'
 								}
 
-								set_project(real_projects[0], true, function(){
-                                    switch_to_default_screen();
+								if(!refresh_project_list_only){
+								    set_project(real_projects[0], true, function(){
+                                        switch_to_default_screen();
 
-                                    active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
-                                    inactive_list = ['registration_button', 'loading'];
+                                        active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
+                                        inactive_list = ['registration_button', 'loading'];
 
-                                    for(var i=0;i<active_list.length;i++){
-                                        if(active_list[i] == 'main_buttons'){
-                                            document.getElementById(active_list[i]).style.display='flex';
-                                        }else{
-                                            document.getElementById(active_list[i]).style.display='initial';
+                                        for(var i=0;i<active_list.length;i++){
+                                            if(active_list[i] == 'main_buttons'){
+                                                document.getElementById(active_list[i]).style.display='flex';
+                                            }else{
+                                                document.getElementById(active_list[i]).style.display='initial';
+                                            }
                                         }
-                                    }
 
-                                    for(var i=0;i<inactive_list.length;i++){
-                                        document.getElementById(inactive_list[i]).style.display='none';
-                                    }
-								});
+                                        for(var i=0;i<inactive_list.length;i++){
+                                            document.getElementById(inactive_list[i]).style.display='none';
+                                        }
+                                    });
+								}else{
+								    __set_project(_current_project);
+
+								    update_actions();
+								}
 							}
 						}
 				);
@@ -4034,6 +4048,12 @@ function save_changes(){
 						}
 						
 						update_paging_panel();
+
+                        var project = get_project();
+
+						if(project.endsWith('/Custom Fields') || project.endsWith('/Users') || project.endsWith('Projects')){
+						    refresh_session(null, true);
+						}
 					}
 				}
 		);
