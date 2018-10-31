@@ -96,7 +96,7 @@
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
 
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Results</button>
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Browse or Edit</button>
 
 					<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
 					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
@@ -105,7 +105,10 @@
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 
 
-					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| View Upload history</button>
+					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Upload history</button>
+					<button id="main_menu_templates" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Templates</button>
+					<button id="main_menu_custom_field_settings" class="main_menu" onclick="load_project_custom_fields()" style="margin-left:20px">| Custom Fields</button>
+					<button id="main_menu_custom_buttons_settings" class="main_menu" onclick="load_project_custom_buttons()" style="margin-left:20px">| Custom Buttons</button>
 					<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()" style="display:none;margin-left:20px"></button>
 
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
@@ -359,7 +362,7 @@
 
 						<div style="display:flex;flex-direction:row;;justify-content:center;">
 							<div>
-								<button style="width:100px;height:100px;padding:2px" id="upload_template_button" onclick="load_template_project()">Template file</button>
+								<button style="width:100px;height:100px;padding:2px" id="upload_template_button" onclick="load_template_project()">Template files</button>
 
 								<button style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
 								<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" style="width:100px;height:100px;padding:2px">File Upload</button>
