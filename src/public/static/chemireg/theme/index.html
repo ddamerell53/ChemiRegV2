@@ -13,6 +13,7 @@
 
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
 		
 		<!-- MIT -->
@@ -92,9 +93,12 @@
 				
 			</div>
 			<div >
-				<div  id="main_buttons" style="display:none;flex-direction:row;background-color:white;padding:5px; margin-bottom:10px" class="screen_button_container">
+				<div  id="main_buttons" class="screen_button_container">
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
 
+
+					<div class="menu-items">
+					<a href="#" class="menu_logo"><img src="images/ChemiReg-logo.png"/></a>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Results</button>
 
@@ -105,21 +109,50 @@
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 
 
-					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| View Upload history</button>
+					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()">View Upload history</button>
 					<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()" style="display:none;margin-left:20px"></button>
 
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
-					
+					</div>
 
-					<div id="project_selection_div" style="display:inline-block;margin:initial;">
-						Projects
-						<select  id="project_selection" style="display:none;height:initial;margin:initial;margin-right:10px;width:100%;max-width:300px">
+					<div id="project_selection_div">
+						<select  id="project_selection">
 							<option>
 								Projects
 							</option>
 						</select>
+						<label>Projects</label>
+						<!--<div id="projects_hide_special_button" onclick="toggle_hide_special_projects()" style="font-size:20pt">+</div>-->
 					</div>
-					<button id="projects_hide_special_button" class="main_menu" onclick="toggle_hide_special_projects()" style="font-size:20pt">+</button>
+					
+					
+					<script>
+					
+					document.getElementById('project_selection').addEventListener("mousedown", function(e){
+						mousePos(e);
+					});
+					
+					function mousePos(e) {
+					    var cursorX = e.clientX;
+					    var cursorY = e.clientY;
+					    
+					    var cursorXPercent = cursorX / window.innerWidth * 100;
+					    
+					    console.log(cursorX);
+					    console.log(cursorY);
+					    console.log('--');
+					    console.log(cursorXPercent);
+					    console.log('------');
+					    
+					    if (cursorXPercent > 96) {
+					    	document.getElementById("project_selection").parentElement.classList.toggle("show-special");
+					    	toggle_hide_special_projects();
+					    }
+					    
+					}
+					
+					</script>
+					
 
 					</div>
 				<div style="display:flex;flex-direction:row">
@@ -138,7 +171,7 @@
 
 		
 		<div id="login" style="position: relative;  height: 100%;background-color:#2c5aa0;display:none">
-			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+			<div class="login-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
 			<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
 			<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
 
@@ -146,10 +179,10 @@
 
 			<div >
 				<label class="login_field_username_label" style="display:inline-block" for="username">Username</label>
-				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block;border: 1px solid #029696;border: 1px solid #029696;    height:30px;    width: 200px;">
+				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block; height:30px; width: 200px;">
 
 				<label class="login_field_password_label" style="display:inline-block" for="password">Password</label>
-				<input class="login_field" style="display:inline-block;border: 1px solid #029696;border: 1px solid #029696;    height:30px;    width: 200px;" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
+				<input class="login_field" style="display:inline-block; height:30px;    width: 200px;" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
 
 			</div>
 			<div style="margin-top:10px;overflow: auto;text-align:center;">
@@ -204,7 +237,7 @@
 						<thead style="background-color:rgb(44, 90, 160);color:white">
 							
 						</thead>
-						<tbody id="compounds_results" style="font-size: small;background-color:white">
+						<tbody id="compounds_results" style="background-color:white">
 
 						</tbody>
 					</table>
@@ -275,7 +308,7 @@
 		</div>
 
 		<div id="login_progress" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
-			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+			<div class="login-progress-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
 				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
 				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
 
@@ -333,46 +366,45 @@
 
 
 
-			<div style="margin:auto;width:70%;height:50%;background-color: white;  border-radius: 10px;">
+			<div class="search-box">
 
 
 
 
-				<h2 style="margin-left:10px">Search</h2>
-				<div style="display:flex;">
+				<h3>Search</h3>
+				<div class="search-inner" style="display:flex;">
 					<select style="display:none;" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
 
-					<label id="search_wildcard_label"  style="border:none;margin:2px;">
-						Wildcard
+					<button id="search_draw_structure_button" onclick="open_structure_window_for_search(true)" style="display:none">Draw Structure</button>
 
-					<input id="wildcard_search" type="checkbox"    style="" checked/>
+					<button id="search_button_search" onclick="search(true)"><i class="fa fa-search" aria-hidden="true"></i></button>
+					
+					<label id="search_wildcard_label"  style="border:none;">Wildcard
+						<input id="wildcard_search" type="checkbox" style="" checked/>
 					</label>
-
-
-					<button id="search_draw_structure_button" onclick="open_structure_window_for_search(true)" style="margin:2px;display:none">Draw Structure</button>
-
-					<button id="search_button_search" style="margin:2px" onclick="search(true)">&#x1f50d;</button>
+					
 				</div>
 				<div id="home_upload_panel">
-					<h2 style="margin-left:10px">Upload Files</h2>
+					<h3>Upload Files</h3>
 					<div id="upload_drop_component" style="display:flex;justify-content:center;flex-direction:column;">
 
-						<div style="display:flex;flex-direction:row;;justify-content:center;">
-							<div>
-								<button style="width:100px;height:100px;padding:2px" id="upload_template_button" onclick="load_template_project()">Template file</button>
+						<div style="display:flex;">
+							<div class="upload-buttons">
+								<button id="upload_template_button" class="button-text" onclick="load_template_project()">Template file</button>
 
-								<button style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
-								<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" style="width:100px;height:100px;padding:2px">File Upload</button>
+								<button class="button-icon" style="background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								
+								<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" class="button-text">File Upload</button>
 
 								<input onclick="this.value=''" type="file" id="upload_simple_input" style="display:none" onchange="show_simple_upload(this.files)" accept=".xlsx,.csv,.txt,.sdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple/>
 
-								<button id="upload_workflow_push_to_validate" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button id="upload_workflow_push_to_validate" class="button-icon" style="background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
 
-								<button disabled id="upload_validation_button" style="width:100px;height:100px;;padding:2px">Validated</button>
+								<button disabled id="upload_validation_button" class="button-text" >Validated</button>
 
-								<button id="upload_workflow_push_to_upload" style="width:50px;height:50px;;padding:2px;background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button id="upload_workflow_push_to_upload" class="button-icon" style="background-image:url('images/workflow_left_grey.png');color:transparent;background-repeat:no-repeat;" >A</button>
 
-								<button onclick="register_sdf_ui()" disabled id="upload_upload_button" style="width:100px;height:100px;;padding:2px">Upload</button>
+								<button onclick="register_sdf_ui()" disabled id="upload_upload_button" class="button-text">Upload</button>
 							</div>
 
 						</div>
@@ -384,7 +416,7 @@
 		</div>
 
 		<div id="session_loading_screen" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
-			<div style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+			<div class="session-loading-screen-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
 				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
 				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
 

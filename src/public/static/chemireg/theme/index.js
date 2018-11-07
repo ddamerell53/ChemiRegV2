@@ -1101,7 +1101,7 @@ function add_row(compound_table_body, compound, replace_row){
 	
 	compound_id_cell.appendChild(compound_id_span);
 	
-	compound_id_span.addEventListener('click', function(event){
+	compound_id_span.addEventListener('mousedown', function(event){
 		make_editable(event.target);
 	});
 	
@@ -1358,7 +1358,7 @@ function add_row(compound_table_body, compound, replace_row){
 				if(field_item.calculated == true){
 					field_cell.classList.add('calculated_field');
 				}else{
-					field_cell.addEventListener('click', function(event){
+					field_cell.addEventListener('mousedown', function(event){
 						make_editable(event.target);
 					});
 
@@ -2762,7 +2762,7 @@ function toggle_hide_special_projects(){
     hide_special_projects(!get_hide_special_projects());
 
     update_actions();
-
+    /**
     var button = document.getElementById('projects_hide_special_button');
 
     if(button.innerText == '+'){
@@ -2770,7 +2770,9 @@ function toggle_hide_special_projects(){
     }else{
         button.innerText = '+';
     }
+    */
 }
+
 
 function clear_project_selection(){
     var projectSelection = document.getElementById('project_selection');
@@ -4762,7 +4764,7 @@ class UploadReportPanel {
         const button = this.get_file_upload_button();
 
         let color = 'white';
-        let font_color = '#555';
+        let font_color = '#2c5aa0';
 
         if(this.upload_state == UploadState.PASSED){
             color = 'green';
@@ -4786,7 +4788,7 @@ class UploadReportPanel {
         const validation_button = document.getElementById('upload_validation_button');
 
         let color = 'white';
-        let font_color = '#555';
+        let font_color = '#2c5aa0';
 
         if(this.upload_state != UploadState.PASSED){
             this.set_validation_button_state(false);
