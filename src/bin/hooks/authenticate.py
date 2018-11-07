@@ -43,7 +43,7 @@ class AuthenticationManager(object):
 
 		self.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
 
-		self.include_scarab = False
+		self.include_scarab = True
 		self.user_registration_enabled = True
 		self.user_registration_disabled_msg = 'Access by invitation only'
 		self.email_manager = EmailManager()
@@ -1113,7 +1113,11 @@ class AuthenticationManager(object):
 		
 		self.crud_manager.save_changes('administrator', changes, project_name + '/Custom Row Buttons')
 		
-		self.conn.commit()		
+		self.conn.commit()
+
+	def add_crud_manager(self):
+		if self.crud_manager is None:
+			self.crud_manager = sdf_register.CompoundManager(None, self)
 	
 	def authenticate_scarab(self, username, password):
 		conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', username, password)
@@ -1137,24 +1141,45 @@ class AuthenticationManager(object):
 		else:
 			if not self.is_user(username, 'scarab'):
 				print('Registering user')
-				self.register_user(row[0], row[1], row[2], username, None, 'scarab', True)
+
+				changes = {
+					'-1': {
+						'first_name': row[0],
+						'last_name': row[1],
+						'email': row[2],
+						'compound_id': username,
+						'password': password,
+						'account_type': 'scarab'
+					}
+				}
+
+				self.add_crud_manager()
+
+				self.crud_manager.save_changes('administrator', changes, 'Users')
+
+				#self.register_user(row[0], row[1], row[2], username, None, 'scarab', True)
 
 			return True
 
-	def delete_user(self, username, uuid_str = str(uuid.uuid4())):
-		if self.is_user(username):
-			self.delete_project(username + '/Settings')
+	def disable_user(self, username):
+		self.conn.cursor().execute('''
+			update
+				users
+			set
+				archive_date = localtimestamp
+			where
+				username = %s
+		''', (username,))
 
-			self.conn.cursor().execute('''
-				update
-					users
-				set
-					archive_date = localtimestamp
-				where
-					username = %s
-			''', (username,))
-		else:
-			raise InvalidUserException('User ' + username + ' doesn\'t exit')
+	def enable_user(self, username):
+		self.conn.cursor.execute('''
+			update
+				users
+			set
+				archive_date = null
+			where
+				username = %s
+		''', (username,))
 
 	def delete_custom_field(self, id):
 		entity = self.fetch_manager.get_entity(id, False)
@@ -1179,12 +1204,12 @@ class AuthenticationManager(object):
 		if original_username != username and self.is_user(username):
 			raise UserRegistrationException('User already exists')
 
-		if account_type != 'scarab' and not self.password_passes(password, [first_name, last_name, email, username]):
+		if account_type != 'scarab'   and not password is None and not self.password_passes(password, [first_name, last_name, email, username]):
 			raise InsecurePasswordException('Insecure password, please try another')
 
 		password_hash = None
 
-		if account_type == 'internal':
+		if account_type == 'internal' and password is not None:
 			password_hash = self.pwd_context.hash(password)
 		else:
 			password_hash = None
@@ -1195,9 +1220,18 @@ class AuthenticationManager(object):
 			last_name,
 			email,
 			username,
-			password_hash,
 			account_type
 		))
+
+		if password_hash is not None:
+			self.conn.cursor().execute('''
+				update
+					users
+				set
+					password_hash = %s
+				where
+					username = %s
+			''', password_hash, username)
 
 		self.rename_project(username + '/Settings', original_username + '/Settings')
 
@@ -1205,7 +1239,7 @@ class AuthenticationManager(object):
 		if not self.user_registration_enabled and account_type != 'scarab':
 			raise UserRegistrationDisabledException(self.user_registration_disabled_msg)
 
-		if (not skip_external_check) and self.include_scarab:
+		if (not skip_external_check) and self.include_scarab and account_type != 'scarab':
 			cur = self.scarab_conn.cursor()
 			cur.execute('''
 				SELECT
@@ -1258,13 +1292,16 @@ class AuthenticationManager(object):
 				
 			self.crud_manager.save_changes('administrator', changes, username + '/Settings')
 			
-			self.add_user_to_project(username, 'SGC')			
-			self.add_user_to_project(username, 'SGC - Oxford')
-			self.add_user_to_project(username, 'SGC/Supplier List')
-			self.add_user_to_project(username, 'SGC/Search History')
-			self.add_user_to_project(username, 'SGC - Oxford/Search History')
-			self.add_user_to_project(username, 'SGC/Salts')
-			self.add_user_to_project(username, 'SGC/Compound Classifications')
+			#self.add_user_to_project(username, 'SGC')
+			#self.add_user_to_project(username, 'SGC - Oxford')
+			#self.add_user_to_project(username, 'SGC/Supplier List')
+			#self.add_user_to_project(username, 'SGC/Search History')
+			#self.add_user_to_project(username, 'SGC - Oxford/Search History')
+			#self.add_user_to_project(username, 'SGC/Salts')
+			#self.add_user_to_project(username, 'SGC/Compound Classifications')
+
+
+
 			
 
 		self.conn.commit()
@@ -2015,7 +2052,24 @@ if __name__ == '__main__':
 		output_json = {'outcome':'success'}
 
 		try:
-			manager.register_user(input_json['first_name'], input_json['last_name'], input_json['email'], input_json['username'], input_json['password'])
+
+			changes = {
+				'-1': {
+					'first_name':input_json['first_name'],
+					'last_name':input_json['last_name'],
+					'email':input_json['email'],
+					'compound_id':input_json['username'],
+					'password':input_json['password'],
+					'account_type': 'internal'
+				}
+			}
+
+			if manager.crud_manager is None:
+				manager.crud_manager = sdf_register.CompoundManager(None, manager)
+
+			manager.crud_manager.save_changes('administrator', changes, 'Users')
+
+			#manager.register_user(input_json['first_name'], input_json['last_name'], input_json['email'], input_json['username'], input_json['password'])
 		except UserRegistrationException as e:
 			output_json['outcome'] = 'failure'
 			output_json['error'] = str(e.value)

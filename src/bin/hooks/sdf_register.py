@@ -670,6 +670,8 @@ class CompoundManager(object):
 
 			self.auth_manager.add_user_to_project(username, project_name)
 
+
+
 	def _create_user(self, changes, entity_pkey):
 		first_name = None
 		last_name = None
@@ -706,7 +708,11 @@ class CompoundManager(object):
 
 		self.auth_manager.register_user(first_name, last_name, email, username, password, account_type, skip_external_check)
 
-
+		if 'enable' in entity:
+			if entity['enable']:
+				self.auth_manager.enable_user(username)
+			else:
+				self.auth_manager.disable_user(username)
 
 	def _create_project(self, changes, entity_pkey):
 		id_group_name = None
@@ -750,7 +756,8 @@ class CompoundManager(object):
 		last_name = old_entity['last_name']
 		email = old_entity['email']
 		username = old_entity['compound_id']
-		password = old_entity['password']
+		#password = old_entity['password']
+		password = None
 		account_type = old_entity['account_type']
 
 		if 'first_name' in entry:
@@ -777,6 +784,12 @@ class CompoundManager(object):
 				raise Exception('Username ends with a reserved word!')
 
 		self.auth_manager.update_user(original_username, first_name, last_name, email, username, password, account_type)
+
+		if 'enable' in entry:
+			if entry['enable']:
+				self.auth_manager.enable_user(username)
+			else:
+				self.auth_manager.disable_user(username)
 
 
 	def _update_project_configuration(self, changes, entity_pkey):
@@ -838,8 +851,6 @@ class CompoundManager(object):
 
 			entity = self.fetch_manager.get_entity(id, False)
 
-			if entity['project_name'] == 'Users':
-				self.auth_manager.delete_user(entity['compound_id'], uuid_str)
 
 			if entity['project_name'] == 'User to Project':
 				self.auth_manager.remove_user_from_project(entity['user_user_id'], entity['user_project_id'])
@@ -864,7 +875,7 @@ class CompoundManager(object):
 						archived_transaction_id = %s
 					where
 						id = %s
-				''',(id, self.transaction_id))
+				''',(self.transaction_id, id))
 			else:
 				self.archive_compound_cur.execute("execute archive_compound (%s,%s,%s)",(id,self.transaction_id,uuid_str))
 			

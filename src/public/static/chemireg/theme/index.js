@@ -2824,14 +2824,14 @@ function clear_project_selection(){
 	projectSelection.selectedIndex = 0;
 }
 
-var session_loading = false;
+//var session_loading = false;
 
 function refresh_session(user, refresh_project_list_only = false){
-    if(session_loading){
-        return;
-    }else{
-        session_loading = true;
-    }
+    //if(session_loading){
+    //    return;
+    //}else{
+    //    session_loading = true;
+    //}
 
     if(!refresh_project_list_only){
         switch_screen('session_loading_screen');
@@ -3014,14 +3014,14 @@ function refresh_session(user, refresh_project_list_only = false){
                                             document.getElementById(inactive_list[i]).style.display='none';
                                         }
 
-                                        session_loading = false;
+                                        //session_loading = false;
                                     });
 								}else{
 								    __set_project(_current_project);
 
 								    update_actions();
 
-								    session_loading = false;
+								   // session_loading = false;
 								}
 							}
 						}
