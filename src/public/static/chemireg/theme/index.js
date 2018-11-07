@@ -884,7 +884,8 @@ function on_project_change(cb){
 	search_control[0].selectize.clearOptions();
 
 	var results_button = document.getElementById('results_button')
-	results_button.innerText = get_entity_name() + 's';
+	//results_button.innerText = get_entity_name() + 's';
+	//results_button.innerText = get_project();
 	
 	document.getElementById('search_selection-selectized').setAttribute('placeholder', get_entity_name());
 	
@@ -902,18 +903,22 @@ function on_project_change(cb){
 	// This does mean that new items won't appear unless a user refreshes the page or toggles between projects
 	
 	update_key_cache(function(){
+	    var screen = null;
+
+	    var auto_show = false;
+
+	    if(current_screen != null && current_screen == 'session_loading_screen'){
+		    screen = 'search';
+        }else if(get_project() == 'Projects' || get_project() == 'Users' || get_project() == 'Custom Field Types' || get_project() == 'User to Project'){
+            screen = 'results'; auto_show = true;
+        }else if(cb == null){
+            screen = current_screen;
+        }
+
 		if(cb == null){
-		    var screen = null;
-
-		    if(current_screen != null && current_screen == 'session_loading_screen'){
-		        screen = 'search';
-		    }else{
-		        screen = current_screen;
-		    }
-
             fetch_all(true, screen, true);
 		}else{
-		    fetch_all(true, null,false);
+		    fetch_all(true, screen,true);
 			cb();
 		}
 	});
@@ -2247,9 +2252,13 @@ function rerun(msgId){
 }
 
 function set_project(project, signal_change, cb){
-	document.getElementById('project_selection').value = project;
+	__set_project(project);
 
 	_set_project(project, signal_change, cb);
+}
+
+function __set_project(project){
+    document.getElementById('project_selection').value = project;
 }
 
 function _set_project(project, signal_change, cb){
@@ -2263,7 +2272,7 @@ function _set_project(project, signal_change, cb){
         update_actions();
 
         if(signal_change){
-            on_project_change(cb);
+            cb();
         }
     });
 }
@@ -2633,16 +2642,24 @@ var first_load = true;
 
 function load_upload_history(){
     set_project(get_project() + '/Uploads', true, function(){
+        switch_screen('results');
+    });
+}
 
+function load_project_custom_fields(){
+    set_project(get_project() + '/Custom Fields', true, function(){
+        switch_screen('results');
+    });
+}
 
+function load_project_custom_buttons(){
+    set_project(get_project() + '/Custom Row Buttons', true, function(){
         switch_screen('results');
     });
 }
 
 function load_template_project(){
     set_project(get_project() + '/Templates', true, function(){
-
-
         switch_screen('results');
     });
 }
@@ -2661,8 +2678,12 @@ function _set_back_project_button(){
     var config = get_project_configuration();
 
     if(config != null){
-        get_back_project_button().innerText = ' | Back to ' + get_project_configuration().entity_name + 's';
+        get_back_project_button().innerText = ' | Back to ' + get_project();
     }
+}
+
+function has_project(project_name){
+    return Reflect.hasField(custom_fields, project_name);
 }
 
 function switch_to_default_screen(){
@@ -2672,15 +2693,31 @@ function switch_to_default_screen(){
 function update_actions(){
     var upload_history_button = document.getElementById('main_menu_upload_history');
 
+    var settings_button = document.getElementById('main_menu_custom_field_settings');
+
+    var custom_buttons = document.getElementById('main_menu_custom_buttons_settings');
+
     var enable_back_button = false;
 
-    if(get_project().endsWith('/Uploads') || get_project().endsWith('Templates')){
+    if(has_project(get_project() + '/Custom Fields')){
+        settings_button.style.display = 'initial';
+    }else{
+        settings_button.style.display = 'none';
+    }
+
+    if(has_project(get_project() + '/Custom Row Buttons') && !get_project().endsWith('/Custom Fields')){
+        custom_buttons.style.display = 'initial';
+    }else{
+        custom_buttons.style.display = 'none';
+    }
+
+    if(get_project().endsWith('/Uploads') || get_project().endsWith('/Templates') || get_project().endsWith('/Custom Fields') || get_project().endsWith('/Custom Row Buttons')){
         enable_back_button = true;
     }
 
     var upload_panel = document.getElementById('home_upload_panel');
     if(get_project_configuration().enable_addition){
-        if(get_project().endsWith('/Uploads') || get_project().endsWith('Templates')){
+        if(get_project().endsWith('/Uploads') || get_project().endsWith('Templates') || get_project() == 'Custom Field Types' || get_project() == 'Projects' || get_project() == 'Users'){
             upload_history_button.style.display = 'none';
         }else{
             upload_panel.style.display = 'initial';
@@ -2695,13 +2732,19 @@ function update_actions(){
     }
 
     var template_button = document.getElementById('upload_template_button');
+    var template_menu_button = document.getElementById('main_menu_templates');
 
     if(get_project().endsWith('/Templates')){
         template_button.style.display = 'none';
+        template_menu_button.style.display = 'none';
 
         enable_back_button = true;
-    }else{
+    }else if(has_project(get_project() + '/Templates')){
         template_button.style.display = 'initial';
+        template_menu_button.style.display = 'initial';
+    }else{
+        template_button.style.display = 'none';
+        template_menu_button.style.display = 'none';
     }
 
     if(enable_back_button){
@@ -2709,7 +2752,6 @@ function update_actions(){
     }else{
         get_back_project_button().style.display = 'none';
     }
-
 
     var select = document.getElementById('project_selection');
 
@@ -2732,6 +2774,8 @@ function update_actions(){
             }else if(project_name.endsWith('/Settings')){
                 enable = false;
             }else if(project_name.endsWith('/Custom Fields')){
+                enable = false;
+            }else if(project_name.endsWith('/Templates')){
                 enable = false;
             }
 
@@ -2782,12 +2826,24 @@ function clear_project_selection(){
 	projectSelection.selectedIndex = 0;
 }
 
+//var session_loading = false;
 
-function refresh_session(){
-    switch_screen('session_loading_screen');
+function refresh_session(user, refresh_project_list_only = false){
+    //if(session_loading){
+    //    return;
+    //}else{
+    //    session_loading = true;
+    //}
 
-	reset_paging_panel();
-	clear_results_table();
+    if(!refresh_project_list_only){
+        switch_screen('session_loading_screen');
+
+        reset_paging_panel();
+        clear_results_table();
+    }
+
+    var _current_project = get_project();
+
 
 	var projectSelection = document.getElementById('project_selection');
 
@@ -2804,7 +2860,6 @@ function refresh_session(){
 						'mode': 'project_list',
 						'_username': null
 				};
-				
 
 
 				saturn.core.Util.getProvider().getByNamedQuery(
@@ -2942,24 +2997,34 @@ function refresh_session(){
 									upload_section.innerText = 'Select (Excel, CSV, Txt)'
 								}
 
-								set_project(real_projects[0], true, function(){
-                                    switch_to_default_screen();
+								if(!refresh_project_list_only){
+								    set_project(real_projects[0], true, function(){
 
-                                    active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
-                                    inactive_list = ['registration_button', 'loading'];
 
-                                    for(var i=0;i<active_list.length;i++){
-                                        if(active_list[i] == 'main_buttons'){
-                                            document.getElementById(active_list[i]).style.display='flex';
-                                        }else{
-                                            document.getElementById(active_list[i]).style.display='initial';
+                                        active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
+                                        inactive_list = ['registration_button', 'loading'];
+
+                                        for(var i=0;i<active_list.length;i++){
+                                            if(active_list[i] == 'main_buttons'){
+                                                document.getElementById(active_list[i]).style.display='flex';
+                                            }else{
+                                                document.getElementById(active_list[i]).style.display='initial';
+                                            }
                                         }
-                                    }
 
-                                    for(var i=0;i<inactive_list.length;i++){
-                                        document.getElementById(inactive_list[i]).style.display='none';
-                                    }
-								});
+                                        for(var i=0;i<inactive_list.length;i++){
+                                            document.getElementById(inactive_list[i]).style.display='none';
+                                        }
+
+                                        //session_loading = false;
+                                    });
+								}else{
+								    __set_project(_current_project);
+
+								    update_actions();
+
+								   // session_loading = false;
+								}
 							}
 						}
 				);
@@ -4036,6 +4101,12 @@ function save_changes(){
 						}
 						
 						update_paging_panel();
+
+                        var project = get_project();
+
+						if(project.endsWith('/Custom Fields') || project.endsWith('/Users') || project.endsWith('Projects') || project.endsWith('/Custom Row Buttons')){
+						    refresh_session(null, true);
+						}
 					}
 				}
 		);

@@ -100,7 +100,7 @@
 					<div class="menu-items">
 					<a href="#" class="menu_logo"><img src="images/ChemiReg-logo.png"/></a>
 					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Results</button>
+					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Browse or Edit</button>
 
 					<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
 					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
@@ -109,7 +109,13 @@
 					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 
 
-					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()">View Upload history</button>
+					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()">| Upload history</button>
+
+					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Upload history</button>
+					<button id="main_menu_templates" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Templates</button>
+					<button id="main_menu_custom_field_settings" class="main_menu" onclick="load_project_custom_fields()" style="margin-left:20px">| Custom Fields</button>
+					<button id="main_menu_custom_buttons_settings" class="main_menu" onclick="load_project_custom_buttons()" style="margin-left:20px">| Custom Buttons</button>
+
 					<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()" style="display:none;margin-left:20px"></button>
 
 					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
@@ -124,34 +130,6 @@
 						<label>Projects</label>
 						<!--<div id="projects_hide_special_button" onclick="toggle_hide_special_projects()" style="font-size:20pt">+</div>-->
 					</div>
-					
-					
-					<script>
-					
-					document.getElementById('project_selection').addEventListener("mousedown", function(e){
-						mousePos(e);
-					});
-					
-					function mousePos(e) {
-					    var cursorX = e.clientX;
-					    var cursorY = e.clientY;
-					    
-					    var cursorXPercent = cursorX / window.innerWidth * 100;
-					    
-					    console.log(cursorX);
-					    console.log(cursorY);
-					    console.log('--');
-					    console.log(cursorXPercent);
-					    console.log('------');
-					    
-					    if (cursorXPercent > 96) {
-					    	document.getElementById("project_selection").parentElement.classList.toggle("show-special");
-					    	toggle_hide_special_projects();
-					    }
-					    
-					}
-					
-					</script>
 					
 
 					</div>
@@ -390,7 +368,7 @@
 
 						<div style="display:flex;">
 							<div class="upload-buttons">
-								<button id="upload_template_button" class="button-text" onclick="load_template_project()">Template file</button>
+								<button id="upload_template_button" class="button-text" onclick="load_template_project()">Template files</button>
 
 								<button class="button-icon" style="background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
 								
