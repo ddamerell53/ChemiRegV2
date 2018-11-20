@@ -7,7 +7,7 @@
 */
 
 var structure_editor_type = 'Ketcher';
-//var structure_editor_type = 'MolEdit';
+// var structure_editor_type = 'MolEdit';
 
 var grid = null;
 var compounds = [];
@@ -49,7 +49,7 @@ var mapping_fields = new haxe.ds.StringMap();
 var login_load = false;
 var user_settings;
 
-var cols_ordered = []; //leo
+var cols_ordered = []; // leo
 var row_index = -1;
 
 var current_screen = null;
@@ -66,6 +66,11 @@ var current_project = null;
 var previous_project = null;
 
 var projects_hide_special = true;
+
+var results_screen_called = false;
+
+var special_open = false;
+
 
 function is_screen_locked(){
     return screen_locked;
@@ -139,7 +144,7 @@ function create_structure_editor(){
 		iframe.setAttribute('height', '100%');
 		iframe.style.width = '100%';
 		iframe.style.height = '100%';
-		//iframe.style.position = 'absolute';
+		// iframe.style.position = 'absolute';
 		iframe.style.border = 'none';
 
 		container.appendChild(iframe);
@@ -179,11 +184,10 @@ function register_sdf_ui(){
 }
 
 function register_sdf(){
-	/*var files = [];
-	var inputFiles = document.getElementById('input').files;
-	for(var i=0;i<inputFiles.length;i++){
-		files.push(inputFiles[i]);
-	}*/
+	/*
+	 * var files = []; var inputFiles = document.getElementById('input').files;
+	 * for(var i=0;i<inputFiles.length;i++){ files.push(inputFiles[i]); }
+	 */
 
 	var files = new Array();
 	for(var i =0;i<upload_files.length;i++){
@@ -372,8 +376,10 @@ function show_upload_set(upload_id,selectedFile){
 }
 
 function new_fetch(auto_show, screen){
-	// Starts a timer which will switch to the home screen to show progress if more than 2 seconds have passed
-	// We are trying to avoid fast queries hiding and then displaying the results table
+	// Starts a timer which will switch to the home screen to show progress if
+	// more than 2 seconds have passed
+	// We are trying to avoid fast queries hiding and then displaying the
+	// results table
 	set_action_done(false);
 	
 	// Clear changes
@@ -715,7 +721,7 @@ function update_upload_field_table(){
 							Reflect.setField(Reflect.field(upload_defaults, field_name),'map_column' ,null);
 							return;
 						}
-						//value and foreign_key_project_name are important here
+						// value and foreign_key_project_name are important here
 						Reflect.setField(Reflect.field(upload_defaults, field_name),'map_column' ,value[0]);
 					}
 				})[0].selectize;
@@ -751,7 +757,7 @@ function update_upload_field_table(){
 						Reflect.setField(Reflect.field(upload_defaults, field_name),'map_column' ,null);
 						return;
 					}
-					//value and foreign_key_project_name are important here
+					// value and foreign_key_project_name are important here
 					Reflect.setField(Reflect.field(upload_defaults, field_name),'default_value' ,value[0]);
 				},
 				load: function(search_term, callback){
@@ -875,17 +881,18 @@ function on_project_change(cb){
 		return;
 	}
 	
+	
 	clear_results_table();
 	reset_paging_panel();
 	add_results_table_headings();
 	
-	//clear recent term searchers
+	// clear recent term searchers
 	search_control[0].selectize.clear();
 	search_control[0].selectize.clearOptions();
 
-	var results_button = document.getElementById('results_button')
-	//results_button.innerText = get_entity_name() + 's';
-	//results_button.innerText = get_project();
+	var results_button = document.getElementById('results_button');
+	// results_button.innerText = get_entity_name() + 's';
+	// results_button.innerText = get_project();
 	
 	document.getElementById('search_selection-selectized').setAttribute('placeholder', get_entity_name());
 	
@@ -896,11 +903,16 @@ function on_project_change(cb){
 		document.getElementById('search_draw_structure_button').style.display = 'none';
 	}
 	
-	// Prefetch items to populate drop-downs, this mechanism won't scale for very large collections
-	// Why - using the load function with pre-load set to true on selectize drop-down elements will 
-	// cause multiple simultaneous requests for the same collections even with cached set to true for
-	// getByNamedQuery.  This is because all requests will be fired before any responses have been cached
-	// This does mean that new items won't appear unless a user refreshes the page or toggles between projects
+	// Prefetch items to populate drop-downs, this mechanism won't scale for
+	// very large collections
+	// Why - using the load function with pre-load set to true on selectize
+	// drop-down elements will
+	// cause multiple simultaneous requests for the same collections even with
+	// cached set to true for
+	// getByNamedQuery. This is because all requests will be fired before any
+	// responses have been cached
+	// This does mean that new items won't appear unless a user refreshes the
+	// page or toggles between projects
 	
 	update_key_cache(function(){
 	    var screen = null;
@@ -924,7 +936,7 @@ function on_project_change(cb){
 	});
 }	
 	
-function update_key_cache(cb){	
+function update_key_cache(cb){
 	update_upload_field_table();
 	cb();
 	return;
@@ -950,7 +962,7 @@ function update_key_cache(cb){
 	var next = null;
 	next = function(){
 		if(projects_to_fetch.length == 0){
-			//tmp to replace with more complete solution
+			// tmp to replace with more complete solution
 			var prefixSelection = document.getElementById('prefix_selection');
 
 			var items = Reflect.field(cached_entities, get_project() + '/Compound Classifications');
@@ -1063,7 +1075,7 @@ function add_new_row(){
 		entity.attachments = [];
 	}
 	
-	//Custom fields
+	// Custom fields
 	var project_fields = custom_fields[get_project()];
 	var fields = Reflect.fields(project_fields);
 	
@@ -1111,7 +1123,7 @@ function add_row(compound_table_body, compound, replace_row){
 	});
 	
 	var field_item = null;
-	compound_id_span.addEventListener('paste', function(event){ //leo
+	compound_id_span.addEventListener('paste', function(event){ // leo
 		event.preventDefault();
 		paste_data(compound, field_item, g_row_index, event);
 	});
@@ -1251,7 +1263,7 @@ function add_row(compound_table_body, compound, replace_row){
 		compound_row.appendChild(attachment_row);
 	}
 	
-	//Custom fields
+	// Custom fields
 	var project_fields = custom_fields[get_project()];
 	var fields = Reflect.fields(project_fields);
 	
@@ -1416,7 +1428,8 @@ function add_row(compound_table_body, compound, replace_row){
 	date_timestamp_cell.setAttribute('column_name','Date Record Created');
 	date_timestamp_cell.classList.add('calculated_field');
 	
-	var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+	var d = new Date(0); // The 0 there is the key, which sets the date to
+							// the epoch
 	date_string = '';
 	
 	if(compound.date_record_created != null){
@@ -1516,7 +1529,8 @@ function add_row(compound_table_body, compound, replace_row){
 				maxItems: 4000,
 				preload: 'focus',
 				closeAfterSelect: true,
-				//options: Reflect.field(cached_entities, foreign_key_project_name),
+				// options: Reflect.field(cached_entities,
+				// foreign_key_project_name),
 				mode: 'single',
 				allowEmptyOption:true,
 				onChange(value){
@@ -1582,7 +1596,8 @@ function paste_data(compound, field_item, g_row_index, event){
 	    }
     }
     
-    // Create a copy of cols_ordered which includes the first special column for ID
+    // Create a copy of cols_ordered which includes the first special column for
+	// ID
     var table_column_defs = [];
     for(var i=0;i<cols_ordered.length;i++){
     	table_column_defs.push(cols_ordered[i]);
@@ -1592,7 +1607,8 @@ function paste_data(compound, field_item, g_row_index, event){
     var starting_col = null;
     
     if(field_item != null){
-    	// We get here for all custom fields (i.e. not the first field which includes the entity ID)
+    	// We get here for all custom fields (i.e. not the first field which
+		// includes the entity ID)
     	
     	// Iterate custom field columns to work out which one was pasted into
     	for(var k=0;k<cols_ordered.length;k++){
@@ -1600,12 +1616,13 @@ function paste_data(compound, field_item, g_row_index, event){
             var col_definition = cols_ordered[k];
             
             if(col_definition == field_item.human_name){
-            	// We get here if, this was the column pasted into 
+            	// We get here if, this was the column pasted into
             	starting_col = k;
             }
         }
     }else{
-    	// We get here when the column pasted into was for the first special ID field
+    	// We get here when the column pasted into was for the first special ID
+		// field
     	starting_col = 0;
     }
     
@@ -1627,7 +1644,8 @@ function paste_data(compound, field_item, g_row_index, event){
     	// Get the TR element for this row
     	var target_elem = document.getElementById('compound_row_' + compound_for_row.id);
     	
-    	// Get a list of all TD elements for this row, so we can find the matching 
+    	// Get a list of all TD elements for this row, so we can find the
+		// matching
         var children = target_elem.getElementsByTagName('td');
     	
     	// Increment row counter for the next loop
@@ -1638,10 +1656,11 @@ function paste_data(compound, field_item, g_row_index, event){
     	
     	// Iterate cells for this row
     	for(var u=0;u<row_cells.length;u++){
-    		// Value associated with this cell 
+    		// Value associated with this cell
     		var row_cell_value = row_cells[u];
     		
-    		// Get the definition for the column we are going to paste a value for
+    		// Get the definition for the column we are going to paste a value
+			// for
     		var col_field_human_name = table_column_defs[row_cell_col];
     		var col_field_item = null;
     		if(custom_fields_human_index.exists(col_field_human_name)){
@@ -1651,7 +1670,8 @@ function paste_data(compound, field_item, g_row_index, event){
     		// Get the TD corresponding to this cell
     		var child = children[row_cell_col];
     		
-    		// We need to treat the first column and all the custom fields differently
+    		// We need to treat the first column and all the custom fields
+			// differently
     		var appendToElem = null;
     		var custom_field_name = null;
     		if(col_field_item == null){
@@ -1667,35 +1687,35 @@ function paste_data(compound, field_item, g_row_index, event){
     		if (col_field_item != null && Reflect.hasField(col_field_item, 'foreign_key_project_name') && col_field_item.foreign_key_project_name != null){
     			var child_id = child.firstChild.id;
     			
-    			//$('#' + child_id).siblings('.selectize-control').find('.item').attr('data-value', row_cell_value);
-    			//$('#' + child_id).siblings('.selectize-control').find('.item').text(row_cell_value);
-    			//$('#' + child_id).siblings('.selectize-control').find('.selectize-dropdown-content').append('<div class="option selected" data-selectable data-value=' + row_cell_value + '><span class="highlight">'+ row_cell_value +'</span></div>');
-    			//$('#' + child_id).siblings('.selectize-control').find('.selectize-dropdown-content').addClass('222222');
+    			// $('#' +
+				// child_id).siblings('.selectize-control').find('.item').attr('data-value',
+				// row_cell_value);
+    			// $('#' +
+				// child_id).siblings('.selectize-control').find('.item').text(row_cell_value);
+    			// $('#' +
+				// child_id).siblings('.selectize-control').find('.selectize-dropdown-content').append('<div
+				// class="option selected" data-selectable data-value=' +
+				// row_cell_value + '><span class="highlight">'+ row_cell_value
+				// +'</span></div>');
+    			// $('#' +
+				// child_id).siblings('.selectize-control').find('.selectize-dropdown-content').addClass('222222');
     			
     			var search_term = row_cell_value;
     			
     			var $select = $('#' + child_id).selectize({
     				create: true,
     			}); /**
-    				load: function(search_term, callback){
-    					saturn.core.Util.getProvider().getByNamedQuery(
-    							'saturn.db.provider.hooks.ExternalJsonHook:FastFetch',
-    							[{'find_terms': search_term, '_username': null, 'project': foreign_key_project_name}],
-    							null,
-    							false,
-    							function(objs, err){
-    								if(err != null){
-    									show_message('Error fetching terms',err);
-    									callback();
-    								}else{
-    									var entities = objs[0].entities;
-    									callback(entities);
-    								}
-    							}
-    					);
-    				}
-    				
-    			}); */
+					 * load: function(search_term, callback){
+					 * saturn.core.Util.getProvider().getByNamedQuery(
+					 * 'saturn.db.provider.hooks.ExternalJsonHook:FastFetch',
+					 * [{'find_terms': search_term, '_username': null,
+					 * 'project': foreign_key_project_name}], null, false,
+					 * function(objs, err){ if(err != null){ show_message('Error
+					 * fetching terms',err); callback(); }else{ var entities =
+					 * objs[0].entities; callback(entities); } } ); }
+					 * 
+					 * });
+					 */
     			
     			
     			var selectize = $select[0].selectize;
@@ -1721,21 +1741,20 @@ function paste_data(compound, field_item, g_row_index, event){
                 selectize.setValue(list[0].value);
                 
                 
-    			//selectize.clear();
+    			// selectize.clear();
 
     			/**
-    			selectize.load(function(callback) {
-    			    callback(list);
-    			}); */
+				 * selectize.load(function(callback) { callback(list); });
+				 */
     		
 
     			
     			
     			selectize.addOption({value:'GB', text:'GB'});
 
-    			//selectize.addItem('GB');
+    			// selectize.addItem('GB');
     		    			
-    			//selectize.setValue('GB', false);
+    			// selectize.setValue('GB', false);
     			
     			
     			selectize.on('change', function() {
@@ -1753,8 +1772,11 @@ function paste_data(compound, field_item, g_row_index, event){
 	    			convert_smiles_to_ctab(row_cell_value, function(ctab_content, error){	    				
 	    				update_structure(ctab_content, g_compound_for_row.id, g_child.getElementsByTagName('button')[0]);
 	    				
-	    				// Saves the change in the unsaved_changes object and highlight the cells with unsaved changes to the user
-	            		// on_field_change(g_custom_field_name, Reflect.field(g_compound_for_row,g_custom_field_name), g_compound_for_row.id, ctab_content, g_child);
+	    				// Saves the change in the unsaved_changes object and
+						// highlight the cells with unsaved changes to the user
+	            		// on_field_change(g_custom_field_name,
+						// Reflect.field(g_compound_for_row,g_custom_field_name),
+						// g_compound_for_row.id, ctab_content, g_child);
 	    			})
     			})();
     		} else if (col_field_human_name == 'Attachments') {
@@ -1768,11 +1790,13 @@ function paste_data(compound, field_item, g_row_index, event){
     			// Append a new text node with the new value to be pasted
         		appendToElem.appendChild(document.createTextNode(row_cell_value));
         		
-        		// Saves the change in the unsaved_changes object and highlight the cells with unsaved changes to the user
+        		// Saves the change in the unsaved_changes object and highlight
+				// the cells with unsaved changes to the user
         		on_field_change(custom_field_name, Reflect.field(compound_for_row,custom_field_name), compound_for_row.id, row_cell_value, child);
     		}
     		
-            // Increment the column number we are going to paste into on the next loop
+            // Increment the column number we are going to paste into on the
+			// next loop
     		row_cell_col += 1;
     	}
     }
@@ -2100,7 +2124,8 @@ function _update_upload_field_mapping(lines){
 			var field = field_to_closest_field.get(field_name);
 			selectize.addItem({'compound_id':field}, true);
 			selectize.setValue(field, true);
-			//close, otherwise the button has massive padding, something must be broken in selectize or the docs
+			// close, otherwise the button has massive padding, something must
+			// be broken in selectize or the docs
 			selectize.close();
 			
 			Reflect.setField(Reflect.field(upload_defaults, real_field_name),'map_column',field);
@@ -2241,12 +2266,12 @@ function rerun(msgId){
 	if(current_fetch.project != get_project()){
 		set_project(current_fetch.project, true, fetch);
 		
-		//on_project_change(fetch)
+		// on_project_change(fetch)
 	}else{
 		fetch();
 	}
 	
-	//current_fetch['project'] = get_project();
+	// current_fetch['project'] = get_project();
 	
 	
 }
@@ -2604,7 +2629,7 @@ function _login(username, password){
 
 			show_message('Login Failed', 'Please try again with valid credentials ' + err);
 		}else{
-		    //switch_screen('search');
+		    // switch_screen('search');
 		}
 	});
 }
@@ -2678,7 +2703,7 @@ function _set_back_project_button(){
     var config = get_project_configuration();
 
     if(config != null){
-        get_back_project_button().innerText = ' | Back to ' + get_project();
+        get_back_project_button().innerText = 'Back to ' + get_project();
     }
 }
 
@@ -2736,14 +2761,16 @@ function update_actions(){
 
     if(get_project().endsWith('/Templates')){
         template_button.style.display = 'none';
+        document.getElementById('upload_template_arrow').style.display = 'none';
         template_menu_button.style.display = 'none';
-
+        
         enable_back_button = true;
     }else if(has_project(get_project() + '/Templates')){
         template_button.style.display = 'initial';
         template_menu_button.style.display = 'initial';
     }else{
         template_button.style.display = 'none';
+        document.getElementById('upload_template_arrow').style.display = 'none';
         template_menu_button.style.display = 'none';
     }
 
@@ -2807,14 +2834,11 @@ function toggle_hide_special_projects(){
 
     update_actions();
     /**
-    var button = document.getElementById('projects_hide_special_button');
-
-    if(button.innerText == '+'){
-        button.innerText = '-';
-    }else{
-        button.innerText = '+';
-    }
-    */
+	 * var button = document.getElementById('projects_hide_special_button');
+	 * 
+	 * if(button.innerText == '+'){ button.innerText = '-'; }else{
+	 * button.innerText = '+'; }
+	 */
 }
 
 
@@ -2826,15 +2850,17 @@ function clear_project_selection(){
 	projectSelection.selectedIndex = 0;
 }
 
-//var session_loading = false;
+// var session_loading = false;
 
 function refresh_session(user, refresh_project_list_only = false){
-    //if(session_loading){
-    //    return;
-    //}else{
-    //    session_loading = true;
-    //}
-
+    // if(session_loading){
+    // return;
+    // }else{
+    // session_loading = true;
+    // }
+	
+	ready = false;
+	
     if(!refresh_project_list_only){
         switch_screen('session_loading_screen');
 
@@ -2973,19 +2999,35 @@ function refresh_session(user, refresh_project_list_only = false){
 									}
 								}
 								
-								for(var i =0;i<ordered_projects.length;i++){
-									var project = ordered_projects[i];
-									var elem = document.createElement('option');
-									
-									if(project == null){
-										elem.setAttribute('disabled','');
-										elem.style.fontSize = '1px';
-										elem.style.backgroundColor = 'rgb(51, 195, 240)';
+								
+								for(var i=0;i<ordered_projects.length;i++){
+									if(i==0) {
+										var elem_group = document.createElement('optgroup');
 									}
 									
+									var project = ordered_projects[i];
+									
+									var elem = document.createElement('option');
+	
 									elem.value = project;
 									elem.text = project;
-									projectSelection.add(elem);
+									
+									if(project != null){
+										elem_group.appendChild(elem);
+									}
+	
+									else {
+										projectSelection.appendChild(elem_group);
+										var elem_group = document.createElement('optgroup');
+										elem.setAttribute('disabled','');
+										elem.style.fontSize = '1px';
+										elem.style.backgroundColor = '#00a1d6';
+										elem.classList.add('test');
+									}
+									
+									if((i + 1) == (ordered_projects.length)){ //last iteration
+										projectSelection.appendChild(elem_group);
+									}
 								}
 								
 								var upload_section = document.getElementById('file_select');
@@ -2998,7 +3040,19 @@ function refresh_session(user, refresh_project_list_only = false){
 								}
 
 								if(!refresh_project_list_only){
-								    set_project(real_projects[0], true, function(){
+									
+									var params = new URLSearchParams(window.location.search);
+									var project_id = params.get('project_id');
+									
+									var real_project_value = '';
+									
+									if (project_id == null){
+										real_project_value = real_projects[0];
+									} else {
+										real_project_value = project_id;
+									}
+									
+								    set_project(real_project_value, true, function(){
 
 
                                         active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
@@ -3006,7 +3060,7 @@ function refresh_session(user, refresh_project_list_only = false){
 
                                         for(var i=0;i<active_list.length;i++){
                                             if(active_list[i] == 'main_buttons'){
-                                                document.getElementById(active_list[i]).style.display='flex';
+                                                document.getElementById(active_list[i]).style.display='block';
                                             }else{
                                                 document.getElementById(active_list[i]).style.display='initial';
                                             }
@@ -3016,15 +3070,23 @@ function refresh_session(user, refresh_project_list_only = false){
                                             document.getElementById(inactive_list[i]).style.display='none';
                                         }
 
-                                        //session_loading = false;
+                                        // session_loading = false;
+                            			if (project_id != null && ready){
+    									  url_search();
+    									}
+                            			
+                            			ready = true;
                                     });
 								}else{
 								    __set_project(_current_project);
 
 								    update_actions();
+								    
+								    ready = true;
 
 								   // session_loading = false;
 								}
+								
 							}
 						}
 				);
@@ -3386,7 +3448,9 @@ function delete_file(file_uuid, compound_id){
 
 var clientCore;
 
-function start(){
+//var ready = false;
+
+function start(){	
     upload_report_panel = new UploadReportPanel();
     activity_panel = new ActivityPanel();
 
@@ -3395,8 +3459,12 @@ function start(){
     create_structure_editor_container();
 
     switch_screen('session_loading_screen');
-	
-	document.getElementById('project_selection').addEventListener('change', function(){		
+    
+	document.getElementById('project_selection').addEventListener('change', function(){
+		/*if(!ready){
+			return;			
+		}*/
+		
 		var upload_section = document.getElementById('upload_section_heading');
 		document.getElementById('sdf_upload').style.display = 'block';
 		
@@ -3443,7 +3511,7 @@ function start(){
 		delimiter:'	',
 		splitOn:/[\t ]+/,
 		persist: false,
-		load: function(search_term, callback){			
+		load: function(search_term, callback){
 			saturn.core.Util.getProvider().getByNamedQuery(
 					'saturn.db.provider.hooks.ExternalJsonHook:FastFetch',
 					[{'find_terms': search_term, '_username': null, 'project': get_project()}],
@@ -3497,6 +3565,19 @@ function start(){
 	});
 	
 	
+	
+	document.getElementById('project_selection').addEventListener("mousedown", function(e){
+		//mousePos(e);
+	});
+	
+	$('#project_selection').on('mouseup', function(e) {
+		mousePos(e);
+	});
+	
+	let switchButton = document.getElementsByClassName('switch-view');
+	switchButton[0].addEventListener('click',function(event){
+		document.getElementById("results").classList.toggle('mobile-view');
+	});
 }
 
 function create_grid(){
@@ -3560,7 +3641,8 @@ function create_grid(){
 	var columns = [{
 		name: "compound_id", // The key of the model attribute
 		label: "Compound ID", // The name to display in the header
-		editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+		editable: false, // By default every cell in a column is editable,
+							// but *ID* shouldn't be
 		cell:'string'
 	},
 	{
@@ -3578,19 +3660,22 @@ function create_grid(){
 	{
 		name: "supplier", // The key of the model attribute
 		label: "Supplier", // The name to display in the header
-		editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+		editable: false, // By default every cell in a column is editable,
+							// but *ID* shouldn't be
 		cell:'string'
 	},
 	{
 		name: "supplier_id", // The key of the model attribute
 		label: "Supplier ID", // The name to display in the header
-		editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+		editable: false, // By default every cell in a column is editable,
+							// but *ID* shouldn't be
 		cell:'string'
 	},
 	{
 		name: "username", // The key of the model attribute
 		label: "Username", // The name to display in the header
-		editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+		editable: false, // By default every cell in a column is editable,
+							// but *ID* shouldn't be
 		cell:'string'
 	},
 	{
@@ -4046,7 +4131,7 @@ function save_changes(){
 			Reflect.setField(changes, field_name, field_value);
 		}
 
-		//changed from compound_id to id
+		// changed from compound_id to id
 		Reflect.setField(compound_updates, compound_id, changes);
 	}
 
@@ -4254,8 +4339,6 @@ function on_results_click(){
     }else{
         switch_screen('results');
     }
-
-
 }
 
 function switch_screen(screen_id){
@@ -4305,8 +4388,10 @@ function switch_screen(screen_id){
 	}
 
 	document.getElementById('search_wildcard_label').style.display='block';
-	/*document.getElementById('wildcard_search').style.display='initial';
-	document.getElementById('wildcard_search_span').style.display='initial';*/
+	/*
+	 * document.getElementById('wildcard_search').style.display='initial';
+	 * document.getElementById('wildcard_search_span').style.display='initial';
+	 */
 	document.getElementById('search_button_search').style.display='initial';
 	
 	
@@ -4315,10 +4400,20 @@ function switch_screen(screen_id){
 	}else{
 		document.getElementById('title').style.display = 'none';
 	}
+	
+	if(screen_id == 'results'){
+		switch_table_view();
+		results_screen_called = true;
+	}
+	
+	if(screen_id != 'results' && results_screen_called === true) {
+		var switchButton = document.getElementsByClassName('switch-view');
+		switchButton[0].style.display = 'none';
+	}
 }
 
 function update_structure_ui(entity_id, structure_btn){
-	//switch_screen('search');
+	// switch_screen('search');
 
 	open_structure_window(update_structure);
 	
@@ -4411,7 +4506,7 @@ function update_structure(ctab_content, compound_id, compound_button){
 	}
 }
 
-//https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
+// https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
 function get_query_params(qs) {
 	qs = qs.split('+').join(' ');
 
@@ -4487,7 +4582,7 @@ function create_modal(title){
     header = document.createElement('div');
     header.style.position = 'absolute';
     header.style.top = '0px';
-    header.style.backgroundColor = 'rgb(125, 117, 117)';
+    header.style.backgroundColor = '#888888';
     header.style.height = '20px';
     header.style.width = '100%';
 
@@ -4503,9 +4598,9 @@ function create_modal(title){
     var closeButton = document.createElement('span');
     closeButton.style.color = 'white';
     closeButton.style.float = 'right';
-    closeButton.style.fontSize = '16px';
-    closeButton.style.fontWeight = 'bold';
-    closeButton.innerHTML = '&times;';
+    closeButton.style.fontSize = '18px';
+    closeButton.style.lineHeight = '18px';
+    closeButton.innerHTML = '<i class="fa fa-times"></i>';
     closeButton.style.cursor = 'pointer';
 
     var close = function(e){
@@ -4549,7 +4644,7 @@ function create_glass_window(title){
 
     modal.container.style.width = '100%';
     modal.container.style.height = '100%';
-    modal.container.style.backgroundColor = 'rgba(0,0,0,0.4)';
+    modal.container.style.backgroundColor = 'rgba(0,0,0,0.5)';
 
     modal.header.style.width = '50%';
     modal.header.style.margin = 'auto';
@@ -4834,12 +4929,14 @@ class UploadReportPanel {
     _update_file_button_state(){
         const button = this.get_file_upload_button();
 
-        let color = 'white';
-        let font_color = '#2c5aa0';
+        //let color = '#00a1d6';
+        //let font_color = 'white';
+        let customClass = 'button';
 
         if(this.upload_state == UploadState.PASSED){
-            color = 'green';
-            font_color = 'white';
+            //color = '#22ad68';
+            //font_color = 'white';
+        	customClass = 'passed';
 
             this.set_workflow_button_enabled(this.get_workflow_push_to_validate_button(), true);
         }else{
@@ -4849,8 +4946,9 @@ class UploadReportPanel {
             this.set_workflow_button_enabled(this.get_workflow_push_to_validate_button(), false);
         }
 
-        button.style.backgroundColor = color;
-        button.style.color = font_color;
+        button.classList.add(customClass);
+        //button.style.backgroundColor = color;
+        //button.style.color = font_color;
 
 
     }
@@ -4858,8 +4956,9 @@ class UploadReportPanel {
     _update_validation_state(auto_open_form){
         const validation_button = document.getElementById('upload_validation_button');
 
-        let color = 'white';
-        let font_color = '#2c5aa0';
+        //let color = 'white';
+        //let font_color = '#2c5aa0';
+        let customClass = 'button';
 
         if(this.upload_state != UploadState.PASSED){
             this.set_validation_button_state(false);
@@ -4867,17 +4966,20 @@ class UploadReportPanel {
 
             this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), false);
         }else{
-            font_color = 'white';
+            //font_color = 'white';
+        	customClass = 'passed new'
             if(this.validation_state == ValidationState.PASSED){
-                color = 'green';
+                //color = '#22ad68';
+            	customClass = 'passed';
 
                 this.set_validation_button_state(true);
                 this.set_upload_button_state(true);
 
                 this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), true);
             }else if(this.validation_state == ValidationState.FUSSY){
-                color = 'green';
-
+                //color = '#22ad68';
+            	customClass = 'fussy';
+                
                 this.set_validation_button_state(true);
                 this.set_upload_button_state(true);
 
@@ -4887,7 +4989,8 @@ class UploadReportPanel {
 
                 this.set_workflow_button_enabled(this.get_workflow_push_to_upload_button(), true);
             }else if(this.validation_state == ValidationState.FAILED){
-                color = 'red';
+                //color = '#bd2412';
+            	customClass = 'failed';
 
                 this.set_validation_button_state(true);
                 this.set_upload_button_state(false);
@@ -4898,8 +5001,9 @@ class UploadReportPanel {
             }
         }
 
-        validation_button.style.backgroundColor = color;
-        validation_button.style.color = font_color;
+        validation_button.classList.add(customClass);
+        //validation_button.style.backgroundColor = color;
+        //validation_button.style.color = font_color;
     }
 
     set_upload_button_state(enabled){
@@ -4968,7 +5072,8 @@ class PreUploadReport {
     }
 
     populate_internal_maps(){
-        // Dictionary of custom field names which have been mapped to fields in the upload file
+        // Dictionary of custom field names which have been mapped to fields in
+		// the upload file
         const custom_fields_mapped_in_file = new Map();
 
         // Dictionary of fields in the upload file which aren't mapped
@@ -5071,4 +5176,44 @@ class PreUploadReport {
     }
 }
 
+function mousePos(e) {
+    var cursorX = e.clientX;
+    var cursorY = e.clientY;
+    var cursorXPercent = cursorX / window.innerWidth * 100;
 
+    if (special_open== true){
+    	special_open = false;
+    	return;
+    }
+
+    if (cursorXPercent > 97) {
+    	special_open = true;
+    	toggle_hide_special_projects();
+    	document.getElementById("project_selection").parentNode.classList.toggle("show-special");
+    }
+}
+
+function switch_table_view() {
+	var switchButton = document.getElementsByClassName('switch-view');
+	var rows = document.getElementById('compounds_results').rows.length;
+	
+	if(rows == 1){
+		switchButton[0].click();
+	}
+    switchButton[0].style.display = 'block';
+}
+
+function url_search() {
+	var params = new URLSearchParams(window.location.search);
+	var compound_id = new Array();
+	compound_id.push(params.get('compound_id'));
+	var project_id = params.get('project_id');
+	
+	if(project_id && project_id.length > 0 && compound_id && compound_id[0] != null) {
+		current_fetch = {'action':'fetch_exact', 'ids': compound_id, '_username': null, 'project_name': project_id, 'project': project_id};
+		new_fetch(true);
+	} 
+	else{
+		show_message('Error','Please check the URL parameters');
+	}
+}

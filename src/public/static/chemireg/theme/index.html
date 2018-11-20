@@ -8,6 +8,17 @@
 -->
 <html>
 	<head>
+	
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129482133-1"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+		
+		  gtag('config', 'UA-129482133-1');
+		</script>
+	
 		<title>ChemiReg</title>
 		<meta charset="utf-8" />
 
@@ -81,14 +92,13 @@
 		<!-- Free for academic and personal use -->
         <!-- <script src="molsoft/moledit.js" type="text/javascript"></script> -->
 	</head>
-	<body onload="start()" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;background-color:rgb(44, 90, 160) ">
+	<body onload="start()" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
 		<!-- Header -->
-		<div style=''>
+		<div class="header">
+			<div class="switch-view">Switch view</div>
 			<div style="display:none">
-				<div  >
+				<div>
 					<h2 id="title" style="margin-bottom: 1rem;margin-top:0px;display:inline-block">ChemiReg<span class="subtitle">, registration made simple</span></h2>
-					
-					
 				</div>
 				
 			</div>
@@ -96,29 +106,27 @@
 				<div  id="main_buttons" class="screen_button_container">
 					<p id="loading" style="margin-bottom:0px">Loading, please wait.......</p>
 
-
+					<a href="/" class="menu_logo"><img src="images/ChemiReg-logo.png"/></a>
 					<div class="menu-items">
-					<a href="#" class="menu_logo"><img src="images/ChemiReg-logo.png"/></a>
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
-					<button   class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Browse or Edit</button>
+						<button class="main_menu main_menu_followed" style="display:none;"  id="search_button" onclick="switch_screen('search')">Home</button>
+						<button class="main_menu main_menu_followed" style="display:none;"  id="results_button" onclick="on_results_click()">Browse or Edit</button>
 
-					<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
-					<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
+						<!--<button  class="main_menu main_menu_followed" style="display:none;margin-bottom:0px" id="upload_button" onclick="switch_screen('upload_simple')">Upload</button>-->
+						<button class="main_menu main_menu_followed" style="display:none;" id="home_button" onclick="activity_panel.show();">Activity</button>
+	
+	
+						<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
 
 
-					<button class="main_menu " style="display:none;" id="help_button" onclick="switch_screen('help')">Help</button>
+						<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()">Upload history</button>
 
+						<button id="main_menu_templates" class="main_menu" onclick="load_upload_history()">Templates</button>
+						<button id="main_menu_custom_field_settings" class="main_menu" onclick="load_project_custom_fields()">Custom Fields</button>
+						<button id="main_menu_custom_buttons_settings" class="main_menu" onclick="load_project_custom_buttons()">Custom Buttons</button>
 
-					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()">| Upload history</button>
+						<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()"></button>
 
-					<button id="main_menu_upload_history" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Upload history</button>
-					<button id="main_menu_templates" class="main_menu" onclick="load_upload_history()" style="margin-left:20px">| Templates</button>
-					<button id="main_menu_custom_field_settings" class="main_menu" onclick="load_project_custom_fields()" style="margin-left:20px">| Custom Fields</button>
-					<button id="main_menu_custom_buttons_settings" class="main_menu" onclick="load_project_custom_buttons()" style="margin-left:20px">| Custom Buttons</button>
-
-					<button id="main_menu_upload_history_back" class="main_menu" onclick="back_project()" style="display:none;margin-left:20px"></button>
-
-					<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
+						<div style="display:inline-block;flex-grow:1;margin-bottom:0px"></div>
 					</div>
 
 					<div id="project_selection_div">
@@ -149,26 +157,30 @@
 
 		
 		<div id="login" style="position: relative;  height: 100%;background-color:#2c5aa0;display:none">
-			<div class="login-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
+			<div class="login-box" style="width: 50%;  height: 40%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
 			<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
 			<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
 
 
 
-			<div >
-				<label class="login_field_username_label" style="display:inline-block" for="username">Username</label>
-				<input class="login_field" type="text" tabindex="1" id="username" style="display:inline-block; height:30px; width: 200px;">
+			<div>
+				<div class="login-row">
+					<!--<label class="login_field_username_label" style="display:inline-block" for="username">Username</label>-->
+					<input class="login_field" type="text" placeholder="Username" tabindex="1" id="username" style="display:inline-block; height:32px; width: 210px; margin-right:15px;">
+				</div>
 
-				<label class="login_field_password_label" style="display:inline-block" for="password">Password</label>
-				<input class="login_field" style="display:inline-block; height:30px;    width: 200px;" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
+				<div class="password-row">
+					<!--<label class="login_field_password_label" style="display:inline-block" for="password">Password</label>-->
+					<input class="login_field" placeholder="Password" style="display:inline-block; height:32px; width: 210px; margin-right:15px;" type="password" tabindex="2" onkeydown="on_password_key_down(event)" id="password" >
+				</div>
 
 			</div>
 			<div style="margin-top:10px;overflow: auto;text-align:center;">
-				<button class="login_field" style="display:inline-block;   padding:0 0;  padding-left: 30px;    padding-right: 30px;       background-color: #2c5aa0;    color: white;    border: none"  tabindex="3" class="button-primary" onclick="login()">Login</button>
+				<button class="login_field button-cr" style="display:inline-block; width:210px; margin-right: 15px; height:32px; line-height:32px; font-size:12px;" tabindex="3" class="button-primary" onclick="login()">Login</button>
 			</div>
-			<div style="overflow: auto;margin: auto;position: absolute;left: 0;bottom: 0;right: 0;text-align:center;margin-bottom:10px">
-				<a tabindex="5" onclick="request_password_reset()" style="cursor:pointer;color: #029696">Reset Password</a>
-				<a  tabindex="4" style="display:none;cursor:pointer;color: #029696"  id="registration_button" onclick="switch_screen('registration')">| Register for an account</a>
+			<div style="overflow: auto;margin: auto;position: absolute;left: 0;bottom: 5px;right: 0;text-align:center;margin-bottom:10px">
+				<a tabindex="5" onclick="request_password_reset()" style="cursor:pointer;">Reset Password</a>
+				<a  tabindex="4" style="display:none;cursor:pointer;"  id="registration_button" onclick="switch_screen('registration')">| Register for an account</a>
 				<br/>
 
 				<span class="sub_title">Designed in Oxford at the SGC, powered by RDkit</span>
@@ -260,7 +272,7 @@
 							<input class="u-full-width" onKeyUp="check_reg_form()" type="password" id="reg_password_confirm"/>
 						</div>
 					</div>
-					<input class="button button-primary" type="submit"  value="Submit"  onclick="register()"  id="reg_submit" disabled/>
+					<input class="button-cr" type="submit"  value="Submit"  onclick="register()"  id="reg_submit" disabled/>
 			    </form>
 				<label for="login_redirect">Login with existing account</label>
 				<button  id="login_redirect" class="button" onclick="switch_screen('login')">Login</button>
@@ -275,7 +287,8 @@
 			</div>
 		</div>
 		
-                <div id="login_progress_old" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
+		<!--
+		<div id="login_progress_old" style="display:none;flex-grow:1;flex-direction:column;overflow:hidden;margin-left:10px;text-align:center">
 >
                         <h2 class="title">ChemiReg, Registration made simple</h2>
 			<img class="title_image" src="images/ChemiReg.png" width="600" style="margin-left:auto;margin-right:auto"/>
@@ -284,13 +297,12 @@
                                 Please wait....
 		        </div>
 		</div>
+		-->
 
 		<div id="login_progress" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
 			<div class="login-progress-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
-				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
-				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
-
-
+				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;"" />
+				<div class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</div>
 
 				<div >
 					Please wait
@@ -353,12 +365,13 @@
 				<div class="search-inner" style="display:flex;">
 					<select style="display:none;" id="search_selection"  placeholder="Compound ID"></select><!--list="search_matches"-->
 
-					<button id="search_draw_structure_button" onclick="open_structure_window_for_search(true)" style="display:none">Draw Structure</button>
+					<button id="search_draw_structure_button" class="button-cr" onclick="open_structure_window_for_search(true)" style="display:none">Draw Structure</button>
 
 					<button id="search_button_search" onclick="search(true)"><i class="fa fa-search" aria-hidden="true"></i></button>
 					
 					<label id="search_wildcard_label"  style="border:none;">Wildcard
-						<input id="wildcard_search" type="checkbox" style="" checked/>
+						<input id="wildcard_search" type="checkbox" checked="checked"/>
+						<span class="checkmark"></span>
 					</label>
 					
 				</div>
@@ -370,7 +383,7 @@
 							<div class="upload-buttons">
 								<button id="upload_template_button" class="button-text" onclick="load_template_project()">Template files</button>
 
-								<button class="button-icon" style="background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
+								<button id="upload_template_arrow" class="button-icon" style="background-image:url('images/workflow_left.png');color:transparent;background-repeat:no-repeat;" >A</button>
 								
 								<button onclick="document.getElementById('upload_simple_input').click()" ondragover="disable_default_drag_over(event);" ondrop="on_file_drop(event)" id="upload_file_state_button" class="button-text">File Upload</button>
 
@@ -396,7 +409,7 @@
 		<div id="session_loading_screen" style="display:none;position: relative;  height: 100%;background-color:#2c5aa0">
 			<div class="session-loading-screen-box" style="width: 50%;  height: 30%;  overflow: auto;  margin: auto;  position: absolute;  top: 0; left: 0; bottom: 0; right: 0;  text-align:center; background-color:white; border-radius: 10px; color:#616161  ">
 				<img class="title_image" src="images/ChemiReg.png" width="300" style="margin-left:auto;margin-right:auto;margin-top:10px"/>
-				<span class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</span>
+				<div class="title" style="display:none;position: absolute;    top: 55px;    font-size: 20px;">ChemiReg, Registration made simple</div>
 
 
 				<div >
