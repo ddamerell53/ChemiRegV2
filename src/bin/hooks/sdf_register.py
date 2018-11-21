@@ -496,10 +496,10 @@ class CompoundManager(object):
 					field_before_update_function = field['before_update_function']
 
 					# Handle custom functions
-					if field_before_update_function is not None:
-						func_parts = field_before_update_function.split('.')
-						function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-						getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
+					#if field_before_update_function is not None:
+				#		func_parts = field_before_update_function.split('.')
+			#			function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+		#				getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
 
 					cur = self.custom_field_cursors[field_type]
 					
@@ -1487,10 +1487,10 @@ class CompoundManager(object):
 				field_before_update_function = field['before_update_function']
 
 				# Handle custom functions
-				if field_before_update_function is not None:
-					func_parts = field_before_update_function.split('.')
-					function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-					getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
+				#f field_before_update_function is not None:
+				#func_parts = field_before_update_function.split('.')
+				#function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+				#getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
 				
 				field_value = None
 				

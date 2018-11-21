@@ -915,13 +915,13 @@ function on_project_change(cb){
 	// page or toggles between projects
 	
 	update_key_cache(function(){
-	    var screen = null;
+	    var screen = current_screen;
 
 	    var auto_show = false;
 
 	    if(current_screen != null && current_screen == 'session_loading_screen'){
 		    screen = 'search';
-        }else if(get_project() == 'Projects' || get_project() == 'Users' || get_project() == 'Custom Field Types' || get_project() == 'User to Project'){
+        }else if(get_project() == 'Projects' || get_project() == 'Users' || get_project() == 'Custom Field Types' || get_project() == 'User to Project' || get_project().endsWith('/Uploads')){
             screen = 'results'; auto_show = true;
         }else if(cb == null){
             screen = current_screen;
@@ -2784,39 +2784,56 @@ function update_actions(){
 
     if(get_hide_special_projects()){
         for(let i=0;i<select.children.length;i++){
-            const child = select.children[i];
+            const parent = select.children[i];
+            let child_visible = false;
 
-            var project_name = child.innerText;
+            for(let j=0;j<parent.children.length;j++){
+                const child = parent.children[j];
+                var project_name = child.innerText;
 
-            var enable = true;
+            	var enable = true;
 
-            if(project_name == null){
-                enable = false;
-            }else if(project_name.endsWith('/Custom Row Buttons')){
-                enable = false;
-            }else if(project_name.endsWith('/Uploads')){
-                enable = false;
-            }else if(project_name.endsWith('/Search History')){
-                enable = false;
-            }else if(project_name.endsWith('/Settings')){
-                enable = false;
-            }else if(project_name.endsWith('/Custom Fields')){
-                enable = false;
-            }else if(project_name.endsWith('/Templates')){
-                enable = false;
-            }
+            	if(project_name == null){
+               	 enable = false;
+            	}else if(project_name.endsWith('/Custom Row Buttons')){
+                	enable = false;
+            	}else if(project_name.endsWith('/Uploads')){
+               		enable = false;
+            	}else if(project_name.endsWith('/Search History')){
+                	enable = false;
+            	}else if(project_name.endsWith('/Settings')){
+                	enable = false;
+            	}else if(project_name.endsWith('/Custom Fields')){
+                	enable = false;
+            	}else if(project_name.endsWith('/Templates')){
+                	enable = false;
+            	}
 
-            if(enable){
-                child.style.display = 'initial';
-            }else{
-                child.style.display = 'none';
-            }
+            	if(enable){
+                	child.style.display = 'initial';
+                        child_visible = true;
+            	}else{
+                	child.style.display = 'none';
+            	}
+	    }
+            if(child_visible==true){
+		parent.style.display = 'initial';
+	    }else{
+                parent.style.display = 'none';
+	    }
         }
     }else{
          for(let i=0;i<select.children.length;i++){
-            const child = select.children[i];
-
-            child.style.display = 'initial';
+            const parent = select.children[i];
+            for(let j=0;j<parent.children.length;j++){
+                const child = parent.children[j];
+            	child.style.display = 'initial';
+	     }
+             if(parent.children.length > 0){
+               parent.style.display = 'initial';
+             }else {
+               parent.style.display = 'none';
+             }
         }
     }
 }
@@ -2918,6 +2935,8 @@ function refresh_session(user, refresh_project_list_only = false){
 								var custom_field_projects = [];
 								var custom_buttons_projects = [];
 								
+								let group_labels = ['Projects', 'Custom Field Projects', 'Upload History','Search History', 'Custom Project Buttons', 'User Settings', 'Actions'];
+
 								for(var i=0;i<projects.length;i++){
 									var project = projects[i];
 									if(project.indexOf('/Custom Row Buttons') >-1){
@@ -2936,49 +2955,37 @@ function refresh_session(user, refresh_project_list_only = false){
 									}
 								}
 
-                                if(custom_field_projects.length > 0){
-								    if(real_projects.length > 0){
-								        real_projects.push(null);
-								    }
+								real_projects.push(null);
 
+				                                if(custom_field_projects.length > 0){
 								    real_projects= real_projects.concat(custom_field_projects);
 								}
 
-								if(upload_projects.length > 0){
-								    if(real_projects.length > 0){
-								        real_projects.push(null);
-								    }
+								real_projects.push(null);
 
+								if(upload_projects.length > 0){
 								    real_projects= real_projects.concat(upload_projects);
 								}
 
-								if(search_projects.length > 0){
-								    if(real_projects.length > 0){
-								        real_projects.push(null);
-								    }
+                                                                real_projects.push(null);
 
+								if(search_projects.length > 0){
 								    real_projects = real_projects.concat(search_projects);
 								}
 
-								if(custom_buttons_projects.length > 0){
-								    if(real_projects.length > 0){
-								        real_projects.push(null);
-								    }
+                                                                real_projects.push(null);
 
+								if(custom_buttons_projects.length > 0){
 								    real_projects= real_projects.concat(custom_buttons_projects);
 								}
 
+                                                                real_projects.push(null);
+                                                                 
 								if(settings_projects.length > 0){
-								    if(real_projects.length > 0){
-								        real_projects.push(null);
-								    }
-
 								    real_projects = real_projects.concat(settings_projects);
 								}
 
-								if(real_projects.length > 0){
-								    real_projects.push(null);
-								}
+                                                                real_projects.push(null); 
 
 								real_projects.push('Logout');
 								
@@ -2999,12 +3006,10 @@ function refresh_session(user, refresh_project_list_only = false){
 									}
 								}
 								
-								
+							        let  elem_group = document.createElement('optgroup');
+                                                                elem_group.setAttribute('label', group_labels.shift());
+
 								for(var i=0;i<ordered_projects.length;i++){
-									if(i==0) {
-										var elem_group = document.createElement('optgroup');
-									}
-									
 									var project = ordered_projects[i];
 									
 									var elem = document.createElement('option');
@@ -3018,11 +3023,11 @@ function refresh_session(user, refresh_project_list_only = false){
 	
 									else {
 										projectSelection.appendChild(elem_group);
-										var elem_group = document.createElement('optgroup');
+										elem_group = document.createElement('optgroup');
+                                                                                elem_group.setAttribute('label', group_labels.shift());
 										elem.setAttribute('disabled','');
 										elem.style.fontSize = '1px';
 										elem.style.backgroundColor = '#00a1d6';
-										elem.classList.add('test');
 									}
 									
 									if((i + 1) == (ordered_projects.length)){ //last iteration
@@ -3055,7 +3060,7 @@ function refresh_session(user, refresh_project_list_only = false){
 								    set_project(real_project_value, true, function(){
 
 
-                                        active_list = ['home_button','help_button','search_button','results_button','registration_button', 'search_button', 'project_selection', 'main_buttons'];
+                                        active_list = ['home_button','help_button','search_button','results_button','search_button', 'project_selection', 'main_buttons'];
                                         inactive_list = ['registration_button', 'loading'];
 
                                         for(var i=0;i<active_list.length;i++){
@@ -3095,7 +3100,7 @@ function refresh_session(user, refresh_project_list_only = false){
 
 	}else{
 		inactive_list = ['home_button','help_button','search_button','results_button','search_button','loading','project_selection', 'main_buttons'];
-		active_list = ['registration_button', ];
+		active_list = [];
 
 		for(var i=0;i<active_list.length;i++){
 			document.getElementById(active_list[i]).style.display='initial';
@@ -5000,6 +5005,10 @@ class UploadReportPanel {
                 }
             }
         }
+
+        validation_button.classList.remove('passed');
+        validation_button.classList.remove('failed');
+        validation_button.classList.remove('fussy');
 
         validation_button.classList.add(customClass);
         //validation_button.style.backgroundColor = color;

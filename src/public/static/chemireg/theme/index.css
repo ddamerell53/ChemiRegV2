@@ -745,6 +745,7 @@ input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focu
 
 #main_buttons #project_selection_div select optgroup {
 	background: #00a1d6;
+        color: #ffffff;
 }
 
 #main_buttons #project_selection_div select optgroup option {
@@ -1030,6 +1031,17 @@ input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focu
 
 #search .search-box .button-text.failed:hover {
 	background: #ab2110
+}
+
+
+#search .search-box .button-text.fussy {
+         background: #22ad68;
+        //background: #ffc200;
+}
+
+#search .search-box .button-text.fussy:hover {
+        background: #1c8c54;
+        //background: #d8a400;
 }
 
 #search .search-box .button-icon {

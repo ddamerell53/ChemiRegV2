@@ -44,7 +44,7 @@ class AuthenticationManager(object):
 		self.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
 
 		self.include_scarab = True
-		self.user_registration_enabled = True
+		self.user_registration_enabled = False 
 		self.user_registration_disabled_msg = 'Access by invitation only'
 		self.email_manager = EmailManager()
 
@@ -1927,7 +1927,13 @@ class AuthenticationManager(object):
 
 		print('Created view ' + corrected_project_name)
 
+	def add_users_to_template_project(self, project_name):
+		cur = self.conn.cursor()
+		cur.execute('select username from users a, user_to_project b, projects c where a.id = b.user_id and b.project_id=c.id and c.project_name=%s',(project_name,))
 
+		for row in cur:
+			username = row[0]
+			self.add_user_to_project(username, project_name + '/Templates')
 
 
 class InsecurePasswordException(Exception):

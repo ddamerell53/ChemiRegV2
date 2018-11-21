@@ -11,7 +11,7 @@ from builtins import staticmethod
 class ChemiRegConfig(object):
     @staticmethod
     def get_db_hostname():
-        return 'chemireg_postgres'
+        return None
     
     @staticmethod
     def get_db_port():
@@ -19,28 +19,28 @@ class ChemiRegConfig(object):
     
     @staticmethod
     def get_db_name():
-        return 'chemireg'
+        return 'sat_reg'
     
     @staticmethod
     def get_db_password():
-        return 'password'
+        return None 
     
     @staticmethod
     def get_email_address():
-        return 'email@email.com'
+        return 'info_bot@sgc.ox.ac.uk'
     
     @staticmethod
     def get_email_hostname():
-        return 'hostname'
+        return 'smtp.ox.ac.uk'
     
     @staticmethod
     def get_email_port():
-        return 25
+        return 587
 
     @staticmethod
     def get_email_username():
-        return 'username'
+        return 'infobot'
     
     @staticmethod
     def get_email_password():
-        return 'password'
+        return '9gVPSOR90'
