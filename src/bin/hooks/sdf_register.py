@@ -85,16 +85,7 @@ class CompoundManager(object):
 
 		self.conn.cursor().execute('BEGIN')
 
-		self.error_cur = self.conn.cursor()
-		self.error_cur.execute('''
-			prepare insert_error as
-			insert into error_log (
-				error_uuid,
-				error_description
-			)
-			values($1,$2)
-		''')
-
+		
 		self.cur = self.conn.cursor()
 		
 		self.cur.execute(
@@ -999,9 +990,21 @@ class CompoundManager(object):
 	def log_error(self, error_description):
 		error_uuid = str(uuid.uuid1())
 
-		self.error_cur.execute("execute insert_error (%s, %s)", (error_uuid, error_description))
+		conn = ConnectionManager.get_new_connection()
 
-		self.conn.commit()
+		error_cur = conn.cursor()
+		error_cur.execute('''
+			prepare insert_error as
+			insert into error_log (
+				error_uuid,
+				error_description
+			)
+			values($1,$2)
+		''')
+
+		error_cur.execute("execute insert_error (%s, %s)", (error_uuid, error_description))
+
+		conn.commit()
 
 		return error_uuid
 			
