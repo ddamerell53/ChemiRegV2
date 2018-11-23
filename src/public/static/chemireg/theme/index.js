@@ -375,7 +375,7 @@ function show_upload_set(upload_id,selectedFile){
 	new_fetch(true);
 }
 
-function new_fetch(auto_show, screen){
+function new_fetch(auto_show, screen, cb){
 	// Starts a timer which will switch to the home screen to show progress if
 	// more than 2 seconds have passed
 	// We are trying to avoid fast queries hiding and then displaying the
@@ -398,6 +398,10 @@ function new_fetch(auto_show, screen){
 				
 				if(err != null){
 					show_message('Search Failed',err);
+
+					if(cb != null){
+					    cb(err);
+					}
 				}else{
 					window.objs = objs;
 
@@ -406,7 +410,7 @@ function new_fetch(auto_show, screen){
 					current_fetch.from_row = 0;
 					current_fetch.to_row = page_size-1;
 
-					fetch(auto_show, screen);
+					fetch(auto_show, screen, cb);
 				}
 			}
 	);
@@ -426,7 +430,7 @@ function set_action_done(done){
 
 
 
-function fetch(auto_show, screen){
+function fetch(auto_show, screen, cb){
 	insert_mode = false;
 	
 	current_fetch.task = 'fetch';
@@ -441,6 +445,10 @@ function fetch(auto_show, screen){
 				
 				if(err != null){
 					show_message('Fetch Failed',err);
+
+					if(cb != null){
+					    cb(err);
+					}
 				}else{
 					update_compound_table(objs[0].upload_set);
 
@@ -450,12 +458,16 @@ function fetch(auto_show, screen){
 
 					update_paging_panel();
 
-					if(auto_show){
+					if(auto_show && cb == null){
 					    if(screen == null){
 					        screen = 'results';
 					    }
 
 						switch_screen(screen);
+					}
+
+					if(cb != null){
+					    cb();
 					}
 				}
 			}
@@ -3123,13 +3135,13 @@ function refresh_session(user, refresh_project_list_only = false){
 	}
 }
 
-function fetch_all(forget_search, screen, auto_show){
+function fetch_all(forget_search, screen, auto_show, cb){
 	if(get_project().indexOf('Search History') > -1){
-		fetch_all_user(forget_search, screen);
+		fetch_all_user(forget_search, screen, cb);
 	}else{
 		current_fetch = {'project':get_project(), '_username': null, 'action':'search_all', 'forget_search': forget_search};
 		
-		new_fetch(auto_show, screen);
+		new_fetch(auto_show, screen, cb);
 	}
 }
 
@@ -3154,10 +3166,10 @@ function fetch_user_settings(cb){
 	
 }
 
-function fetch_all_user(forget_search, screen){
+function fetch_all_user(forget_search, screen,cb){
 	current_fetch = {'project':get_project(), '_username': null, 'action':'search_user_all', 'forget_search': forget_search};
 	
-	new_fetch(false, screen);
+	new_fetch(false, screen,cb);
 }
 
 
