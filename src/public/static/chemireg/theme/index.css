@@ -750,6 +750,7 @@ input[type="email"]:focus, input[type="number"]:focus, input[type="search"]:focu
 
 #main_buttons #project_selection_div select optgroup option {
 	background: #ffffff;
+        color: #444444;
 }
 
 @media (max-width: 1024px) {
