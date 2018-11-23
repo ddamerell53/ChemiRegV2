@@ -458,7 +458,7 @@ function fetch(auto_show, screen, cb){
 
 					update_paging_panel();
 
-					if(auto_show && cb == null){
+					if(auto_show ){
 					    if(screen == null){
 					        screen = 'results';
 					    }
@@ -938,13 +938,7 @@ function on_project_change(cb){
         }else if(cb == null){
             screen = current_screen;
         }
-
-		if(cb == null){
-            fetch_all(true, screen, true);
-		}else{
-		    fetch_all(true, screen,true);
-			cb();
-		}
+            fetch_all(true, screen, true, cb);
 	});
 }	
 	
