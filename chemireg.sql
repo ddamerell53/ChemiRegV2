@@ -36,9 +36,6 @@ drop table if exists error_log;
 create sequence transaction_counter increment by 1 minvalue 1;
 create sequence monotone_transaction_counter;
 
---CREATE EXTENSION pg_trgm;
-CREATE EXTENSION pg_bigm;
-
 create table suppliers (
     id serial PRIMARY KEY,
     name varchar(4000)
