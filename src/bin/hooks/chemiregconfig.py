@@ -19,7 +19,7 @@ class ChemiRegConfig(object):
     
     @staticmethod
     def get_db_name():
-        return 'sat_reg'
+        return 'chemireg'
     
     @staticmethod
     def get_db_password():
@@ -27,20 +27,20 @@ class ChemiRegConfig(object):
     
     @staticmethod
     def get_email_address():
-        return 'info_bot@sgc.ox.ac.uk'
+        return None
     
     @staticmethod
     def get_email_hostname():
-        return 'smtp.ox.ac.uk'
+        return None
     
     @staticmethod
     def get_email_port():
-        return 587
+        return None
 
     @staticmethod
     def get_email_username():
-        return 'infobot'
+        return None
     
     @staticmethod
     def get_email_password():
-        return '9gVPSOR90'
+        return None
