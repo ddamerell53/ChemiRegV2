@@ -11,27 +11,27 @@ create extension rdkit;
 
 \c chemireg chemireg
 
-drop table custom_varchar_fields;
-drop table custom_float_fields;
-drop table custom_int_fields;
-drop table compounds_idx;
-drop table custom_text_fields;
-drop table custom_foreign_key_field;
-drop table custom_bool_fields;
+drop table if exists custom_varchar_fields;
+drop table if exists custom_float_fields;
+drop table if exists custom_int_fields;
+drop table if exists compounds_idx;
+drop table if exists custom_text_fields;
+drop table if exists custom_foreign_key_field;
+drop table if exists custom_bool_fields;
 
-drop table custom_fields;
-drop table custom_field_types;
+drop table if exists custom_fields;
+drop table if exists custom_field_types;
 
-drop table file_uploads;
-drop table compounds;
-drop table suppliers;
-drop table compound_prefixes;
+drop table if exists file_uploads;
+drop table if exists compounds;
+drop table if exists suppliers;
+drop table if exists compound_prefixes;
 
-drop table user_to_project;
-drop table projects;
-drop table users;
-drop table compound_salts;
-drop table error_log;
+drop table if exists user_to_project;
+drop table if exists projects;
+drop table if exists users;
+drop table if exists compound_salts;
+drop table if exists error_log;
 
 create sequence transaction_counter increment by 1 minvalue 1;
 create sequence monotone_transaction_counter;
