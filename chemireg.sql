@@ -19,8 +19,6 @@ drop table custom_text_fields;
 drop table custom_foreign_key_field;
 drop table custom_bool_fields;
 
-alter table custom_fields drop constraint custom_fields_custom_field_fk_id_fkey;
-
 drop table custom_fields;
 drop table custom_field_types;
 
@@ -28,12 +26,12 @@ drop table file_uploads;
 drop table compounds;
 drop table suppliers;
 drop table compound_prefixes;
-drop table compound_salts;
 
 drop table user_to_project;
 drop table projects;
 drop table users;
 drop table compound_salts;
+drop table error_log;
 
 create sequence transaction_counter increment by 1 minvalue 1;
 create sequence monotone_transaction_counter;
@@ -71,7 +69,7 @@ values(
     'email@email.com',
     'administrator',
     '$pbkdf2-sha256$29000$aU1p7Z3zXovR2vu/F4LwXg$b96emhG99VOSVi/JlvMitVNuR3pzOoZVmRbpMRZGsO0'
-)
+);
 
 alter table users add constraint users_idx UNIQUE (username);
 create index users_idx2 on users (username);
@@ -87,8 +85,6 @@ create table projects (
     enable_addition boolean default true,
     archived_date timestamp
 );
-
-alter table projects add column archived_date timestamp;
 
 insert into projects (project_name, entity_name, enable_structure_field,enable_attachment_field, enable_addition)
 
@@ -226,6 +222,7 @@ values(
     0
 );
 
+create unique index copounds_idx0 on compounds(compound_id, project_id);
 create index copounds_idx1 on compounds(compound_id);
 create index copounds_idx2 on compounds(upper(compound_id));
 
@@ -238,7 +235,6 @@ create index copounds_idx4 on compounds using gin (upper(compound_id) gin_bigm_o
 create index compounds_id on compounds (id);
 create index upload_id_idx on compounds (upload_id);
 create index batchable_idx on compounds (batchable);
-create index compound_desalted_inchi_no_tautomer_idx on compounds (desalted_inchi_no_tautomer);
 create index compounds_insert_transaction_id on compounds (insert_transaction_id);
 create index compounds_update_transaction_id on compounds (update_transaction_id);
 create index compounds_delete_transaction_id on compounds (archived_transaction_id);
@@ -327,9 +323,6 @@ create table custom_fields (
 	before_update_function varchar(400),
 	archived_date timestamp
 );
-
-alter table custom_fields add column before_update_function varchar(400);
-alter table custom_fields add column archived_date timestamp;
 
 insert into custom_fields(
     project_id,
@@ -565,14 +558,6 @@ values
     null
 );
 
-create table user_to_project (
-    id serial primary key,
-    project_id int REFERENCES projects (id) on delete cascade,
-    user_id int REFERENCES users (id) on delete cascade,
-    default_project boolean,
-    is_administrator boolean default false
-);
-
 create unique index custom_fields_uqx on custom_fields(project_id, name);
 create unique index custom_fields_uqx2 on custom_fields(project_id, human_name);
 create index custom_field_idx1 on custom_fields(name);
@@ -734,5 +719,3 @@ create index molecule_mol_idx on compounds_idx using gist(molecule);
 -- import string into the following
 -- sudo  vim /usr/local/anaconda_cos6/envs/sat_reg/lib/python2.7/site-packages/rdkit/sping/SVG/pidSVG.py
 -- (sat_reg) -bash-4.1$ sudo vim /usr/local/anaconda_cos6/envs/sat_reg/lib/python2.7/site-packages/rdkit/sping/PDF/pdfmetrics.py
-
-create index test1 on compounds using gist(project_id, archived_transaction_id, upper(compound_id) gin_bigm_ops);
