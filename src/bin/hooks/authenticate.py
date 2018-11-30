@@ -44,7 +44,7 @@ class AuthenticationManager(object):
 		self.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
 
 		self.include_scarab = True
-		self.user_registration_enabled = False 
+		self.user_registration_enabled = True
 		self.user_registration_disabled_msg = 'Access by invitation only'
 		self.email_manager = EmailManager()
 
