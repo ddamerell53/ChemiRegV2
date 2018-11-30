@@ -132,8 +132,7 @@ class AuthenticationManager(object):
 				last_name = $3,
 				email = $4,
 				username = $5,
-				password_hash = $6,
-				account_type = $7
+				account_type = $6
 			where
 				username = $1
 		''')
