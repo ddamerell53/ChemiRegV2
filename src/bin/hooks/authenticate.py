@@ -1230,7 +1230,7 @@ class AuthenticationManager(object):
 					password_hash = %s
 				where
 					username = %s
-			''', password_hash, username)
+			''', (password_hash, username))
 
 		self.rename_project(username + '/Settings', original_username + '/Settings')
 
