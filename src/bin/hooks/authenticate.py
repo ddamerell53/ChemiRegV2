@@ -1213,7 +1213,7 @@ class AuthenticationManager(object):
 		else:
 			password_hash = None
 
-		self.update_user_cur.execute("execute update_user (%s,%s,%s,%s,%s,%s,%s)", (
+		self.update_user_cur.execute("execute update_user (%s,%s,%s,%s,%s,%s)", (
 			original_username,
 			first_name,
 			last_name,
