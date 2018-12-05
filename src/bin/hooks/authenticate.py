@@ -58,10 +58,15 @@ class AuthenticationManager(object):
 		
 		if fetch_manager is None:
 			import fetch
-		
+
 			self.fetch_manager = fetch.CompoundFetchManager(None, self)
 		else:
 			self.fetch_manager = fetch_manager
+
+		if crud_manager is None:
+			import sdf_register
+
+			crud_manager = sdf_register.CompoundManager(self.conn, self)
 			
 		self.crud_manager = crud_manager
 
