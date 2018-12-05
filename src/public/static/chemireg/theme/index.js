@@ -2116,14 +2116,15 @@ function _update_upload_field_mapping(lines){
 		var selectize = mapping_fields.get(field_name)[0];
 		var real_field_name = mapping_fields.get(field_name)[1];
 
-		if(real_field_name == 'compound_id'){
-		    continue;
-		}
-
 		selectize.clearOptions();
 		selectize.load(function(cb){
 			cb(fields);
 		});
+
+		if(real_field_name == 'compound_id'){
+		    continue;
+		}
+
 		var set = false;
 		
 		if(field_to_closest_field.exists(field_name)){
