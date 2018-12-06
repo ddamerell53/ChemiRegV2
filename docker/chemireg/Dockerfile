@@ -5,12 +5,12 @@ MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 RUN apt-get update && \
 apt-get install -y git vim build-essential libcap2-bin libcairo2
 RUN useradd -ms /bin/bash chemireg
+RUN echo "2.1006" > /VERSION
 USER chemireg
-COPY chemireg.tar.gz /tmp/chemireg.tar.gz
 RUN cd /home/chemireg && \
-tar zxvf /tmp/chemireg.tar.gz
-USER root
-RUN cd /home/chemireg/src && \
+git clone https://github.com/ddamerell53/ChemiRegV2.git
+USER root:
+RUN cd /home/chemireg/ChemiRegV2/src && \
 conda install --yes --file python_requirements.txt
 RUN pip install git+git://github.com/ddamerell53/socketIO-client-2.0.3
 RUN conda install --yes -c rdkit rdkit
@@ -34,10 +34,13 @@ USER root
 RUN setcap 'cap_net_bind_service=+ep' /home/chemireg/node-v8.9.3-linux-x64/bin/node
 RUN /opt/conda/bin/conda install jupyter -y --quiet && \
 mkdir /opt/notebooks
+USER root
+RUN apt-get install -y postgresql-client
+CMD /bin/bash
 USER chemireg
-RUN cd / &&\
-tar zxvf /home/chemireg/src/jupyter.tar.gz && \
-rm /home/chemireg/src/jupyter.tar.gz
-ENV PYTHONPATH=/home/chemireg/src/bin/hooks
-RUN chmod u+x /home/chemireg/src/start.sh
-CMD /home/chemireg/src/start.sh
+ENV PYTHONPATH=/home/chemireg/ChemiRegV2/src/bin/hooks
+ENV PATH=/home/chemireg/redis-4.0.6/src/:/opt/conda/bin:${PATH}
+RUN chmod u+x /home/chemireg/ChemiRegV2/src/start.sh
+RUN echo "2.1005" > /home/chemireg/VERSION
+RUN mkdir /home/chemireg/.jupyter
+RUN cp /home/chemireg/ChemiRegV2/jupyter_notebook_config.json /home/chemireg/.jupyter/
