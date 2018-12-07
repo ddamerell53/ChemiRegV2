@@ -1611,7 +1611,7 @@ class CompoundManager(object):
 				mol = Chem.MolFromSmiles(mol_str)
 			
 			if mol is None:
-				raise RegistrationException('Compound on row ' + str(j) + ' is invalid')
+				raise RegistrationException('Compound on row ' + str(i) + ' is invalid')
 				
 			for j in range(0, columns):
 				value = sheet.cell_value(i,j)
