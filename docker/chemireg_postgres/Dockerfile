@@ -1,4 +1,4 @@
-FROM ddamerell/chemireg:sgc_rdkit_postgres_bigm
+FROM sgcit/chemireg:sgc_rdkit_postgres_bigm
 
 MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 

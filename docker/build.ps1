@@ -10,10 +10,10 @@ cd ../chemireg
 docker pull continuumio/anaconda3
 docker build -t chemireg .
 
-docker tag chemireg ddamerell/chemireg:latest
-docker tag chemireg_postgres ddamerell/chemireg:postgres
-docker tag sgc_rdkit_postgres_bigm ddamerell/chemireg:sgc_rdkit_postgres_bigm
+docker tag chemireg sgcit/chemireg:latest
+docker tag chemireg_postgres sgcit/chemireg:postgres
+docker tag sgc_rdkit_postgres_bigm sgcit/chemireg:sgc_rdkit_postgres_bigm
 
-docker push ddamerell/chemireg:latest
-docker push ddamerell/chemireg:postgres
-docker push ddamerell/chemireg:sgc_rdkit_postgres_bigm
+docker push sgcit/chemireg:latest
+docker push sgcit/chemireg:postgres
+docker push sgcit/chemireg:sgc_rdkit_postgres_bigm

@@ -36,7 +36,7 @@ RUN /opt/conda/bin/conda install jupyter -y --quiet && \
 mkdir /opt/notebooks
 USER root
 RUN apt-get install -y postgresql-client
-CMD /bin/bash
+#CMD /bin/bash
 USER chemireg
 ENV PYTHONPATH=/home/chemireg/ChemiRegV2/src/bin/hooks
 ENV PATH=/home/chemireg/redis-4.0.6/src/:/opt/conda/bin:${PATH}
@@ -44,3 +44,5 @@ RUN chmod u+x /home/chemireg/ChemiRegV2/src/start.sh
 RUN echo "2.1005" > /home/chemireg/VERSION
 RUN mkdir /home/chemireg/.jupyter
 RUN cp /home/chemireg/ChemiRegV2/jupyter_notebook_config.json /home/chemireg/.jupyter/
+WORKDIR /home/chemireg/ChemiRegV2/src/
+CMD /home/chemireg/ChemiRegV2/src/start.sh
