@@ -1296,13 +1296,14 @@ class AuthenticationManager(object):
 				
 			self.crud_manager.save_changes('administrator', changes, username + '/Settings')
 			
-			#self.add_user_to_project(username, 'SGC')
-			#self.add_user_to_project(username, 'SGC - Oxford')
-			#self.add_user_to_project(username, 'SGC/Supplier List')
-			#self.add_user_to_project(username, 'SGC/Search History')
-			#self.add_user_to_project(username, 'SGC - Oxford/Search History')
-			#self.add_user_to_project(username, 'SGC/Salts')
-			#self.add_user_to_project(username, 'SGC/Compound Classifications')
+			self.add_user_to_project(username, 'SGC')
+			self.add_user_to_project(username, 'SGC - Oxford')
+			self.add_user_to_project(username, 'SGC/Supplier List')
+			self.add_user_to_project(username, 'SGC/Search History')
+			self.add_user_to_project(username, 'SGC - Oxford/Search History')
+			self.add_user_to_project(username, 'SGC/Salts')
+			self.add_user_to_project(username, 'SGC/Compound Classifications')
+			self.add_user_to_project(username, 'SGC/Compound Series')
 
 
 
