@@ -1216,6 +1216,10 @@ class CompoundFetchManager(object):
 				fields.append(custom_fields)
 				field_names.append(custom_fields[field_name]['field_name'])
 				field_name_to_human_name[custom_fields[field_name]['field_name']]= custom_fields[field_name]['human_name']
+
+		field_names += ['id']
+		field_name_to_human_name['id'] = 'ChemiReg PKEY'
+
 		
 		tz = dateutil.tz.gettz(tz)
 		
@@ -1288,6 +1292,9 @@ class CompoundFetchManager(object):
 		field_names += ['username', 'date_record_created']
 		field_name_to_human_name['username'] = 'Record Creator'
 		field_name_to_human_name['date_record_created'] = 'Date Record Created'
+
+		field_names += ['id']
+		field_name_to_human_name['id'] = 'ChemiReg PKEY'
 		
 		col_i = 0
 		
