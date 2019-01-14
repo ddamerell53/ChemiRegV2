@@ -2699,7 +2699,7 @@ function load_template_project(){
     });*/
 }
 
-function open_project_in_new_tab(project_id){
+function open_project_in_new_tab(project_name){
     window.open(window.location.href + '?project_id='+project_name+'&screen_id=results');
 }
 
