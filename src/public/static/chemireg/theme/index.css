@@ -390,7 +390,10 @@ a:hover, a:focus {
 	left: -9999px;
 }
 
-.mobile-view .search_results tr { border: 1px solid #ccc; }
+.mobile-view .search_results tr {
+    border: 1px solid #ccc;
+    border-bottom: 2px solid rgb(44, 90, 160);
+ }
 
 .mobile-view .search_results_td_narrow {
 	/* Behave  like a "row" */
