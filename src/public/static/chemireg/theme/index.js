@@ -4156,7 +4156,7 @@ function search(include_terms){
 	}else if(terms.length > 0){
 		new_fetch(true);
 	}else{
-		fetch_all(true, null, false);
+		fetch_all(true, null, true);
 	}
 }
 
