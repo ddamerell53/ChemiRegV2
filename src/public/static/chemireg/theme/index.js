@@ -2705,7 +2705,7 @@ function load_template_project(){
 }
 
 function open_project_in_new_tab(project_name){
-    window.open(window.location.href + '?project_id='+project_name+'&screen_id=results');
+    window.open(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port+ + 'static/chemireg/theme/index.html?project_id='+project_name+'&screen_id=results');
 }
 
 function back_project(){
