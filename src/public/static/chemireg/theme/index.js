@@ -2680,21 +2680,24 @@ function logout(){
 var first_load = true;
 
 function load_upload_history(){
-    set_project(get_project() + '/Uploads', true, function(){
+    open_project_in_new_tab(get_project() + '/Uploads');
+    /*set_project(get_project() + '/Uploads', true, function(){
         switch_screen('results');
-    });
+    });*/
 }
 
 function load_project_custom_fields(){
-    set_project(get_project() + '/Custom Fields', true, function(){
+    open_project_in_new_tab(get_project() + '/Custom Fields');
+    /*set_project(get_project() + '/Custom Fields', true, function(){
         switch_screen('results');
-    });
+    });*/
 }
 
 function load_project_custom_buttons(){
-    set_project(get_project() + '/Custom Row Buttons', true, function(){
+    open_project_in_new_tab(get_project() + '/Custom Row Buttons');
+    /*set_project(get_project() + '/Custom Row Buttons', true, function(){
         switch_screen('results');
-    });
+    });*/
 }
 
 function load_template_project(){
@@ -2793,11 +2796,11 @@ function update_actions(){
         template_menu_button.style.display = 'none';
     }
 
-    if(enable_back_button){
+    /*if(enable_back_button){
         get_back_project_button().style.display = 'initial';
-    }else{
+    }else{*/
         get_back_project_button().style.display = 'none';
-    }
+    //}
 
     var select = document.getElementById('project_selection');
 
