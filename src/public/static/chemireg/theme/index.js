@@ -2693,9 +2693,14 @@ function load_project_custom_buttons(){
 }
 
 function load_template_project(){
-    set_project(get_project() + '/Templates', true, function(){
+    open_project_in_new_tab(get_project() + '/Templates');
+    /*set_project(get_project() + '/Templates', true, function(){
         switch_screen('results');
-    });
+    });*/
+}
+
+function open_project_in_new_tab(project_id){
+    window.open(window.location.href + '?project_id='+project_name+'&screen_id=results');
 }
 
 function back_project(){
