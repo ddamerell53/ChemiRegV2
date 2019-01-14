@@ -347,7 +347,7 @@ function register_sdf(){
 					if(err == null){
 						register_function(upload_key)
 					}else{
-						show_message('Registration Failedk',err);
+						show_message('Registration Failed',err);
 					}
 				});
 				msgIdToFileName.set(msgId, selectedFile.name);
@@ -2246,7 +2246,7 @@ function attach_files(id, inputFiles){
 					if(err == null){
 						attach_function(upload_key)
 					}else{
-						show_message('Registration Failedk',err);
+						show_message('Registration Failed',err);
 					}
 				});
 				msgIdToFileName.set(msgId, selectedFile.name);
@@ -3588,8 +3588,20 @@ function start(){
 	
 	let switchButton = document.getElementsByClassName('switch-view');
 	switchButton[0].addEventListener('click',function(event){
-		document.getElementById("results").classList.toggle('mobile-view');
+		toggle_form_display();
 	});
+}
+
+function toggle_form_display(){
+    document.getElementById("results").classList.toggle('mobile-view');
+}
+
+function set_form_display(){
+    document.getElementById("results").classList.addClass('mobile-view');
+}
+
+function set_table_display(){
+    document.getElementById("results").classList.removeClass('mobile-view');
 }
 
 function create_grid(){
@@ -4173,7 +4185,7 @@ function save_changes(){
 								}
 							})
 						}else{
-							show_message('Registration Failedt',err);
+							show_message('Registration Failed',err);
 						}
 					}else{
 						var elems = document.getElementsByClassName('compound_table_field');
@@ -5211,11 +5223,13 @@ function mousePos(e) {
 
 function switch_table_view() {
 	var switchButton = document.getElementsByClassName('switch-view');
-	var rows = document.getElementById('compounds_results').rows.length;
 	
-	if(rows == 1){
-		switchButton[0].click();
+	if(query_size == 1){
+		set_form_display();
+	}else{
+	    set_table_display();
 	}
+
     switchButton[0].style.display = 'block';
 }
 
