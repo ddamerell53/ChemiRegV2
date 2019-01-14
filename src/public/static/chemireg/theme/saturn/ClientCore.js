@@ -5625,13 +5625,13 @@ saturn.client.core.ClientCore.prototype = {
 			this.authenticateSocket(user,function(err,user1) {
 				if(err == null) {
 					_g.installProviders();
-					var _g1 = 0;
+					/*var _g1 = 0;
 					var _g2 = _g.loginListeners;
 					while(_g1 < _g2.length) {
 						var listener = _g2[_g1];
 						++_g1;
 						listener(user1);
-					}
+					}*/
 				}
 				if(cb != null) cb(err);
 			});
