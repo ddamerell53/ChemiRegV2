@@ -5249,5 +5249,7 @@ function url_search() {
 		current_fetch = {'action':'fetch_exact', 'ids': compound_id, '_username': null, 'project_name': project_id, 'project': project_id};
 
 		new_fetch(true, screen_id);
+	}else if(screen_id != null){
+	    switch_screen(screen_id);
 	}
 }
