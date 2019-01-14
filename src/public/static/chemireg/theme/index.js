@@ -64,6 +64,7 @@ var activity_panel = null;
 
 var current_project = null;
 var previous_project = null;
+var previous_screen = null;
 
 var projects_hide_special = true;
 
@@ -2296,6 +2297,7 @@ function __set_project(project){
 function _set_project(project, signal_change, cb){
     _set_back_project_button();
 
+    previous_screen = current_screen;
     previous_project = current_project;
 
     current_project = project;
@@ -2698,7 +2700,7 @@ function load_template_project(){
 
 function back_project(){
     set_project(previous_project, true, function(){
-        switch_screen('search');
+        switch_screen(previous_screen);
     });
 }
 
@@ -5235,15 +5237,17 @@ function switch_table_view() {
 
 function url_search() {
 	var params = new URLSearchParams(window.location.search);
+
 	var compound_id = new Array();
+
 	compound_id.push(params.get('compound_id'));
+
 	var project_id = params.get('project_id');
-	
+	var screen_id = params.get('screen_id');
+
 	if(project_id && project_id.length > 0 && compound_id && compound_id[0] != null) {
 		current_fetch = {'action':'fetch_exact', 'ids': compound_id, '_username': null, 'project_name': project_id, 'project': project_id};
-		new_fetch(true);
-	} 
-	else{
-		show_message('Error','Please check the URL parameters');
+
+		new_fetch(true, screen_id);
 	}
 }
