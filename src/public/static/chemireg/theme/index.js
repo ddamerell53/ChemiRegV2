@@ -3597,11 +3597,11 @@ function toggle_form_display(){
 }
 
 function set_form_display(){
-    document.getElementById("results").classList.addClass('mobile-view');
+    document.getElementById("results").classList.add('mobile-view');
 }
 
 function set_table_display(){
-    document.getElementById("results").classList.removeClass('mobile-view');
+    document.getElementById("results").classList.remove('mobile-view');
 }
 
 function create_grid(){
