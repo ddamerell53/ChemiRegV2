@@ -72,6 +72,8 @@ var results_screen_called = false;
 
 var special_open = false;
 
+var prevent_default_fetch = false;
+
 
 function is_screen_locked(){
     return screen_locked;
@@ -939,7 +941,10 @@ function on_project_change(cb){
         }else if(cb == null){
             screen = current_screen;
         }
+
+        if(prevent_default_fetch){
             fetch_all(true, screen, true, cb);
+        }
 	});
 }	
 	
@@ -2918,7 +2923,6 @@ function refresh_session(user, refresh_project_list_only = false){
 						'_username': null
 				};
 
-
 				saturn.core.Util.getProvider().getByNamedQuery(
 						'saturn.db.provider.hooks.ExternalJsonHook:Register',
 						[request],
@@ -3062,6 +3066,15 @@ function refresh_session(user, refresh_project_list_only = false){
 									
 									var params = new URLSearchParams(window.location.search);
 									var project_id = params.get('project_id');
+
+
+									var params = new URLSearchParams(window.location.search);
+
+                                    var compound_id = new Array();
+
+                                    compound_id.push(params.get('compound_id'));
+
+                                    var screen_id = params.get('screen_id');
 									
 									var real_project_value = '';
 									
@@ -3070,10 +3083,12 @@ function refresh_session(user, refresh_project_list_only = false){
 									} else {
 										real_project_value = project_id;
 									}
+
+									if(compound_id && compound_id[0] != null){
+									    prevent_default_fetch = true;
+									}
 									
 								    set_project(real_project_value, true, function(){
-
-
                                         active_list = ['home_button','help_button','search_button','results_button','search_button', 'project_selection', 'main_buttons'];
                                         inactive_list = ['registration_button', 'loading'];
 
@@ -3090,8 +3105,14 @@ function refresh_session(user, refresh_project_list_only = false){
                                         }
 
                                         // session_loading = false;
-                            			if (project_id != null && ready){
-    									  url_search();
+                            			if (compound_id && compound_id[0] != null){
+    									    current_fetch = {'action':'fetch_exact', 'ids': compound_id, '_username': null, 'project_name': project_id, 'project': project_id};
+
+                                            new_fetch(true, screen_id);
+
+                                            prevent_default_fetch = false;
+    									}else if(screen_id != null){
+                                            switch_screen(screen_id);
     									}
                             			
                             			ready = true;
@@ -5238,23 +5259,4 @@ function switch_table_view() {
 	}
 
     switchButton[0].style.display = 'block';
-}
-
-function url_search() {
-	var params = new URLSearchParams(window.location.search);
-
-	var compound_id = new Array();
-
-	compound_id.push(params.get('compound_id'));
-
-	var project_id = params.get('project_id');
-	var screen_id = params.get('screen_id');
-
-	if(project_id && project_id.length > 0 && compound_id && compound_id[0] != null) {
-		current_fetch = {'action':'fetch_exact', 'ids': compound_id, '_username': null, 'project_name': project_id, 'project': project_id};
-
-		new_fetch(true, screen_id);
-	}else if(screen_id != null){
-	    switch_screen(screen_id);
-	}
 }
