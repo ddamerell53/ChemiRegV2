@@ -942,7 +942,7 @@ function on_project_change(cb){
             screen = current_screen;
         }
 
-        if(prevent_default_fetch){
+        if(prevent_default_fetch == false){
             fetch_all(true, screen, true, cb);
         }
 	});
@@ -3066,9 +3066,6 @@ function refresh_session(user, refresh_project_list_only = false){
 									
 									var params = new URLSearchParams(window.location.search);
 									var project_id = params.get('project_id');
-
-
-									var params = new URLSearchParams(window.location.search);
 
                                     var compound_id = new Array();
 
