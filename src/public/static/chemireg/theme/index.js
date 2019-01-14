@@ -466,6 +466,11 @@ function fetch(auto_show, screen, cb){
 					        screen = 'results';
 					    }
 
+					    // Override screen for the user if they are already on the results screen
+					    if(current_screen == 'results'){
+					        screen = 'results';
+					    }
+
 						switch_screen(screen);
 					}
 
@@ -3131,7 +3136,7 @@ function refresh_session(user, refresh_project_list_only = false){
 						}
 				);
 			});
-		}, 2000);
+		}, 20);
 
 	}else{
 		inactive_list = ['home_button','help_button','search_button','results_button','search_button','loading','project_selection', 'main_buttons'];
@@ -3163,7 +3168,7 @@ function fetch_all(forget_search, screen, auto_show, cb){
 		fetch_all_user(forget_search, screen, cb);
 	}else{
 		current_fetch = {'project':get_project(), '_username': null, 'action':'search_all', 'forget_search': forget_search};
-		
+
 		new_fetch(auto_show, screen, cb);
 	}
 }
