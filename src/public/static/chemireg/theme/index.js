@@ -26,7 +26,6 @@ var msgIdToImage = new haxe.ds.StringMap();
 var msgIdToFileName = new haxe.ds.StringMap();
 var ctab_to_image = new haxe.ds.StringMap();
 var unsaved_changes = new haxe.ds.StringMap();
-var last_target = null;
 var term_search_in_progress = false;
 var last_search_term = null;
 var ignore_reset = false;
@@ -120,6 +119,19 @@ function get_ketcher(){
 	return ketcher;
 }
 
+function update_structure_editor_from_paste(event){
+    //event.preventDefault();
+    var pasted_data = event.clipboardData.getData('text');
+
+    convert_smiles_to_ctab(pasted_data, function(ctab_content, error){
+        if(error == null){
+            import_from_string(ctab_content);
+        }else{
+            show_message('SMILES conversion error', 'Unable to convert SMILES to Mol Block');
+        }
+    });
+}
+
 function create_structure_editor(){
 	var width = 900;
 	var height = 450;
@@ -138,6 +150,7 @@ function create_structure_editor(){
 	}else if(structure_editor_type == 'Ketcher'){
 		// Your distribution becomes GPL at this point
 		var container = document.getElementById('structure_editor');
+
 		
 		var iframe = document.createElement('iframe');
 		
@@ -150,12 +163,44 @@ function create_structure_editor(){
 		// iframe.style.position = 'absolute';
 		iframe.style.border = 'none';
 
-		container.appendChild(iframe);
+
 
 		structure_window.container.style.position = 'absolute';
 		structure_window.container.style.top = '-100000px';
 
+        //iframe.addEventListener('paste', update_structure_editor_from_paste);
+
+        var inputContainer = document.createElement('div');
+        inputContainer.style.margin='auto';
+        inputContainer.style.width='50%';
+        inputContainer.style.backgroundColor='rgb(51, 195, 240)';
+        inputContainer.style.textAlign='center';
+
+        var inputLabel = document.createElement('label');
+        inputLabel.setAttribute('for', 'structure_text_entry_field');
+        inputLabel.innerText = 'Enter SMILES';
+        inputLabel.style.color='white';
+
+
+        var inputText = document.createElement('textarea');
+        //inputText.setAttribute('type', 'text');
+        inputText.setAttribute('rows','2');
+        inputText.setAttribute('cols','80');
+        inputText.setAttribute('name', 'structure_text_entry_field');
+
+        inputText.addEventListener('paste', update_structure_editor_from_paste);
+
+        container.appendChild(iframe);
+
+        inputContainer.appendChild(inputLabel);
+        inputContainer.appendChild(inputText);
+
+        structure_window.container.appendChild(inputContainer);
+
+
 		setTimeout(function(){
+
+
 		    structure_window.close();
 
 		    structure_window.container.style.position = 'fixed';
@@ -1139,7 +1184,9 @@ function add_row(compound_table_body, compound, replace_row){
 		make_editable(event.target);
 	});
 	
-	var field_item = null;
+	var field_item = new Object();
+	field_item.field_name = 'compound_id';
+
 	compound_id_span.addEventListener('paste', function(event){ // leo
 		event.preventDefault();
 		paste_data(compound, field_item, g_row_index, event);
@@ -1166,6 +1213,15 @@ function add_row(compound_table_body, compound, replace_row){
 			structure_cell.setAttribute('column_name','Structure');
 			structure_cell.classList.add('compound_table_field');
 			structure_cell.classList.add('search_results_td_narrow');
+
+			structure_cell.addEventListener('paste', function(event){ // leo
+                event.preventDefault();
+
+                var field_item = new Object();
+                field_item.field_name = 'compound_sdf';
+
+                paste_data(compound, field_item, g_row_index, event);
+            });
 	
 			i += 1;
 			
@@ -1593,13 +1649,12 @@ function add_row(compound_table_body, compound, replace_row){
 function paste_data(compound, field_item, g_row_index, event){
 	var pasted_data = event.clipboardData.getData('text');
 	var rows = pasted_data.split('\n');
-    rows.pop();
-    
-    if (field_item == null) {
-    	field_name = 'compound_id';
-    } else {
-    	var field_name = field_item.field_name;
-    }
+
+	if(rows[rows.length-1] == ''){
+	    rows.pop();
+	}
+
+    var field_name = field_item.field_name;
     
     var total_rows = compounds.length;
     var diff = total_rows - g_row_index + 1;
@@ -1623,7 +1678,7 @@ function paste_data(compound, field_item, g_row_index, event){
     // Column of table pasted into - an integer
     var starting_col = null;
     
-    if(field_item != null){
+    if(field_item.field_name != 'compound_id' && field_item.field_name != 'compound_sdf'){
     	// We get here for all custom fields (i.e. not the first field which
 		// includes the entity ID)
     	
@@ -1640,7 +1695,12 @@ function paste_data(compound, field_item, g_row_index, event){
     }else{
     	// We get here when the column pasted into was for the first special ID
 		// field
-    	starting_col = 0;
+
+		if(field_item.field_name == 'compound_id'){
+		    starting_col = 0;
+		}else if(field_item.field_name == 'compound_sdf'){
+		    starting_col = 1;
+		}
     }
     
     // Iterate rows of pasted content
