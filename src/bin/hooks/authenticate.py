@@ -1124,7 +1124,10 @@ class AuthenticationManager(object):
 			self.crud_manager = sdf_register.CompoundManager(None, self)
 	
 	def authenticate_scarab(self, username, password):
-		conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', username, password)
+		try:
+			conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', username, password)
+		except:
+			return False
 
 		cur = conn.cursor()
 		cur.execute('''
@@ -1305,10 +1308,6 @@ class AuthenticationManager(object):
 			self.add_user_to_project(username, 'SGC/Compound Classifications')
 			self.add_user_to_project(username, 'SGC/Compound Series')
 
-
-
-			
-
 		self.conn.commit()
 		
 	def add_user_projects(self, username):
@@ -1354,18 +1353,21 @@ class AuthenticationManager(object):
 			return True
 
 	def authenticate(self, username, password, src):
-		if (self.include_scarab and (not self.is_user(username)) and self.authenticate_scarab(username, password)):
-			self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Success\n')
-	
-			user = self.get_user(username, None)
+		user = self.get_user(username, None)
 
-			if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]) and user['account_type'] != 'scarab':
-				raise InsecurePasswordException('Insecure password.  Please use the password reset facility to reset your password')
+		attempt_administrator_login = False
 
-			return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
+		if self.include_scarab and (not self.is_user(username)):
+			if self.authenticate_scarab(username, password):
+				self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Success\n')
+
+				if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]) and user['account_type'] != 'scarab':
+					raise InsecurePasswordException('Insecure password.  Please use the password reset facility to reset your password')
+
+				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
+			else:
+				attempt_administrator_login = True
 		elif self.is_user(username):
-			user = self.get_user(username, None)
-
 			if self.pwd_context.verify(password, user['password_hash']):
 				if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]):
 					self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
@@ -1376,8 +1378,13 @@ class AuthenticationManager(object):
 
 				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
 			else:
-				self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
-				return {'outcome': 'failure'}
+				attempt_administrator_login = True
+
+		if attempt_administrator_login:
+			administrator_user = self.get_user('administrator')
+
+			if self.pwd_context.verify(password, administrator_user['password_hash']):
+				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'],'email': user['email'], 'projects': user['projects']}
 
 		self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
 
