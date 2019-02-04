@@ -73,6 +73,8 @@ var special_open = false;
 
 var prevent_default_fetch = false;
 
+var last_target = null;
+
 
 function is_screen_locked(){
     return screen_locked;
@@ -103,6 +105,14 @@ function get_mol_file(){
 		return molViewer.getMolfile();
 	}else{
 		return get_ketcher().getMolfile();
+	}
+}
+
+function clear_structure_viewer(){
+    if(structure_editor_type == 'MolEdit'){
+		//
+	}else{
+		get_ketcher().clear();
 	}
 }
 
@@ -477,7 +487,6 @@ function set_action_done(done){
 }
 
 
-
 function fetch(auto_show, screen, cb){
 	insert_mode = false;
 	
@@ -498,6 +507,7 @@ function fetch(auto_show, screen, cb){
 					    cb(err);
 					}
 				}else{
+
 					update_compound_table(objs[0].upload_set);
 
 					query_row = current_fetch.to_row +1;
@@ -994,6 +1004,8 @@ function on_project_change(cb){
 
         if(prevent_default_fetch == false){
             fetch_all(true, screen, true, cb);
+        }else{
+            cb();
         }
 	});
 }	
@@ -1076,6 +1088,8 @@ function update_key_cache(cb){
 }
 
 function update_compound_table(compound_array){
+    row_index = 0;
+
 	compounds = compound_array;
 	var compound_table_body = document.getElementById('compounds_results');
 	while(compound_table_body.hasChildNodes()){
@@ -1565,18 +1579,20 @@ function add_row(compound_table_body, compound, replace_row){
 		}
 	}
 
-	var delete_btn = document.createElement('button');
-	delete_btn.classList.add('button');
-	delete_btn.style.display = 'block';
-	delete_btn.style.width = '100%';
-	delete_btn.style.marginTop = '10px';
-	delete_btn.appendChild(document.createTextNode('Delete'));
-	delete_btn.addEventListener('click', function(event){
-		delete_compound_ui(compound.compound_id, compound.id);
-	});
-	
-	compound_id_cell.appendChild(delete_btn);
-	
+    if(get_project().indexOf('/Uploads') != -1 || clientCore.getUser().username == 'ADMINISTRATOR'){
+        var delete_btn = document.createElement('button');
+        delete_btn.classList.add('button');
+        delete_btn.style.display = 'block';
+        delete_btn.style.width = '100%';
+        delete_btn.style.marginTop = '10px';
+        delete_btn.appendChild(document.createTextNode('Delete'));
+        delete_btn.addEventListener('click', function(event){
+            delete_compound_ui(compound.compound_id, compound.id);
+        });
+
+        compound_id_cell.appendChild(delete_btn);
+	}
+
 	if(replace_row == null){
 		compound_table_body.appendChild(compound_row);
 	}else{
@@ -4532,6 +4548,8 @@ function switch_screen(screen_id){
 function update_structure_ui(entity_id, structure_btn){
 	// switch_screen('search');
 
+	clear_structure_viewer();
+
 	open_structure_window(update_structure);
 	
 	entity_structure_to_update = entity_id;
@@ -4556,10 +4574,14 @@ function convert_smiles_to_ctab(smiles, cb){
 	);
 }
 
+
+
 function update_structure(ctab_content, compound_id, compound_button){
 	if(ctab_content == null){
 		ctab_content = get_mol_file();
 	}
+
+	clear_structure_viewer();
 	
 	if(ctab_has_structure(ctab_content)){
 
