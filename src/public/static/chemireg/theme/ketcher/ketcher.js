@@ -245,6 +245,10 @@ ketcher.init = function ()
     ui.init();
 };
 
+ketcher.clear = function(){
+    ui.init();
+}
+
 ketcher.getSmiles = function ()
 {
     var saver = new chem.SmilesSaver();
