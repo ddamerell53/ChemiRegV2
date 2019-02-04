@@ -1579,7 +1579,7 @@ function add_row(compound_table_body, compound, replace_row){
 		}
 	}
 
-    if(get_project().indexOf('/Uploads') != -1 || clientCore.getUser().username == 'ADMINISTRATOR'){
+    if(get_project().indexOf('/Uploads') == -1 || clientCore.getUser().username == 'ADMINISTRATOR'){
         var delete_btn = document.createElement('button');
         delete_btn.classList.add('button');
         delete_btn.style.display = 'block';
