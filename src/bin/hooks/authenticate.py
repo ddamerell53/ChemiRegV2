@@ -1353,13 +1353,13 @@ class AuthenticationManager(object):
 			return True
 
 	def authenticate(self, username, password, src):
-		user = self.get_user(username, None)
-
 		attempt_administrator_login = False
 
 		if self.include_scarab and (not self.is_user(username)):
 			if self.authenticate_scarab(username, password):
 				self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Success\n')
+
+				user = self.get_user(username, None)
 
 				if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]) and user['account_type'] != 'scarab':
 					raise InsecurePasswordException('Insecure password.  Please use the password reset facility to reset your password')
@@ -1368,6 +1368,8 @@ class AuthenticationManager(object):
 			else:
 				attempt_administrator_login = True
 		elif self.is_user(username):
+			user = self.get_user(username, None)
+
 			if self.pwd_context.verify(password, user['password_hash']):
 				if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]):
 					self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
@@ -1381,6 +1383,8 @@ class AuthenticationManager(object):
 				attempt_administrator_login = True
 
 		if attempt_administrator_login:
+			user = self.get_user(username, None)
+
 			administrator_user = self.get_user('administrator')
 
 			if self.pwd_context.verify(password, administrator_user['password_hash']):
