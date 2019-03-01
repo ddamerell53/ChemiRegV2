@@ -1997,6 +1997,8 @@ phylo.PhyloAnnotationManager = $hxClasses["phylo.PhyloAnnotationManager"] = func
 	this.selectedAnnotationOptions = [];
 	this.searchedGenes = [];
 	this.annotationListeners = [];
+	this.skipAnnotation = [];
+	this.skipCurrentLegend = [];
 };
 phylo.PhyloAnnotationManager.__name__ = ["phylo","PhyloAnnotationManager"];
 phylo.PhyloAnnotationManager.prototype = {
@@ -2015,6 +2017,8 @@ phylo.PhyloAnnotationManager.prototype = {
 	,alreadyGotAnnotation: null
 	,selectedAnnotationOptions: null
 	,annotationNameToConfig: null
+	,skipAnnotation: null
+	,skipCurrentLegend: null
 	,showAssociatedData: function(active,data,mx,my) {
 		var annotation = this.annotations[data.annotation.type];
 		if(!active && annotation.divMethod != null) annotation.divMethod(data,mx,my);
@@ -2794,7 +2798,6 @@ phylo.PhyloCanvasRenderer.prototype = {
 		this.ctx.arc(x,y,Math.abs(radius),sAngle,eAngle);
 		this.ctx.lineWidth = lineWidth;
 		this.ctx.stroke();
-		this.ctx.closePath();
 		this.ctx.restore();
 	}
 	,drawWedge: function(x,y,radius,sAngle,eAngle,strokeStyle,lineWidth) {
@@ -3160,6 +3163,7 @@ phylo.PhyloCanvasConfiguration = $hxClasses["phylo.PhyloCanvasConfiguration"] = 
 	this.scale = 1;
 	this.enableZoom = false;
 	this.highlightedGenes = new haxe.ds.StringMap();
+	this.editmode = false;
 	this.drawingMode = phylo.PhyloDrawingMode.CIRCULAR;
 	this.bezierLines = false;
 	this.shadowColour = "gray";
@@ -3171,6 +3175,7 @@ phylo.PhyloCanvasConfiguration.prototype = {
 	,shadowColour: null
 	,bezierLines: null
 	,drawingMode: null
+	,editmode: null
 	,highlightedGenes: null
 	,enableZoom: null
 	,scale: null
@@ -3503,7 +3508,10 @@ phylo.PhyloHighlightWidget.prototype = $extend(phylo.PhyloGlassPaneWidget.protot
 	}
 	,addHighlightList: function() {
 		var formContainer = window.document.createElement("div");
+		formContainer.setAttribute("id","highlight-box");
 		formContainer.style.margin = "auto";
+		formContainer.style.overflowY = "scroll";
+		formContainer.style.height = "75%";
 		this.highlightInputs = [];
 		var targets = this.canvas.getRootNode().targets;
 		targets.sort(function(a,b) {
@@ -3518,25 +3526,29 @@ phylo.PhyloHighlightWidget.prototype = $extend(phylo.PhyloGlassPaneWidget.protot
 			++_g;
 			if(target == null || target == "") continue;
 			i += 1;
+			var elementWrapper = window.document.createElement("div");
+			elementWrapper.setAttribute("class","element-wrapper");
+			elementWrapper.style["float"] = "left";
+			elementWrapper.style.marginRight = "28px";
+			elementWrapper.style.marginBottom = "10px";
 			var name = "target_highlight_" + i;
 			var inputLabel = window.document.createElement("label");
 			inputLabel.setAttribute("for",name);
 			inputLabel.innerText = target;
-			inputLabel.style.width = "60px";
-			inputLabel.style.marginBottom = "5px";
-			inputLabel.style.display = "inline-block";
+			inputLabel.style["float"] = "left";
+			inputLabel.style.width = "55px";
+			inputLabel.style.margin = "0";
 			var inputElement = window.document.createElement("input");
 			inputElement.setAttribute("type","checkbox");
 			inputElement.setAttribute("value",target);
 			inputElement.setAttribute("name",name);
 			inputElement.style.width = "15px";
 			inputElement.style.height = "15px";
-			inputElement.style.display = "inline-block";
-			inputElement.style.marginRight = "15px";
+			inputElement.style.margin = "1px";
 			this.highlightInputs.push(inputElement);
-			formContainer.appendChild(inputLabel);
-			formContainer.appendChild(inputElement);
-			if(i % 7 == 0) formContainer.appendChild(window.document.createElement("br"));
+			formContainer.appendChild(elementWrapper);
+			elementWrapper.appendChild(inputLabel);
+			elementWrapper.appendChild(inputElement);
 		}
 		this.content.appendChild(formContainer);
 	}
@@ -3883,6 +3895,7 @@ phylo.PhyloRadialTreeLayout.__name__ = ["phylo","PhyloRadialTreeLayout"];
 phylo.PhyloRadialTreeLayout.prototype = {
 	cx: null
 	,cy: null
+	,annotations: null
 	,renderCircle: function(treeNode,renderer,annotations,annotList,lineColour) {
 		if(lineColour == null) lineColour = "rgb(28,102,224)";
 		if(treeNode.colour != null) lineColour = treeNode.colour;
@@ -4052,6 +4065,184 @@ phylo.PhyloRadialTreeLayout.prototype = {
 			treeNode.screen.push(rootScreen);
 		}
 		return i;
+	}
+	,render: function(treeNode,renderer,annotations,annotList,lineColour) {
+		if(lineColour == null) lineColour = "rgb(28,102,224)";
+		var i = 0;
+		var x = treeNode.x;
+		var y = treeNode.y;
+		if(renderer.getConfig().editmode == true) lineColour = "rgb(234,147,28)";
+		while(i < treeNode.children.length) {
+			treeNode.children[i].space = 0;
+			if(treeNode.children[i].isLeaf()) {
+				if(treeNode.children[i].lineMode == phylo.LineMode.BEZIER) {
+					var deltaX1 = Math.abs(x - treeNode.children[i].x);
+					var deltaY1 = Math.abs(y - treeNode.children[i].y);
+					var firstY;
+					var secondY;
+					var firstX;
+					var secondX;
+					if(treeNode.children[i].xRandom == null) treeNode.children[i].xRandom = Math.random() * 0.3 + 0.3;
+					if(treeNode.children[i].yRandom == null) treeNode.children[i].yRandom = Math.random() * 0.4 + 0.4;
+					if(treeNode.children[i].y < y) {
+						firstY = y - deltaY1 * treeNode.children[i].yRandom;
+						secondY = treeNode.children[i].y + deltaY1 * treeNode.children[i].yRandom;
+					} else {
+						firstY = y + deltaY1 * treeNode.children[i].yRandom;
+						secondY = treeNode.children[i].y - deltaY1 * treeNode.children[i].yRandom;
+					}
+					if(treeNode.children[i].x > x) {
+						firstX = x + deltaX1 * 0.6;
+						secondX = treeNode.children[i].x - deltaX1 * treeNode.children[i].xRandom;
+					} else {
+						firstX = x - deltaX1 * 0.6;
+						secondX = treeNode.children[i].x + deltaX1 * treeNode.children[i].xRandom;
+					}
+					renderer.bezierCurve(x,y,treeNode.children[i].x,treeNode.children[i].y,firstX,firstY,secondX,secondY,lineColour,treeNode.children[i].lineWidth);
+				} else renderer.drawLine(x,y,treeNode.children[i].x,treeNode.children[i].y,lineColour,treeNode.children[i].lineWidth);
+				var t;
+				var aux;
+				var aux1;
+				var yequalsign = false;
+				if(treeNode.children[i].y > 0 && y > 0) yequalsign = true; else if(treeNode.children[i].y < 0 && y < 0) yequalsign = true;
+				var xequalsign = false;
+				if(treeNode.children[i].x > 0 && x > 0) xequalsign = true; else if(treeNode.children[i].x < 0 && x < 0) xequalsign = true;
+				var deltaY;
+				var deltaX;
+				if(xequalsign == true) deltaX = Math.abs(treeNode.children[i].x - x); else deltaX = Math.abs(treeNode.children[i].x) + Math.abs(x);
+				if(yequalsign == true) deltaY = Math.abs(treeNode.children[i].y - y); else deltaY = Math.abs(treeNode.children[i].y) + Math.abs(y);
+				var tang = deltaY / deltaX;
+				treeNode.children[i].rad = Math.atan(tang);
+				var rot;
+				rot = 0;
+				var orign = "start";
+				if(treeNode.children[i].y > y && treeNode.children[i].x > x) {
+					rot = treeNode.children[i].rad;
+					orign = "start";
+					treeNode.children[i].quad = 1;
+				}
+				if(treeNode.children[i].y < y && treeNode.children[i].x > x) {
+					rot = 2 * Math.PI - treeNode.children[i].rad;
+					orign = "start";
+					treeNode.children[i].quad = 2;
+				}
+				if(treeNode.children[i].y < y && treeNode.children[i].x < x) {
+					rot = treeNode.children[i].rad;
+					orign = "end";
+					treeNode.children[i].quad = 3;
+				}
+				if(treeNode.children[i].y > y && treeNode.children[i].x < x) {
+					rot = 2 * Math.PI - treeNode.children[i].rad;
+					orign = "end";
+					treeNode.children[i].quad = 4;
+				}
+				if(treeNode.children[i].y == y && treeNode.children[i].x > x) {
+					treeNode.children[i].quad = 5;
+					rot = 0;
+				}
+				if(treeNode.children[i].y == y && treeNode.children[i].x < x) {
+					treeNode.children[i].quad = 6;
+					rot = Math.PI;
+				}
+				if(treeNode.children[i].y > y && treeNode.children[i].x == x) {
+					rot = 3 * Math.PI - Math.PI / 2;
+					treeNode.children[i].quad = 7;
+				}
+				if(treeNode.children[i].y < y && treeNode.children[i].x == x) {
+					treeNode.children[i].quad = 8;
+					rot = 3 * Math.PI / 4;
+				}
+				var namecolor = "#585b5f";
+				var ttar = treeNode.children[i].name;
+				if((function($this) {
+					var $r;
+					var this1 = renderer.getConfig().highlightedGenes;
+					$r = this1.exists(ttar);
+					return $r;
+				}(this)) == true) namecolor = "#ff0000";
+				renderer.drawText(" " + treeNode.children[i].name,treeNode.children[i].x,treeNode.children[i].y,-2,3,rot,orign,namecolor);
+				this.updateTreeRectangle(treeNode.children[i].x,treeNode.children[i].y,treeNode.root);
+				t = renderer.mesureText(treeNode.children[i].name) + 10;
+				treeNode.children[i].rad = rot;
+				var j;
+				var _g1 = 1;
+				var _g = annotations.length;
+				while(_g1 < _g) {
+					var j1 = _g1++;
+					if(annotations[j1] == true) {
+						var added;
+						added = this.addAnnotation(treeNode.children[i],j1,t,renderer,annotList);
+						if(treeNode.children[i].annotations[j1] != null && treeNode.children[i].annotations[j1].alfaAnnot[0] != null && treeNode.children[i].annotations[j1].alfaAnnot.length > 0) {
+							var u = 0;
+							if(added == true) treeNode.children[i].space = treeNode.children[i].space - 1;
+							treeNode.children[i].space = treeNode.children[i].space + 1;
+							var _g3 = 0;
+							var _g2 = treeNode.children[i].annotations[j1].alfaAnnot.length;
+							while(_g3 < _g2) {
+								var u1 = _g3++;
+								if(annotList[j1].shape == "text" && treeNode.children[i].quad == 2) treeNode.children[i].space = treeNode.children[i].space + 2; else if(annotList[j1].shape == "text" && treeNode.children[i].quad == 1) treeNode.children[i].space = treeNode.children[i].space + 2; else treeNode.children[i].space = treeNode.children[i].space + 1;
+								added = this.addAlfaAnnotation(treeNode.children[i],treeNode.children[i].annotations[j1].alfaAnnot[u1],j1,t,renderer,annotList);
+							}
+							if(added == true) treeNode.children[i].space = treeNode.children[i].space + 1;
+						} else if(added == true) treeNode.children[i].space = treeNode.children[i].space + 1;
+					}
+				}
+			} else {
+				var childLineColour = lineColour;
+				if(treeNode.children[i].colour != null) childLineColour = treeNode.children[i].colour;
+				this.render(treeNode.children[i],renderer,annotations,annotList,childLineColour);
+				if(treeNode.children[i].lineMode == phylo.LineMode.BEZIER) {
+					var deltaX2 = Math.abs(x - treeNode.children[i].x);
+					var deltaY2 = Math.abs(y - treeNode.children[i].y);
+					var firstY1;
+					var secondY1;
+					var firstX1;
+					var secondX1;
+					if(treeNode.children[i].xRandom == null) treeNode.children[i].xRandom = Math.random() * 0.3 + 0.3;
+					if(treeNode.children[i].yRandom == null) treeNode.children[i].yRandom = Math.random() * 0.4 + 0.4;
+					if(treeNode.children[i].y < y) {
+						firstY1 = y - deltaY2 * treeNode.children[i].yRandom;
+						secondY1 = treeNode.children[i].y + deltaY2 * treeNode.children[i].yRandom;
+					} else {
+						firstY1 = y + deltaY2 * treeNode.children[i].yRandom;
+						secondY1 = treeNode.children[i].y - deltaY2 * treeNode.children[i].yRandom;
+					}
+					if(treeNode.children[i].x > x) {
+						firstX1 = x + deltaX2 * 0.6;
+						secondX1 = treeNode.children[i].x - deltaX2 * treeNode.children[i].xRandom;
+					} else {
+						firstX1 = x - deltaX2 * 0.6;
+						secondX1 = treeNode.children[i].x + deltaX2 * treeNode.children[i].xRandom;
+					}
+					renderer.bezierCurve(x,y,treeNode.children[i].x,treeNode.children[i].y,firstX1,firstY1,secondX1,secondY1,lineColour,treeNode.children[i].lineWidth);
+				} else renderer.drawLine(x,y,treeNode.children[i].x,treeNode.children[i].y,lineColour,treeNode.children[i].lineWidth);
+				var data;
+				data = new phylo.PhyloScreenData();
+				data.renderer = renderer;
+				data.isAnnot = false;
+				data.nodeId = treeNode.children[i].nodeId;
+				data.point = 5;
+				data.width = 10;
+				data.height = 10;
+				data.parentx = Math.round(x);
+				data.parenty = Math.round(y);
+				data.x = Math.round(treeNode.children[i].x);
+				data.y = Math.round(treeNode.children[i].y);
+				treeNode.root.screen[treeNode.root.screen.length] = data;
+			}
+			i++;
+		}
+		if(treeNode.parent == null) {
+			var rootScreen = new phylo.PhyloScreenData();
+			rootScreen.x = treeNode.x;
+			rootScreen.y = treeNode.y;
+			rootScreen.nodeId = treeNode.nodeId;
+			rootScreen.renderer = renderer;
+			rootScreen.point = 5;
+			rootScreen.width = 10;
+			rootScreen.height = 10;
+			treeNode.screen.push(rootScreen);
+		}
 	}
 	,addAnnotation: function(leave,annotation,$long,renderer,annotList) {
 		if(annotList[annotation].optionSelected.length != 0) {
@@ -4668,6 +4859,22 @@ phylo.PhyloRadialTreeLayout.prototype = {
 		leave.root.screen[leave.root.screen.length] = data;
 		return res;
 	}
+	,updateTreeRectangle: function(x,y,treeNode) {
+		var top;
+		top = treeNode.rectangleTop | 0;
+		var right;
+		right = treeNode.rectangleRight | 0;
+		var bottom;
+		bottom = treeNode.rectangleBottom | 0;
+		var left;
+		left = treeNode.rectangleLeft | 0;
+		x = x | 0;
+		y = y | 0;
+		if(x < left) treeNode.rectangleLeft = x;
+		if(x > right) treeNode.rectangleRight = x;
+		if(y < bottom) treeNode.rectangleBottom = y;
+		if(y > top) treeNode.rectangleTop = y;
+	}
 	,__class__: phylo.PhyloRadialTreeLayout
 };
 phylo.PhyloScreenData = $hxClasses["phylo.PhyloScreenData"] = function() {
@@ -4795,7 +5002,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/center-single.png)";
+		button.style.backgroundImage = "url(js/images/center-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.backgroundSize = "30px";
@@ -4814,7 +5021,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/mag_plus-single.png)";
+		button.style.backgroundImage = "url(js/images/mag_plus-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.height = "25px";
@@ -4832,7 +5039,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/mag_minus-single.png)";
+		button.style.backgroundImage = "url(js/images/mag_minus-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.height = "25px";
@@ -4850,7 +5057,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/png-single.png)";
+		button.style.backgroundImage = "url(js/images/png-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.height = "25px";
@@ -4868,7 +5075,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/svg-single.png)";
+		button.style.backgroundImage = "url(js/images/svg-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.height = "25px";
@@ -4886,7 +5093,7 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		this.position(button);
-		button.style.backgroundImage = "url(/static/js/images/hightlight-single.png)";
+		button.style.backgroundImage = "url(js/images/hightlight-single.png)";
 		button.style.backgroundRepeat = "no-repeat";
 		button.style.backgroundPosition = "center center";
 		button.style.backgroundSize = "30px";
@@ -4909,11 +5116,13 @@ phylo.PhyloToolBar.prototype = {
 		var inputLabel = window.document.createElement("label");
 		inputLabel.setAttribute("for","tree_line_width");
 		inputLabel.innerText = "Pen width";
+		inputLabel.style.padding = "2px";
 		inputLabel.style.display = "inline-block";
 		var inputElement = window.document.createElement("input");
 		inputElement.setAttribute("type","text");
 		inputElement.style.width = "30px";
 		inputElement.setAttribute("value","1");
+		inputElement.style.padding = "2px";
 		inputElement.style.marginLeft = "5px";
 		this.position(inputElement);
 		inputElement.addEventListener("input",function(e) {
@@ -4927,11 +5136,11 @@ phylo.PhyloToolBar.prototype = {
 		var button = window.document.createElement("button");
 		this.position(button);
 		button.innerText = "Toggle Type";
-		button.style.border = "none";
+		button.style.border = "1px solid #c1c1c1";
 		button.style.cursor = "pointer";
-		button.style.padding = "3px";
-		button.style.marginLeft = "20px";
-		button.style.marginRight = "20px";
+		button.style.padding = "3px 6px";
+		button.style.marginLeft = "25px";
+		button.style.marginRight = "25px";
 		this.position(button);
 		button.addEventListener("click",function() {
 			_g.canvas.toggleType();
@@ -4942,10 +5151,10 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		button.innerText = "Toggle Line Type";
-		button.style.border = "none";
+		button.style.border = "1px solid #c1c1c1";
 		button.style.cursor = "pointer";
-		button.style.padding = "3px";
-		button.style.marginLeft = "20px";
+		button.style.padding = "3px 6px";
+		button.style.marginRight = "25px";
 		this.position(button);
 		button.addEventListener("click",function() {
 			_g.canvas.toggleLineMode();
@@ -4971,9 +5180,10 @@ phylo.PhyloToolBar.prototype = {
 			_g.canvas.setShadowColour(shadowInputColour.value);
 		});
 		removeShadowButton.innerText = "Toggle Shadow";
-		removeShadowButton.style.border = "none";
+		removeShadowButton.style.border = "1px solid #c1c1c1";
 		removeShadowButton.style.cursor = "pointer";
-		removeShadowButton.style.marginLeft = "20px";
+		removeShadowButton.style.padding = "3px 6px";
+		removeShadowButton.style.marginLeft = "25px";
 		this.position(shadowInputColour);
 		this.position(removeShadowButton);
 		removeShadowButton.addEventListener("click",function() {
@@ -4986,10 +5196,10 @@ phylo.PhyloToolBar.prototype = {
 		var _g = this;
 		var button = window.document.createElement("button");
 		button.innerText = "Fit";
-		button.style.border = "none";
+		button.style.border = "1px solid #c1c1c1";
 		button.style.cursor = "pointer";
-		button.style.padding = "3px";
-		button.style.marginLeft = "20px";
+		button.style.padding = "3px 6px";
+		button.style.marginLeft = "25px";
 		this.position(button);
 		button.addEventListener("click",function() {
 			_g.canvas.autoFit();
@@ -5594,11 +5804,11 @@ saturn.client.core.ClientCore.prototype = {
 		req.onData = function(data) {
 			var obj = JSON.parse(data);
 			if(obj.error) {
-				cb("Login failed");
+				_g.showMessage("Login failed","Unable to authenticate");
 				return;
 			}
 			var cookies = Cookies;
-			var c = cookies.set("user",{ 'fullname' : obj.full_name, 'token' : obj.token, 'username' : username.toUpperCase()},{ 'expires' : 14});
+			cookies.set("user",{ 'fullname' : obj.full_name, 'token' : obj.token, 'username' : username.toUpperCase(), 'projects' : obj.projects},{ 'expires' : 14});
 			var user = new saturn.core.User();
 			user.fullname = obj.full_name;
 			user.token = obj.token;
@@ -5623,28 +5833,19 @@ saturn.client.core.ClientCore.prototype = {
 			user.username = cookie.username;
 			user.projects = cookie.projects;
 			this.authenticateSocket(user,function(err,user1) {
-				if(err == null) {
-					_g.installProviders();
-					/*var _g1 = 0;
-					var _g2 = _g.loginListeners;
-					while(_g1 < _g2.length) {
-						var listener = _g2[_g1];
-						++_g1;
-						listener(user1);
-					}*/
-				}
+				if(err == null) _g.installProviders();
 				if(cb != null) cb(err);
 			});
 		} else {
 			saturn.core.Util.debug("Installing unauthenticated node socket");
 			this.installNodeSocket();
 			this.installProviders();
-			var _g3 = 0;
+			var _g1 = 0;
 			var _g11 = this.refreshListeners;
-			while(_g3 < _g11.length) {
-				var listener1 = _g11[_g3];
-				++_g3;
-				listener1();
+			while(_g1 < _g11.length) {
+				var listener = _g11[_g1];
+				++_g1;
+				listener();
 			}
 			if(cb != null) cb(null);
 		}
@@ -8435,6 +8636,7 @@ saturn.db.query_lang.Token.prototype = {
 		this.tokens = tokens;
 	}
 	,addToken: function(token) {
+		if(!js.Boot.__instanceof(token,saturn.db.query_lang.Token)) token = new saturn.db.query_lang.Value(saturn.db.query_lang.Token);
 		if(this.tokens == null) this.tokens = [];
 		this.tokens.push(token);
 		return this;
