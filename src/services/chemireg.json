@@ -6,10 +6,6 @@
     "redis_port" : 6380,
     "index_page":"/static/chemireg/theme/index.html",
     "origins" : "https://*:*/ https://localhost:*/",
-    "restify_http_options":{
-      "socketio": "true"
-    },
-    
     "socket_plugins": [
          {
             "clazz": "saturn.server.plugins.socket.core.RemoteProviderPlugin",
@@ -36,6 +32,9 @@
         }
     ],
     "plugins":[
+        {
+             "clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin"
+        },
         {
             "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
             "connections" : [{
@@ -110,7 +109,7 @@
 
 		    },
                     "jwt_timeout": "300",
-                    "jwt_secret": "&&Wk&gh9B9fNFk&0ioNx9d7oM68$adaE#$@uakqom^t$g&wdfsdfsdfsdfsdfsdfdsq",
+                    "jwt_secret": "&&Wk&gh9B9fNFk&0ioNx9d7oM68$adaE",
                     "password_in_token": false 
         }
 
