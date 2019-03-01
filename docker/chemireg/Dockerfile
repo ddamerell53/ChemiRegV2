@@ -24,7 +24,7 @@ wget https://nodejs.org/dist/v8.9.3/node-v8.9.3-linux-x64.tar.xz && \
 tar xvf node-v8.9.3-linux-x64.tar.xz 
 ENV PATH="/home/chemireg/node-v8.9.3-linux-x64/bin:${PATH}"
 RUN cd /home/chemireg/ && \
-npm install restify@4.3.1 tempfile debug bull jsonwebtoken@7.4.1 redis fs-extra pg temp socket.io node-uuid socketio-jwt
+npm install restify tempfile debug bull jsonwebtoken redis fs-extra pg temp socket.io node-uuid socketio-jwt restify-cookies
 RUN cd /home/chemireg && \
 wget http://download.redis.io/releases/redis-4.0.6.tar.gz && \
 tar zxvf redis-4.0.6.tar.gz && \
