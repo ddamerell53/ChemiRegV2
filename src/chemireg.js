@@ -1757,6 +1757,7 @@ js_Node.isNodeWebkit = function() {
 	return (typeof process == "object");
 };
 var saturn_app_SaturnServer = function() {
+	this.usingEncryption = false;
 	this.__dirname = __dirname;
 	this.restify = js_Node.require("restify");
 	this.osLib = js_Node.require("os");
@@ -1824,7 +1825,15 @@ saturn_app_SaturnServer.prototype = {
 	,socketPlugins: null
 	,plugins: null
 	,redisClient: null
+	,internalConnectionHostName: null
 	,authPlugin: null
+	,usingEncryption: null
+	,isEncrypted: function() {
+		return this.usingEncryption;
+	}
+	,getInternalConnectionHostName: function() {
+		return this.internalConnectionHostName;
+	}
 	,getRedisPort: function() {
 		return this.redisPort;
 	}
@@ -1841,16 +1850,25 @@ saturn_app_SaturnServer.prototype = {
 		var _g = this;
 		var http_config = { };
 		var serverConfig = this.getServerConfig();
+		if(Object.prototype.hasOwnProperty.call(serverConfig,"internalConnectionHostName")) this.internalConnectionHostName = Reflect.field(serverConfig,"internalConnectionHostName"); else this.internalConnectionHostName = Reflect.field(serverConfig,"hostname");
 		if(Object.prototype.hasOwnProperty.call(serverConfig,"restify_http_options")) {
 			http_config = Reflect.field(serverConfig,"restify_http_options");
 			saturn_core_Util.debug(saturn_core_Util.string(http_config));
-		}
-		this.server = this.restify.createServer(http_config);
+			if(Object.prototype.hasOwnProperty.call(http_config,"cert")) {
+				var certificate = Reflect.field(http_config,"cert");
+				if(certificate != null && certificate != "") {
+					this.usingEncryption = true;
+					this.server = this.restify.createServer({ 'httpsServerOptions' : http_config});
+				}
+			}
+		} else this.server = this.restify.createServer();
 		this.server["use"](this.restify.plugins.queryParser({ mapParams : true}));
 		this.server["use"](this.restify.plugins.bodyParser({ mapParams : true}));
+		var CookieParser = js_Node.require("restify-cookies");
+		this.server["use"](CookieParser.parse);
 		this.installPlugins();
 		this.installSocketPlugins();
-		this.server.get(/static\/.*/,this.restify.plugins.serveStatic({ directory : "./public"}));
+		this.server.get("/static/*",this.restify.plugins.serveStatic({ directory : "./public"}));
 		this.server.get("/",function(req,res,next) {
 			res.header("Location",index_page);
 			res.send(302);
@@ -1875,17 +1893,17 @@ saturn_app_SaturnServer.prototype = {
 				var plugin = Type.createInstance(Type.resolveClass(pluginDef.clazz),[this,pluginDef]);
 				this.socketPlugins.push(plugin);
 			}
+			var Queue = js_Node.require("bull");
+			this.theServerSocket.sockets.on("connection",function(socket) {
+				var _g11 = 0;
+				var _g2 = _g.socketPlugins;
+				while(_g11 < _g2.length) {
+					var plugin1 = _g2[_g11];
+					++_g11;
+					plugin1.addListeners(socket);
+				}
+			});
 		}
-		var Queue = js_Node.require("bull");
-		this.theServerSocket.sockets.on("connection",function(socket) {
-			var _g11 = 0;
-			var _g2 = _g.socketPlugins;
-			while(_g11 < _g2.length) {
-				var plugin1 = _g2[_g11];
-				++_g11;
-				plugin1.addListeners(socket);
-			}
-		});
 	}
 	,installPlugins: function() {
 		if(Reflect.hasField(this.getServerConfig(),"plugins")) {
@@ -2543,6 +2561,9 @@ saturn_core_molecule_Molecule.prototype = {
 			cb(err,res);
 		});
 	}
+	,getAtPosition: function(pos) {
+		return this.sequence.charAt(pos);
+	}
 	,__class__: saturn_core_molecule_Molecule
 };
 var saturn_core_DNA = function(seq) {
@@ -3013,6 +3034,9 @@ saturn_core_GeneticCode.prototype = {
 	,aaToCodonTable: null
 	,startCodons: null
 	,stopCodons: null
+	,isAA: function(aa) {
+		return this.aaToCodonTable.exists(aa);
+	}
 	,addStartCodon: function(codon) {
 		this.startCodons.set(codon,"1");
 	}
@@ -4417,6 +4441,7 @@ saturn_core_domain_SgcAllele.prototype = $extend(saturn_core_DNA.prototype,{
 	,entryClone: null
 	,elnId: null
 	,alleleStatus: null
+	,complex: null
 	,forwardPrimer: null
 	,reversePrimer: null
 	,proteinSequenceObj: null
@@ -4470,6 +4495,7 @@ saturn_core_domain_SgcEntryClone.prototype = $extend(saturn_core_DNA.prototype,{
 	,sourceId: null
 	,sequenceConfirmed: null
 	,elnId: null
+	,complex: null
 	,proteinSequenceObj: null
 	,getMoleculeName: function() {
 		return this.entryCloneId;
@@ -4555,6 +4581,9 @@ saturn_core_domain_SgcTarget.prototype = $extend(saturn_core_DNA.prototype,{
 	,pi: null
 	,comments: null
 	,proteinSequenceObj: null
+	,complexComments: null
+	,eln: null
+	,complex: null
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
 		this.setName(this.targetId);
@@ -8097,12 +8126,13 @@ saturn_db_provider_MySQLProvider.prototype = $extend(saturn_db_provider_GenericR
 			});
 			connection.on("error",function(err) {
 				_g.debug("Error connecting " + Std.string(err));
-				if(!err.fatal) return;
-				if(err.code != "PROTOCOL_CONNECTION_LOST") throw new js__$Boot_HaxeError(err);
-				_g.debug("Reconnecting!!!!");
-				_g._getConnection(function(err1,conn) {
-					if(err1 != null) throw new js__$Boot_HaxeError("Unable to reconnect MySQL session"); else _g.theConnection = conn;
-				});
+				_g.debug("Waiting to attempt reconnect");
+				if(_g.config.auto_reconnect) haxe_Timer.delay(function() {
+					_g.debug("Reconnecting");
+					_g._getConnection(function(err1,conn) {
+						if(err1 != null) throw new js__$Boot_HaxeError("Unable to reconnect MySQL session"); else _g.theConnection = conn;
+					});
+				},500);
 			});
 		} catch( e ) {
 			if (e instanceof js__$Boot_HaxeError) e = e.val;
@@ -8375,6 +8405,7 @@ saturn_db_query_$lang_Token.prototype = {
 		this.tokens = tokens;
 	}
 	,addToken: function(token) {
+		if(!js_Boot.__instanceof(token,saturn_db_query_$lang_Token)) token = new saturn_db_query_$lang_Value(saturn_db_query_$lang_Token);
 		if(this.tokens == null) this.tokens = [];
 		this.tokens.push(token);
 		return this;
@@ -8388,7 +8419,7 @@ saturn_db_query_$lang_Token.prototype = {
 		if(js_Boot.__instanceof(token,saturn_db_query_$lang_Operator)) {
 			var n = new saturn_db_query_$lang_Token();
 			n.add(this);
-			n.tokens.push(token);
+			n.addToken(token);
 			return n;
 		} else return this.addToken(token);
 	}
@@ -8401,8 +8432,8 @@ saturn_db_query_$lang_Token.prototype = {
 		return this.add(l);
 	}
 	,concat: function(token) {
-		var c = new saturn_db_query_$lang_Concat(token);
-		return this.add(c);
+		var c = new saturn_db_query_$lang_Concat([this,token]);
+		return c;
 	}
 	,substr: function(position,length) {
 		return new saturn_db_query_$lang_Substr(this,position,length);
@@ -8469,6 +8500,24 @@ saturn_db_query_$lang_And.__super__ = saturn_db_query_$lang_Operator;
 saturn_db_query_$lang_And.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
 	__class__: saturn_db_query_$lang_And
 });
+var saturn_db_query_$lang_Function = function(tokens) {
+	saturn_db_query_$lang_Token.call(this,tokens);
+};
+$hxClasses["saturn.db.query_lang.Function"] = saturn_db_query_$lang_Function;
+saturn_db_query_$lang_Function.__name__ = ["saturn","db","query_lang","Function"];
+saturn_db_query_$lang_Function.__super__ = saturn_db_query_$lang_Token;
+saturn_db_query_$lang_Function.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+	__class__: saturn_db_query_$lang_Function
+});
+var saturn_db_query_$lang_Cast = function(expression,type) {
+	saturn_db_query_$lang_Function.call(this,[expression,type]);
+};
+$hxClasses["saturn.db.query_lang.Cast"] = saturn_db_query_$lang_Cast;
+saturn_db_query_$lang_Cast.__name__ = ["saturn","db","query_lang","Cast"];
+saturn_db_query_$lang_Cast.__super__ = saturn_db_query_$lang_Function;
+saturn_db_query_$lang_Cast.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
+	__class__: saturn_db_query_$lang_Cast
+});
 var saturn_db_query_$lang_ClassToken = function(clazz) {
 	this.setClass(clazz);
 	saturn_db_query_$lang_Token.call(this,null);
@@ -8490,23 +8539,23 @@ saturn_db_query_$lang_ClassToken.prototype = $extend(saturn_db_query_$lang_Token
 	}
 	,__class__: saturn_db_query_$lang_ClassToken
 });
-var saturn_db_query_$lang_Concat = function(value) {
-	if(value == null) saturn_db_query_$lang_Operator.call(this,null); else saturn_db_query_$lang_Operator.call(this,value);
+var saturn_db_query_$lang_Concat = function(tokens) {
+	saturn_db_query_$lang_Function.call(this,tokens);
 };
 $hxClasses["saturn.db.query_lang.Concat"] = saturn_db_query_$lang_Concat;
 saturn_db_query_$lang_Concat.__name__ = ["saturn","db","query_lang","Concat"];
-saturn_db_query_$lang_Concat.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Concat.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
+saturn_db_query_$lang_Concat.__super__ = saturn_db_query_$lang_Function;
+saturn_db_query_$lang_Concat.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
 	__class__: saturn_db_query_$lang_Concat
 });
-var saturn_db_query_$lang_Function = function(tokens) {
-	saturn_db_query_$lang_Token.call(this,tokens);
+var saturn_db_query_$lang_ConcatOperator = function(token) {
+	saturn_db_query_$lang_Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.Function"] = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Function.__name__ = ["saturn","db","query_lang","Function"];
-saturn_db_query_$lang_Function.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Function.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Function
+$hxClasses["saturn.db.query_lang.ConcatOperator"] = saturn_db_query_$lang_ConcatOperator;
+saturn_db_query_$lang_ConcatOperator.__name__ = ["saturn","db","query_lang","ConcatOperator"];
+saturn_db_query_$lang_ConcatOperator.__super__ = saturn_db_query_$lang_Operator;
+saturn_db_query_$lang_ConcatOperator.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
+	__class__: saturn_db_query_$lang_ConcatOperator
 });
 var saturn_db_query_$lang_Count = function(token) {
 	saturn_db_query_$lang_Function.call(this,[token]);
@@ -9081,6 +9130,15 @@ saturn_db_query_$lang_QueryVisitor.prototype = {
 	translateQuery: null
 	,__class__: saturn_db_query_$lang_QueryVisitor
 };
+var saturn_db_query_$lang_RegexpLike = function(field,expression) {
+	saturn_db_query_$lang_Function.call(this,[field,expression]);
+};
+$hxClasses["saturn.db.query_lang.RegexpLike"] = saturn_db_query_$lang_RegexpLike;
+saturn_db_query_$lang_RegexpLike.__name__ = ["saturn","db","query_lang","RegexpLike"];
+saturn_db_query_$lang_RegexpLike.__super__ = saturn_db_query_$lang_Function;
+saturn_db_query_$lang_RegexpLike.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
+	__class__: saturn_db_query_$lang_RegexpLike
+});
 var saturn_db_query_$lang_SQLVisitor = function(provider,valPos,aliasToGenerated,nextAliasId) {
 	if(nextAliasId == null) nextAliasId = 0;
 	if(valPos == null) valPos = 1;
@@ -9137,7 +9195,7 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 			if(token.getTokens() != null) {
 				var tokenTranslations = [];
 				if(js_Boot.__instanceof(token,saturn_db_query_$lang_Instr)) {
-					if(this.provider.getProviderType() == "SQLITE") {
+					if(this.provider.getProviderType() == "SQLITE" || this.provider.getProviderType() == "MYSQL") {
 						token.tokens.pop();
 						token.tokens.pop();
 					}
@@ -9177,7 +9235,7 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 					if(this.provider.getProviderType() == "SQLITE") sqlTranslation += "ltrim(" + nestedTranslation + ",'0'" + ")"; else sqlTranslation += "Trim( leading '0' from " + nestedTranslation + ")";
 				} else {
 					var funcName = "";
-					if(js_Boot.__instanceof(token,saturn_db_query_$lang_Max)) funcName = "MAX"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Count)) funcName = "COUNT"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Instr)) funcName = "INSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Substr)) funcName = "SUBSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Length)) funcName = "LENGTH";
+					if(js_Boot.__instanceof(token,saturn_db_query_$lang_Max)) funcName = "MAX"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Count)) funcName = "COUNT"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Instr)) funcName = "INSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Substr)) funcName = "SUBSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Length)) funcName = "LENGTH"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Concat)) funcName = "CONCAT";
 					sqlTranslation += funcName + "( " + nestedTranslation + " )";
 				}
 			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Select)) sqlTranslation += " SELECT " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Field)) {
@@ -9449,7 +9507,6 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 				user.uuid = uuid.v4();
 				user.username = username;
 				if(_g.config.password_in_token) {
-					saturn_core_Util.debug("Warning storing password in token is insecure");
 					var iv = crypto.randomBytes(_g.config.encrypt_iv_length);
 					var cipher = crypto.createCipheriv(_g.config.algorithm,new Buffer(_g.config.encrypt_password),iv);
 					var crypted = cipher.update(password,"utf8","hex");
@@ -9459,6 +9516,7 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 				}
 				db.set("USER_UUID: " + user.uuid,user.username);
 				var token = jwt.sign({ firstname : user.firstname, lastname : user.lastname, email : user.email, uuid : user.uuid, username : user.username, password : user.password},_g.config.jwt_secret,{ expiresIn : Std.string(_g.config.jwt_timeout) + "m"});
+				res.header("Set-Cookie","saturn_token=" + token);
 				res.send(200,{ token : token, full_name : user.firstname + " " + user.lastname, email : user.email, 'projects' : user.projects});
 				next();
 			},function(err) {
@@ -9683,7 +9741,7 @@ saturn_server_plugins_core_MySQLAuthPlugin.prototype = {
 	config: null
 	,authenticate: function(username,password,onSuccess,onFailure,src) {
 		var mysql = js_Node.require("mysql2");
-		saturn_core_Util.debug("Connecting as " + username);
+		saturn_core_Util.debug("Connecting as " + username + " to " + username + " with password " + password + " on " + Std.string(this.config.hostname));
 		var connection = mysql.createConnection({ host : this.config.hostname, user : username, password : password, database : username});
 		connection.on("connect",function(connect) {
 			if(connect) connection.query("\r\n                    SELECT\r\n                     *\r\n                    FROM\r\n                        icmdb_page_secure.V_USERS\r\n                    WHERE\r\n                        Name=?\r\n                ",[username],function(err,res) {
@@ -9714,7 +9772,6 @@ saturn_server_plugins_core_MySQLAuthPlugin.prototype = {
 		connection.on("error",function(err1) {
 			js_Node.console.log("Error: " + (err1 == null?"null":"" + err1));
 			onFailure("Unable to connect");
-			connection.end();
 		});
 	}
 	,__class__: saturn_server_plugins_core_MySQLAuthPlugin
@@ -9812,6 +9869,178 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 		};
 	}
 	,__class__: saturn_server_plugins_core_ProxyPlugin
+});
+var saturn_server_plugins_core_RESTSocketWrapperPlugin = function(server,config) {
+	this.uuidToJobInfo = new haxe_ds_StringMap();
+	this.uuidToResponse = new haxe_ds_StringMap();
+	this.uuidToToken = new haxe_ds_StringMap();
+	this.uuidModule = js_Node.require("node-uuid");
+	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+	this.registerListeners();
+};
+$hxClasses["saturn.server.plugins.core.RESTSocketWrapperPlugin"] = saturn_server_plugins_core_RESTSocketWrapperPlugin;
+saturn_server_plugins_core_RESTSocketWrapperPlugin.__name__ = ["saturn","server","plugins","core","RESTSocketWrapperPlugin"];
+saturn_server_plugins_core_RESTSocketWrapperPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
+saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+	uuidModule: null
+	,uuidToToken: null
+	,uuidToResponse: null
+	,uuidToJobInfo: null
+	,extractAuthenticationToken: function(req) {
+		var cookies = req.cookies;
+		if(cookies.saturn_token != null) return cookies.saturn_token; else return req.params.token;
+	}
+	,invalidAuthentication: function(req,res,next) {
+		res.status(403);
+		res.send("Bad uuid");
+		next();
+	}
+	,registerListeners: function() {
+		var _g = this;
+		this.saturn.getServer().post("/api/queue/:uuid",function(req1,res1,next1) {
+			var token1 = _g.extractAuthenticationToken(req1);
+			if(token1 == null) {
+				_g.invalidAuthentication(req1,req1,next1);
+				return;
+			}
+			var uuid1 = req1.params.uuid;
+			if(_g.uuidToToken.exists(uuid1)) {
+				if(_g.uuidToToken.get(uuid1) == token1) {
+					if(_g.uuidToResponse.exists(uuid1)) {
+						var response = _g.uuidToResponse.get(uuid1);
+						res1.status(200);
+						res1.send(response);
+						next1();
+					} else {
+						res1.status(102);
+						next1();
+					}
+				} else {
+					res1.status(403);
+					res1.send("Token/uuid missmatch expected " + _g.uuidToToken.get(uuid1) + " and you passed " + token1);
+					next1();
+				}
+			} else {
+				res1.status(403);
+				res1.send("Bad uuid");
+				next1();
+			}
+		});
+		var handle_function = function(path,req,res,next) {
+			_g.debug("In Function");
+			var token = _g.extractAuthenticationToken(req);
+			if(token == null) {
+				_g.invalidAuthentication(req,req,next);
+				return;
+			}
+			var command = req.params.command;
+			var json = js_Node.parse(req.params.json);
+			if(path == "/api/command/") {
+				if(command == "_remote_provider_._data_request_objects_namedquery") {
+					var d = { };
+					d.queryId = json.queryId;
+					d.parameters = haxe_Serializer.run(json.parameters);
+					json = d;
+				}
+			} else if(path == "/api/provider/command/") {
+				var d1 = { };
+				d1.queryId = command;
+				command = "_remote_provider_._data_request_objects_namedquery";
+				d1.parameters = haxe_Serializer.run(json.parameters);
+				json = d1;
+			}
+			var wait = "no";
+			if(Object.prototype.hasOwnProperty.call(req.params,"wait")) {
+				wait = req.params.wait;
+				_g.debug("Going to wait");
+				if(wait != "no" && wait != "yes") {
+					res.status(403);
+					res.send("Wait setting must be yes or no");
+					next();
+					return;
+				}
+			}
+			var uuid = _g.uuidModule.v4();
+			_g.uuidToToken.set(uuid,token);
+			res.header("Location","/api/queue/" + uuid);
+			if(wait == "no") {
+				res.status(202);
+				res.send();
+				next();
+			} else next();
+			var io = js_Node.require("socket.io-client");
+			var protocol = "ws";
+			if(_g.saturn.isEncrypted()) protocol = "wss";
+			var conStr = protocol + "://" + _g.saturn.getInternalConnectionHostName() + ":" + Std.string(_g.saturn.getServerConfig().port);
+			_g.debug("Connecting to " + conStr);
+			var socket = io.connect(conStr,{ port : 8091});
+			var openTime = new Date().getTime();
+			var status = new haxe_ds_StringMap();
+			if(__map_reserved.connected != null) status.setReserved("connected",false); else status.h["connected"] = false;
+			if(__map_reserved.disconnected != null) status.setReserved("disconnected",false); else status.h["disconnected"] = false;
+			socket.on("error",function(data) {
+				_g.respond(uuid,500,socket,wait,"Unknown error",status,res);
+			});
+			socket.on("authenticated",function(data1) {
+				_g.runCommand(socket,command,json,uuid);
+			});
+			socket.on("unauthorized",function(data2) {
+				_g.respond(uuid,403,socket,wait,"Unauthorised",status,res);
+			});
+			socket.on("receiveError",function(data3) {
+				_g.respond(uuid,200,socket,wait,data3,status,res);
+			});
+			socket.on("__response__",function(data4) {
+				_g.respond(uuid,200,socket,wait,data4,status,res);
+			});
+			socket.on("connect",function(data5) {
+				if(__map_reserved.connected != null) status.setReserved("connected",true); else status.h["connected"] = true;
+				socket.emit("authenticate",{ token : token});
+			});
+			var cleanUp = null;
+			cleanUp = function() {
+				var currentTime = new Date().getTime();
+				if(__map_reserved.disconnected != null?status.getReserved("disconnected"):status.h["disconnected"]) {
+				} else if((currentTime - openTime) / 1000 > 300) {
+					socket.disconnect();
+					if(__map_reserved.disconnected != null) status.setReserved("disconnected",true); else status.h["disconnected"] = true;
+					if(wait == "yes") {
+						_g.debug("Sending response");
+						res.status(200);
+						res.send("Connection time-out");
+					}
+				} else haxe_Timer.delay(cleanUp,10000);
+			};
+			cleanUp();
+		};
+		this.saturn.getServer().post("/api",function(req2,res2,next2) {
+			handle_function("/api/",req2,res2,next2);
+		});
+		this.saturn.getServer().post("/api/command/:command",function(req3,res3,next3) {
+			handle_function("/api/command/",req3,res3,next3);
+		});
+		this.saturn.getServer().post("/api/provider/command/:command",function(req4,res4,next4) {
+			handle_function("/api/provider/command/",req4,res4,next4);
+		});
+	}
+	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
+		if(wait == "yes") {
+			this.debug("Sending response");
+			res.status(statusCode);
+			res.send(data);
+		} else this.debug("Not sending response");
+		this.uuidToResponse.set(uuid,data);
+		socket.disconnect();
+		status.set("disconnected",true);
+	}
+	,runCommand: function(socket,command,json,uuid) {
+		json.msgId = uuid;
+		json.bioinfJobId = uuid;
+		this.uuidToJobInfo.set(uuid,{ 'MSG' : command, 'JSON' : json});
+		this.debug("Sending command " + command);
+		socket.emit(command,json);
+	}
+	,__class__: saturn_server_plugins_core_RESTSocketWrapperPlugin
 });
 var saturn_server_plugins_core_SocketPlugin = function(server,config) {
 	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
