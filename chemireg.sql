@@ -65,7 +65,7 @@ values(
     'Administrator',
     'email@email.com',
     'administrator',
-    '$pbkdf2-sha256$29000$aU1p7Z3zXovR2vu/F4LwXg$b96emhG99VOSVi/JlvMitVNuR3pzOoZVmRbpMRZGsO0'
+    '$pbkdf2-sha256$29000$vPe.19obQwhBaA0BgNDamw$8FLG.7VTaObPM158JQ6inygMkXANY6OK83IQRBmt8DI'
 );
 
 alter table users add constraint users_idx UNIQUE (username);
