@@ -43,7 +43,7 @@ class AuthenticationManager(object):
 
 		self.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
 
-		self.include_scarab = True
+		self.include_scarab = False 
 		self.user_registration_enabled = True
 		self.user_registration_disabled_msg = 'Access by invitation only'
 		self.email_manager = EmailManager()
@@ -85,7 +85,7 @@ class AuthenticationManager(object):
 		self.transaction_id = fetch_transaction.fetchone()[0]
 
 		if self.include_scarab:
-			self.scarab_conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', 'icmdb', 'molsoft')
+			self.scarab_conn =  MySQLdb.connect('<hostname>', '<username>', '<password>')
 		
 		self.check_user_exists_cur = self.conn.cursor()
 		self.check_user_exists_cur.execute('''
