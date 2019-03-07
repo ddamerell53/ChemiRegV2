@@ -31,9 +31,11 @@ RUN /opt/conda/bin/conda install jupyter -y --quiet && \
 mkdir /opt/notebooks
 
 USER chemireg
-RUN cd /home/chemireg && \
-wget https://api.github.com/repos/ddamerell53/ChemiRegV2/git/refs/heads/master -o version.json && \
-git clone https://github.com/ddamerell53/ChemiRegV2.git
+RUN mkdir /home/chemireg/ChemiRegV2/src -p
+COPY src/python_requirements.txt /home/chemireg/ChemiRegV2/src/
+#RUN cd /home/chemireg && \
+#wget https://api.github.com/repos/ddamerell53/ChemiRegV2/git/refs/heads/master -o version.json && \
+#git clone https://github.com/ddamerell53/ChemiRegV2.git
 
 USER root
 
@@ -48,10 +50,19 @@ RUN pip install ijson
 
 USER chemireg
 
+ARG VERSION=unknown
+RUN VERSION=${VERSION}
+COPY . /home/chemireg/ChemiRegV2
+
+USER root
+
+RUN chown -R chemireg:users /home/chemireg/ChemiRegV2
+RUN chmod u+x /home/chemireg/ChemiRegV2/src/start.sh
+
+USER chemireg
+
 ENV PYTHONPATH=/home/chemireg/ChemiRegV2/src/bin/hooks
 ENV PATH=/home/chemireg/redis-4.0.6/src/:/opt/conda/bin:${PATH}
-RUN chmod u+x /home/chemireg/ChemiRegV2/src/start.sh
-RUN echo "2.1005" > /home/chemireg/VERSION
 RUN mkdir /home/chemireg/.jupyter
 RUN cp /home/chemireg/ChemiRegV2/jupyter_notebook_config.json /home/chemireg/.jupyter/
 WORKDIR /home/chemireg/ChemiRegV2/src/
