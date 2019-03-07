@@ -5,7 +5,7 @@ services:
  
 before_install:
   - cd docker
-  - sh redeploy.sh 
+  - sh redeploy_travis.sh 
   - sleep 10
 
 script:
