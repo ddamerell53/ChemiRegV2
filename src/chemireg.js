@@ -9880,6 +9880,16 @@ var saturn_server_plugins_core_RESTSocketWrapperPlugin = function(server,config)
 };
 $hxClasses["saturn.server.plugins.core.RESTSocketWrapperPlugin"] = saturn_server_plugins_core_RESTSocketWrapperPlugin;
 saturn_server_plugins_core_RESTSocketWrapperPlugin.__name__ = ["saturn","server","plugins","core","RESTSocketWrapperPlugin"];
+saturn_server_plugins_core_RESTSocketWrapperPlugin.fetch_compound = function(path,req,res,next,handle_function) {
+	var command = "_remote_provider_._data_request_objects_namedquery";
+	var d = { };
+	var json = { };
+	json.action = "as_svg";
+	json.ctab_content = req.params.molblock;
+	d.queryId = "saturn.db.provider.hooks.ExternalJsonHook:Fetch";
+	d.parameters = haxe_Serializer.run([json]);
+	handle_function(path,req,res,next,command,d);
+};
 saturn_server_plugins_core_RESTSocketWrapperPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
 saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
 	uuidModule: null
@@ -9888,11 +9898,11 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 	,uuidToJobInfo: null
 	,extractAuthenticationToken: function(req) {
 		var cookies = req.cookies;
-		if(cookies.saturn_token != null) return cookies.saturn_token; else return req.params.token;
+		if(cookies != null && cookies.saturn_token != null) return cookies.saturn_token; else return req.params.token;
 	}
 	,invalidAuthentication: function(req,res,next) {
 		res.status(403);
-		res.send("Bad uuid");
+		res.send("Bad token");
 		next();
 	}
 	,registerListeners: function() {
@@ -9900,7 +9910,7 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 		this.saturn.getServer().post("/api/queue/:uuid",function(req1,res1,next1) {
 			var token1 = _g.extractAuthenticationToken(req1);
 			if(token1 == null) {
-				_g.invalidAuthentication(req1,req1,next1);
+				_g.invalidAuthentication(req1,res1,next1);
 				return;
 			}
 			var uuid1 = req1.params.uuid;
@@ -9926,28 +9936,30 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 				next1();
 			}
 		});
-		var handle_function = function(path,req,res,next) {
+		var handle_function = function(path,req,res,next,command,json) {
 			_g.debug("In Function");
 			var token = _g.extractAuthenticationToken(req);
 			if(token == null) {
-				_g.invalidAuthentication(req,req,next);
+				_g.invalidAuthentication(req,res,next);
 				return;
 			}
-			var command = req.params.command;
-			var json = js_Node.parse(req.params.json);
-			if(path == "/api/command/") {
-				if(command == "_remote_provider_._data_request_objects_namedquery") {
-					var d = { };
-					d.queryId = json.queryId;
-					d.parameters = haxe_Serializer.run(json.parameters);
-					json = d;
+			if(command == null && json == null) {
+				command = req.params.command;
+				json = js_Node.parse(req.params.json);
+				if(path == "/api/command/") {
+					if(command == "_remote_provider_._data_request_objects_namedquery") {
+						var d = { };
+						d.queryId = json.queryId;
+						d.parameters = haxe_Serializer.run(json.parameters);
+						json = d;
+					}
+				} else if(path == "/api/provider/command/") {
+					var d1 = { };
+					d1.queryId = command;
+					command = "_remote_provider_._data_request_objects_namedquery";
+					d1.parameters = haxe_Serializer.run(json.parameters);
+					json = d1;
 				}
-			} else if(path == "/api/provider/command/") {
-				var d1 = { };
-				d1.queryId = command;
-				command = "_remote_provider_._data_request_objects_namedquery";
-				d1.parameters = haxe_Serializer.run(json.parameters);
-				json = d1;
 			}
 			var wait = "no";
 			if(Object.prototype.hasOwnProperty.call(req.params,"wait")) {
@@ -10022,14 +10034,34 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 		this.saturn.getServer().post("/api/provider/command/:command",function(req4,res4,next4) {
 			handle_function("/api/provider/command/",req4,res4,next4);
 		});
+		if(Object.prototype.hasOwnProperty.call(this.config,"commands")) {
+			var commands = Reflect.field(this.config,"commands");
+			var _g1 = 0;
+			while(_g1 < commands.length) {
+				var command1 = commands[_g1];
+				++_g1;
+				var route = [command1.route];
+				var format_method_clazz = [command1.format_request_clazz];
+				var format_method_method = [command1.format_request_method];
+				var http_method = command1.http_method;
+				if(http_method == "POST") this.saturn.getServer().post(route[0],(function(format_method_method,format_method_clazz,route) {
+					return function(req5,res5,next5) {
+						var clazz = Type.resolveClass(format_method_clazz[0]);
+						(Reflect.field(clazz,format_method_method[0]))(route[0],req5,res5,next5,handle_function);
+					};
+				})(format_method_method,format_method_clazz,route));
+			}
+		}
 	}
 	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
+		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error") && Object.prototype.hasOwnProperty.call(data.json,"objects")) data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, 'result-set' : data.json.objects};
 		if(wait == "yes") {
 			this.debug("Sending response");
 			res.status(statusCode);
 			res.send(data);
 		} else this.debug("Not sending response");
-		this.uuidToResponse.set(uuid,data);
+		var value = data;
+		this.uuidToResponse.set(uuid,value);
 		socket.disconnect();
 		status.set("disconnected",true);
 	}
