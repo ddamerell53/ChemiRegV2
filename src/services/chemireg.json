@@ -6,6 +6,7 @@
     "redis_port" : 6380,
     "index_page":"/static/chemireg/theme/index.html",
     "origins" : "https://*:*/ https://localhost:*/",
+    "internalConnectionHostName": "127.0.0.1",
     "socket_plugins": [
          {
             "clazz": "saturn.server.plugins.socket.core.RemoteProviderPlugin",
@@ -33,7 +34,15 @@
     ],
     "plugins":[
         {
-             "clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin"
+             "clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin",
+			 "commands": [
+				{
+                            "route": "/api/compounds",
+                            "format_request_clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin",
+                            "format_request_method": "fetch_compound",
+                            "http_method": "POST"
+                }
+			]
         },
         {
             "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
