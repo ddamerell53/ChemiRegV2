@@ -10,5 +10,5 @@ before_install:
   - sleep 10
 
 script:
-  - docker exec -i -t docker_chemireg_1 python /home/chemireg/src/bin/hooks/ChemiRegTester.py
+  - docker exec -i -t docker_chemireg_1 python /home/chemireg/ChemiRegV2/src/bin/hooks/ChemiRegTester.py
   - sudo docker-compose stop
