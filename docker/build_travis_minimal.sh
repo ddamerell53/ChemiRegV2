@@ -1,4 +1,6 @@
-﻿cd sgc_rdkit_postgres
+﻿#!/bin/bash
+
+cd sgc_rdkit_postgres
 docker pull sgcit/chemireg:sgc_rdkit_postgres_bigm
 cd ../chemireg_postgres
 docker build -t chemireg_postgres:latest . 
