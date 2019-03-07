@@ -33,9 +33,6 @@ mkdir /opt/notebooks
 USER chemireg
 RUN mkdir /home/chemireg/ChemiRegV2/src -p
 COPY src/python_requirements.txt /home/chemireg/ChemiRegV2/src/
-#RUN cd /home/chemireg && \
-#wget https://api.github.com/repos/ddamerell53/ChemiRegV2/git/refs/heads/master -o version.json && \
-#git clone https://github.com/ddamerell53/ChemiRegV2.git
 
 USER root
 
