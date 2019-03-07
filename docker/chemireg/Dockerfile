@@ -55,4 +55,5 @@ RUN echo "2.1005" > /home/chemireg/VERSION
 RUN mkdir /home/chemireg/.jupyter
 RUN cp /home/chemireg/ChemiRegV2/jupyter_notebook_config.json /home/chemireg/.jupyter/
 WORKDIR /home/chemireg/ChemiRegV2/src/
+
 CMD /home/chemireg/ChemiRegV2/src/start.sh
