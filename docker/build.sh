@@ -14,6 +14,4 @@ docker tag chemireg sgcit/chemireg:latest
 docker tag chemireg_postgres sgcit/chemireg:postgres
 docker tag sgc_rdkit_postgres_bigm sgcit/chemireg:sgc_rdkit_postgres_bigm
 
-#docker push sgcit/chemireg:latest
-#docker push sgcit/chemireg:postgres
-#docker push sgcit/chemireg:sgc_rdkit_postgres_bigm
+
