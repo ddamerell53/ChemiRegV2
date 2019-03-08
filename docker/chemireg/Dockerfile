@@ -1,10 +1,17 @@
 FROM continuumio/anaconda3
+#FROM frolvlad/alpine-miniconda3
 
 MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 
 RUN apt-get update && \
-apt-get install -y git vim build-essential libcap2-bin libcairo2 postgresql-client
+apt-get install -y  git vim build-essential libcap2-bin libcairo2 postgresql-client
+#RUN apk add --update alpine-sdk linux-headers
+#RUN apk update && \
+#apk add git vim alphine-sdk  libcap2-bin  postgresql-client
+
 RUN useradd -ms /bin/bash chemireg
+#RUN adduser -s /bin/bash -D chemireg
+
 RUN echo "2.1006" > /VERSION
 
 USER chemireg
@@ -55,6 +62,9 @@ USER root
 
 RUN chown -R chemireg:users /home/chemireg/ChemiRegV2
 RUN chmod u+x /home/chemireg/ChemiRegV2/src/start.sh
+RUN apt-get remove -y build-essential
+RUN apt-get clean
+RUN apt -y autoremove
 
 USER chemireg
 
@@ -63,5 +73,6 @@ ENV PATH=/home/chemireg/redis-4.0.6/src/:/opt/conda/bin:${PATH}
 RUN mkdir /home/chemireg/.jupyter
 RUN cp /home/chemireg/ChemiRegV2/jupyter_notebook_config.json /home/chemireg/.jupyter/
 WORKDIR /home/chemireg/ChemiRegV2/src/
-
+RUN cat /home/chemireg/ChemiRegV2/src/chemireg.js > /home/chemireg/ChemiRegV2/src/start.js
+RUN cat /home/chemireg/ChemiRegV2/src/routes.js >> /home/chemireg/ChemiRegV2/src/start.js
 CMD /home/chemireg/ChemiRegV2/src/start.sh

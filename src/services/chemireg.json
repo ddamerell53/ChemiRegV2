@@ -38,7 +38,7 @@
 			 "commands": [
 				{
                             "route": "/api/compounds",
-                            "format_request_clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin",
+                            "format_request_clazz": "ChemiRegRoutes",
                             "format_request_method": "fetch_compound",
                             "http_method": "POST"
                 }
