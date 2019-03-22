@@ -1065,10 +1065,13 @@ class CompoundManager(object):
 		
 		# Batch on a separate column
 		if batchable_defaults['map_column'] is not None:
+			# Name of column in user file to batch with
 			col_name = batchable_defaults['map_column']
-				
+
+			# Iterate upload defaults
 			for field_name in upload_defaults.keys():
-				if 'map_column' in upload_defaults[field_name]:
+				# Check if user is mapping column
+				if field_name != 'batchable' and 'map_column' in upload_defaults[field_name]:
 					if col_name == upload_defaults[field_name]['map_column']:
 						batch_on_field = field_name
 						break
@@ -1604,12 +1607,12 @@ class CompoundManager(object):
 				mol_str = sheet.cell_value(i, mol_column)
 			else:
 				mol_str = mol_default
-				
+
 			if mol_str.startswith('InChI'):
 				mol = Chem.MolFromInchi(mol_str)
 			else:
 				mol = Chem.MolFromSmiles(mol_str)
-			
+
 			if mol is None:
 				raise RegistrationException('Compound on row ' + str(i) + ' is invalid')
 				
