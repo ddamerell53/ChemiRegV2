@@ -1,0 +1,17 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+  chemireg_postgres:
+     image: sgcit/chemireg:postgres
+     restart: always
+     ports:
+       - "5432:5432"
+     command: -c "listen_addresses=*" 
+  chemireg:
+     image: sgcit/chemireg:latest
+     restart: always
+     ports: 
+       - "8080:80"
+       - "8888:8888"
+

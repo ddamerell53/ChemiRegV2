@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ddamerell53/ChemiRegV2.svg?branch=master)](https://travis-ci.org/ddamerell53/ChemiRegV2)
+
 Alpha quality project!
 
 Whilst we are refining and documentating you can play with the docker images as follows

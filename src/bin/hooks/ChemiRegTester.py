@@ -21,7 +21,7 @@ class ChemiRegTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_url = 'http://pan.sgc.ox.ac.uk:8080'
+        cls.base_url = 'http://127.0.0.1:80'
 
         command = 'login'
         args = {

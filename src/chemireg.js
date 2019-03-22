@@ -1,21 +1,18 @@
-(function (console, $hx_exports, $global) { "use strict";
-$hx_exports.saturn = $hx_exports.saturn || {};
-$hx_exports.saturn.core = $hx_exports.saturn.core || {};
-$hx_exports.saturn.core.domain = $hx_exports.saturn.core.domain || {};
-var $hxClasses = {},$estr = function() { return js_Boot.__string_rec(this,''); };
+var $global = typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this;
+var console = $global.console || {log:function(){}};
+var $hxClasses = $hxClasses || {},$estr = function() { return js.Boot.__string_rec(this,''); };
 function $extend(from, fields) {
 	function Inherit() {} Inherit.prototype = from; var proto = new Inherit();
 	for (var name in fields) proto[name] = fields[name];
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
-var EReg = function(r,opt) {
+var EReg = $hxClasses["EReg"] = function(r,opt) {
 	opt = opt.split("u").join("");
 	this.r = new RegExp(r,opt);
 	this.rs = r;
 	this.opt = opt;
 };
-$hxClasses["EReg"] = EReg;
 EReg.__name__ = ["EReg"];
 EReg.prototype = {
 	r: null
@@ -40,19 +37,19 @@ EReg.prototype = {
 		return this.r.m != null;
 	}
 	,matched: function(n) {
-		if(this.r.m != null && n >= 0 && n < this.r.m.length) return this.r.m[n]; else throw new js__$Boot_HaxeError("EReg::matched");
+		if(this.r.m != null && n >= 0 && n < this.r.m.length) return this.r.m[n]; else throw new js._Boot.HaxeError("EReg::matched");
 	}
 	,matchedLeft: function() {
-		if(this.r.m == null) throw new js__$Boot_HaxeError("No string matched");
+		if(this.r.m == null) throw new js._Boot.HaxeError("No string matched");
 		return HxOverrides.substr(this.r.s,0,this.r.m.index);
 	}
 	,matchedRight: function() {
-		if(this.r.m == null) throw new js__$Boot_HaxeError("No string matched");
+		if(this.r.m == null) throw new js._Boot.HaxeError("No string matched");
 		var sz = this.r.m.index + this.r.m[0].length;
 		return HxOverrides.substr(this.r.s,sz,this.r.s.length - sz);
 	}
 	,matchedPos: function() {
-		if(this.r.m == null) throw new js__$Boot_HaxeError("No string matched");
+		if(this.r.m == null) throw new js._Boot.HaxeError("No string matched");
 		return { pos : this.r.m.index, len : this.r.m[0].length};
 	}
 	,matchSub: function(s,pos,len) {
@@ -77,8 +74,7 @@ EReg.prototype = {
 	}
 	,__class__: EReg
 };
-var HxOverrides = function() { };
-$hxClasses["HxOverrides"] = HxOverrides;
+var HxOverrides = $hxClasses["HxOverrides"] = function() { };
 HxOverrides.__name__ = ["HxOverrides"];
 HxOverrides.strDate = function(s) {
 	var _g = s.length;
@@ -100,7 +96,7 @@ HxOverrides.strDate = function(s) {
 		var t = k2[1].split(":");
 		return new Date(y[0],y[1] - 1,y[2],t[0],t[1],t[2]);
 	default:
-		throw new js__$Boot_HaxeError("Invalid date format : " + s);
+		throw new js._Boot.HaxeError("Invalid date format : " + s);
 	}
 };
 HxOverrides.cca = function(s,index) {
@@ -142,8 +138,7 @@ HxOverrides.iter = function(a) {
 		return this.arr[this.cur++];
 	}};
 };
-var Lambda = function() { };
-$hxClasses["Lambda"] = Lambda;
+var Lambda = $hxClasses["Lambda"] = function() { };
 Lambda.__name__ = ["Lambda"];
 Lambda.count = function(it,pred) {
 	var n = 0;
@@ -162,10 +157,9 @@ Lambda.count = function(it,pred) {
 	}
 	return n;
 };
-var List = function() {
+var List = $hxClasses["List"] = function() {
 	this.length = 0;
 };
-$hxClasses["List"] = List;
 List.__name__ = ["List"];
 List.prototype = {
 	h: null
@@ -186,8 +180,7 @@ List.prototype = {
 	,__class__: List
 };
 Math.__name__ = ["Math"];
-var Reflect = function() { };
-$hxClasses["Reflect"] = Reflect;
+var Reflect = $hxClasses["Reflect"] = function() { };
 Reflect.__name__ = ["Reflect"];
 Reflect.hasField = function(o,field) {
 	return Object.prototype.hasOwnProperty.call(o,field);
@@ -196,7 +189,7 @@ Reflect.field = function(o,field) {
 	try {
 		return o[field];
 	} catch( e ) {
-		if (e instanceof js__$Boot_HaxeError) e = e.val;
+		if (e instanceof js._Boot.HaxeError) e = e.val;
 		return null;
 	}
 };
@@ -224,14 +217,13 @@ Reflect.deleteField = function(o,field) {
 	delete(o[field]);
 	return true;
 };
-var Std = function() { };
-$hxClasses["Std"] = Std;
+var Std = $hxClasses["Std"] = function() { };
 Std.__name__ = ["Std"];
 Std["is"] = function(v,t) {
-	return js_Boot.__instanceof(v,t);
+	return js.Boot.__instanceof(v,t);
 };
 Std.string = function(s) {
-	return js_Boot.__string_rec(s,"");
+	return js.Boot.__string_rec(s,"");
 };
 Std.parseInt = function(x) {
 	var v = parseInt(x,10);
@@ -242,10 +234,9 @@ Std.parseInt = function(x) {
 Std.parseFloat = function(x) {
 	return parseFloat(x);
 };
-var StringBuf = function() {
+var StringBuf = $hxClasses["StringBuf"] = function() {
 	this.b = "";
 };
-$hxClasses["StringBuf"] = StringBuf;
 StringBuf.__name__ = ["StringBuf"];
 StringBuf.prototype = {
 	b: null
@@ -257,8 +248,7 @@ StringBuf.prototype = {
 	}
 	,__class__: StringBuf
 };
-var StringTools = function() { };
-$hxClasses["StringTools"] = StringTools;
+var StringTools = $hxClasses["StringTools"] = function() { };
 StringTools.__name__ = ["StringTools"];
 StringTools.startsWith = function(s,start) {
 	return s.length >= start.length && HxOverrides.substr(s,0,start.length) == start;
@@ -293,11 +283,10 @@ ValueType.TEnum = function(e) { var $x = ["TEnum",7,e]; $x.__enum__ = ValueType;
 ValueType.TUnknown = ["TUnknown",8];
 ValueType.TUnknown.toString = $estr;
 ValueType.TUnknown.__enum__ = ValueType;
-var Type = function() { };
-$hxClasses["Type"] = Type;
+var Type = $hxClasses["Type"] = function() { };
 Type.__name__ = ["Type"];
 Type.getClass = function(o) {
-	if(o == null) return null; else return js_Boot.getClass(o);
+	if(o == null) return null; else return js.Boot.getClass(o);
 };
 Type.getClassName = function(c) {
 	var a = c.__name__;
@@ -340,7 +329,7 @@ Type.createInstance = function(cl,args) {
 	case 8:
 		return new cl(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7]);
 	default:
-		throw new js__$Boot_HaxeError("Too many arguments");
+		throw new js._Boot.HaxeError("Too many arguments");
 	}
 	return null;
 };
@@ -350,12 +339,12 @@ Type.createEmptyInstance = function(cl) {
 };
 Type.createEnum = function(e,constr,params) {
 	var f = Reflect.field(e,constr);
-	if(f == null) throw new js__$Boot_HaxeError("No such constructor " + constr);
+	if(f == null) throw new js._Boot.HaxeError("No such constructor " + constr);
 	if(Reflect.isFunction(f)) {
-		if(params == null) throw new js__$Boot_HaxeError("Constructor " + constr + " need parameters");
+		if(params == null) throw new js._Boot.HaxeError("Constructor " + constr + " need parameters");
 		return Reflect.callMethod(e,f,params);
 	}
-	if(params != null && params.length != 0) throw new js__$Boot_HaxeError("Constructor " + constr + " does not need parameters");
+	if(params != null && params.length != 0) throw new js._Boot.HaxeError("Constructor " + constr + " does not need parameters");
 	return f;
 };
 Type.getInstanceFields = function(c) {
@@ -383,7 +372,7 @@ Type["typeof"] = function(v) {
 		if(v == null) return ValueType.TNull;
 		var e = v.__enum__;
 		if(e != null) return ValueType.TEnum(e);
-		var c = js_Boot.getClass(v);
+		var c = js.Boot.getClass(v);
 		if(c != null) return ValueType.TClass(c);
 		return ValueType.TObject;
 	case "function":
@@ -395,12 +384,12 @@ Type["typeof"] = function(v) {
 		return ValueType.TUnknown;
 	}
 };
-var bindings_NodeSocket = function(nativeSocket) {
+var bindings = bindings || {};
+bindings.NodeSocket = $hxClasses["bindings.NodeSocket"] = function(nativeSocket) {
 	this.theNativeSocket = nativeSocket;
 };
-$hxClasses["bindings.NodeSocket"] = bindings_NodeSocket;
-bindings_NodeSocket.__name__ = ["bindings","NodeSocket"];
-bindings_NodeSocket.prototype = {
+bindings.NodeSocket.__name__ = ["bindings","NodeSocket"];
+bindings.NodeSocket.prototype = {
 	theNativeSocket: null
 	,id: null
 	,on: function(command,func) {
@@ -415,64 +404,61 @@ bindings_NodeSocket.prototype = {
 	,disconnect: function() {
 		this.theNativeSocket.disconnect();
 	}
-	,__class__: bindings_NodeSocket
+	,__class__: bindings.NodeSocket
 };
-var bindings_NodeFSExtra = function() { };
-$hxClasses["bindings.NodeFSExtra"] = bindings_NodeFSExtra;
-bindings_NodeFSExtra.__name__ = ["bindings","NodeFSExtra"];
-bindings_NodeFSExtra.copy = function(src,dest,cb) {
-	bindings_NodeFSExtra.fsExtra.copy(src,dest,cb);
+bindings.NodeFSExtra = $hxClasses["bindings.NodeFSExtra"] = function() { };
+bindings.NodeFSExtra.__name__ = ["bindings","NodeFSExtra"];
+bindings.NodeFSExtra.copy = function(src,dest,cb) {
+	bindings.NodeFSExtra.fsExtra.copy(src,dest,cb);
 	return;
 };
-var bindings_NodeTemp = function() { };
-$hxClasses["bindings.NodeTemp"] = bindings_NodeTemp;
-bindings_NodeTemp.__name__ = ["bindings","NodeTemp"];
-bindings_NodeTemp.open = function(prefix,cb) {
-	return bindings_NodeTemp.temp.open(prefix,cb);
+bindings.NodeTemp = $hxClasses["bindings.NodeTemp"] = function() { };
+bindings.NodeTemp.__name__ = ["bindings","NodeTemp"];
+bindings.NodeTemp.open = function(prefix,cb) {
+	return bindings.NodeTemp.temp.open(prefix,cb);
 };
-var com_dongxiguo_continuation_Continuation = function() { };
-$hxClasses["com.dongxiguo.continuation.Continuation"] = com_dongxiguo_continuation_Continuation;
-com_dongxiguo_continuation_Continuation.__name__ = ["com","dongxiguo","continuation","Continuation"];
-var com_dongxiguo_continuation_ContinuationDetail = function() { };
-$hxClasses["com.dongxiguo.continuation.ContinuationDetail"] = com_dongxiguo_continuation_ContinuationDetail;
-com_dongxiguo_continuation_ContinuationDetail.__name__ = ["com","dongxiguo","continuation","ContinuationDetail"];
-var haxe_IMap = function() { };
-$hxClasses["haxe.IMap"] = haxe_IMap;
-haxe_IMap.__name__ = ["haxe","IMap"];
-haxe_IMap.prototype = {
+var com = com || {};
+if(!com.dongxiguo) com.dongxiguo = {};
+if(!com.dongxiguo.continuation) com.dongxiguo.continuation = {};
+com.dongxiguo.continuation.Continuation = $hxClasses["com.dongxiguo.continuation.Continuation"] = function() { };
+com.dongxiguo.continuation.Continuation.__name__ = ["com","dongxiguo","continuation","Continuation"];
+com.dongxiguo.continuation.ContinuationDetail = $hxClasses["com.dongxiguo.continuation.ContinuationDetail"] = function() { };
+com.dongxiguo.continuation.ContinuationDetail.__name__ = ["com","dongxiguo","continuation","ContinuationDetail"];
+var haxe = haxe || {};
+haxe.IMap = $hxClasses["haxe.IMap"] = function() { };
+haxe.IMap.__name__ = ["haxe","IMap"];
+haxe.IMap.prototype = {
 	get: null
 	,set: null
 	,exists: null
 	,remove: null
 	,keys: null
 	,iterator: null
-	,__class__: haxe_IMap
+	,__class__: haxe.IMap
 };
-var haxe_Json = function() { };
-$hxClasses["haxe.Json"] = haxe_Json;
-haxe_Json.__name__ = ["haxe","Json"];
-haxe_Json.stringify = function(obj,replacer,insertion) {
+haxe.Json = $hxClasses["haxe.Json"] = function() { };
+haxe.Json.__name__ = ["haxe","Json"];
+haxe.Json.stringify = function(obj,replacer,insertion) {
 	return JSON.stringify(obj,replacer,insertion);
 };
-haxe_Json.parse = function(jsonString) {
+haxe.Json.parse = function(jsonString) {
 	return JSON.parse(jsonString);
 };
-var haxe_Serializer = function() {
+haxe.Serializer = $hxClasses["haxe.Serializer"] = function() {
 	this.buf = new StringBuf();
 	this.cache = [];
-	this.useCache = haxe_Serializer.USE_CACHE;
-	this.useEnumIndex = haxe_Serializer.USE_ENUM_INDEX;
-	this.shash = new haxe_ds_StringMap();
+	this.useCache = haxe.Serializer.USE_CACHE;
+	this.useEnumIndex = haxe.Serializer.USE_ENUM_INDEX;
+	this.shash = new haxe.ds.StringMap();
 	this.scount = 0;
 };
-$hxClasses["haxe.Serializer"] = haxe_Serializer;
-haxe_Serializer.__name__ = ["haxe","Serializer"];
-haxe_Serializer.run = function(v) {
-	var s = new haxe_Serializer();
+haxe.Serializer.__name__ = ["haxe","Serializer"];
+haxe.Serializer.run = function(v) {
+	var s = new haxe.Serializer();
 	s.serialize(v);
 	return s.toString();
 };
-haxe_Serializer.prototype = {
+haxe.Serializer.prototype = {
 	buf: null
 	,cache: null
 	,shash: null
@@ -602,7 +588,7 @@ haxe_Serializer.prototype = {
 					this.buf.b += "v";
 					this.buf.add(d.getTime());
 					break;
-				case haxe_ds_StringMap:
+				case haxe.ds.StringMap:
 					this.buf.b += "b";
 					var v4 = v;
 					var $it0 = v4.keys();
@@ -613,7 +599,7 @@ haxe_Serializer.prototype = {
 					}
 					this.buf.b += "h";
 					break;
-				case haxe_ds_IntMap:
+				case haxe.ds.IntMap:
 					this.buf.b += "q";
 					var v5 = v;
 					var $it1 = v5.keys();
@@ -625,7 +611,7 @@ haxe_Serializer.prototype = {
 					}
 					this.buf.b += "h";
 					break;
-				case haxe_ds_ObjectMap:
+				case haxe.ds.ObjectMap:
 					this.buf.b += "M";
 					var v6 = v;
 					var $it2 = v6.keys();
@@ -639,12 +625,12 @@ haxe_Serializer.prototype = {
 					}
 					this.buf.b += "h";
 					break;
-				case haxe_io_Bytes:
+				case haxe.io.Bytes:
 					var v7 = v;
 					var i2 = 0;
 					var max = v7.length - 2;
 					var charsBuf = new StringBuf();
-					var b64 = haxe_Serializer.BASE64;
+					var b64 = haxe.Serializer.BASE64;
 					while(i2 < max) {
 						var b1 = v7.get(i2++);
 						var b2 = v7.get(i2++);
@@ -688,11 +674,11 @@ haxe_Serializer.prototype = {
 				}
 				break;
 			case 4:
-				if(js_Boot.__instanceof(v,Class)) {
+				if(js.Boot.__instanceof(v,Class)) {
 					var className = Type.getClassName(v);
 					this.buf.b += "A";
 					this.serializeString(className);
-				} else if(js_Boot.__instanceof(v,Enum)) {
+				} else if(js.Boot.__instanceof(v,Enum)) {
 					this.buf.b += "B";
 					this.serializeString(Type.getEnumName(v));
 				} else {
@@ -724,32 +710,31 @@ haxe_Serializer.prototype = {
 				if(this.useCache) this.cache.push(v);
 				break;
 			case 5:
-				throw new js__$Boot_HaxeError("Cannot serialize function");
+				throw new js._Boot.HaxeError("Cannot serialize function");
 				break;
 			default:
-				throw new js__$Boot_HaxeError("Cannot serialize " + Std.string(v));
+				throw new js._Boot.HaxeError("Cannot serialize " + Std.string(v));
 			}
 		}
 	}
-	,__class__: haxe_Serializer
+	,__class__: haxe.Serializer
 };
-var haxe_Timer = function(time_ms) {
+haxe.Timer = $hxClasses["haxe.Timer"] = function(time_ms) {
 	var me = this;
 	this.id = setInterval(function() {
 		me.run();
 	},time_ms);
 };
-$hxClasses["haxe.Timer"] = haxe_Timer;
-haxe_Timer.__name__ = ["haxe","Timer"];
-haxe_Timer.delay = function(f,time_ms) {
-	var t = new haxe_Timer(time_ms);
+haxe.Timer.__name__ = ["haxe","Timer"];
+haxe.Timer.delay = function(f,time_ms) {
+	var t = new haxe.Timer(time_ms);
 	t.run = function() {
 		t.stop();
 		f();
 	};
 	return t;
 };
-haxe_Timer.prototype = {
+haxe.Timer.prototype = {
 	id: null
 	,stop: function() {
 		if(this.id == null) return;
@@ -758,37 +743,36 @@ haxe_Timer.prototype = {
 	}
 	,run: function() {
 	}
-	,__class__: haxe_Timer
+	,__class__: haxe.Timer
 };
-var haxe_Unserializer = function(buf) {
+haxe.Unserializer = $hxClasses["haxe.Unserializer"] = function(buf) {
 	this.buf = buf;
 	this.length = buf.length;
 	this.pos = 0;
 	this.scache = [];
 	this.cache = [];
-	var r = haxe_Unserializer.DEFAULT_RESOLVER;
+	var r = haxe.Unserializer.DEFAULT_RESOLVER;
 	if(r == null) {
 		r = Type;
-		haxe_Unserializer.DEFAULT_RESOLVER = r;
+		haxe.Unserializer.DEFAULT_RESOLVER = r;
 	}
 	this.setResolver(r);
 };
-$hxClasses["haxe.Unserializer"] = haxe_Unserializer;
-haxe_Unserializer.__name__ = ["haxe","Unserializer"];
-haxe_Unserializer.initCodes = function() {
+haxe.Unserializer.__name__ = ["haxe","Unserializer"];
+haxe.Unserializer.initCodes = function() {
 	var codes = [];
 	var _g1 = 0;
-	var _g = haxe_Unserializer.BASE64.length;
+	var _g = haxe.Unserializer.BASE64.length;
 	while(_g1 < _g) {
 		var i = _g1++;
-		codes[haxe_Unserializer.BASE64.charCodeAt(i)] = i;
+		codes[haxe.Unserializer.BASE64.charCodeAt(i)] = i;
 	}
 	return codes;
 };
-haxe_Unserializer.run = function(v) {
-	return new haxe_Unserializer(v).unserialize();
+haxe.Unserializer.run = function(v) {
+	return new haxe.Unserializer(v).unserialize();
 };
-haxe_Unserializer.prototype = {
+haxe.Unserializer.prototype = {
 	buf: null
 	,pos: null
 	,length: null
@@ -835,17 +819,17 @@ haxe_Unserializer.prototype = {
 	}
 	,unserializeObject: function(o) {
 		while(true) {
-			if(this.pos >= this.length) throw new js__$Boot_HaxeError("Invalid object");
+			if(this.pos >= this.length) throw new js._Boot.HaxeError("Invalid object");
 			if(this.buf.charCodeAt(this.pos) == 103) break;
 			var k = this.unserialize();
-			if(!(typeof(k) == "string")) throw new js__$Boot_HaxeError("Invalid object key");
+			if(!(typeof(k) == "string")) throw new js._Boot.HaxeError("Invalid object key");
 			var v = this.unserialize();
 			o[k] = v;
 		}
 		this.pos++;
 	}
 	,unserializeEnum: function(edecl,tag) {
-		if(this.get(this.pos++) != 58) throw new js__$Boot_HaxeError("Invalid enum format");
+		if(this.get(this.pos++) != 58) throw new js._Boot.HaxeError("Invalid enum format");
 		var nargs = this.readDigits();
 		if(nargs == 0) return Type.createEnum(edecl,tag);
 		var args = [];
@@ -869,7 +853,7 @@ haxe_Unserializer.prototype = {
 			return this.readFloat();
 		case 121:
 			var len = this.readDigits();
-			if(this.get(this.pos++) != 58 || this.length - this.pos < len) throw new js__$Boot_HaxeError("Invalid string length");
+			if(this.get(this.pos++) != 58 || this.length - this.pos < len) throw new js._Boot.HaxeError("Invalid string length");
 			var s = HxOverrides.substr(this.buf,this.pos,len);
 			this.pos += len;
 			s = decodeURIComponent(s.split("+").join(" "));
@@ -905,19 +889,19 @@ haxe_Unserializer.prototype = {
 			return o;
 		case 114:
 			var n1 = this.readDigits();
-			if(n1 < 0 || n1 >= this.cache.length) throw new js__$Boot_HaxeError("Invalid reference");
+			if(n1 < 0 || n1 >= this.cache.length) throw new js._Boot.HaxeError("Invalid reference");
 			return this.cache[n1];
 		case 82:
 			var n2 = this.readDigits();
-			if(n2 < 0 || n2 >= this.scache.length) throw new js__$Boot_HaxeError("Invalid string reference");
+			if(n2 < 0 || n2 >= this.scache.length) throw new js._Boot.HaxeError("Invalid string reference");
 			return this.scache[n2];
 		case 120:
-			throw new js__$Boot_HaxeError(this.unserialize());
+			throw new js._Boot.HaxeError(this.unserialize());
 			break;
 		case 99:
 			var name = this.unserialize();
 			var cl = this.resolver.resolveClass(name);
-			if(cl == null) throw new js__$Boot_HaxeError("Class not found " + name);
+			if(cl == null) throw new js._Boot.HaxeError("Class not found " + name);
 			var o1 = Type.createEmptyInstance(cl);
 			this.cache.push(o1);
 			this.unserializeObject(o1);
@@ -925,18 +909,18 @@ haxe_Unserializer.prototype = {
 		case 119:
 			var name1 = this.unserialize();
 			var edecl = this.resolver.resolveEnum(name1);
-			if(edecl == null) throw new js__$Boot_HaxeError("Enum not found " + name1);
+			if(edecl == null) throw new js._Boot.HaxeError("Enum not found " + name1);
 			var e = this.unserializeEnum(edecl,this.unserialize());
 			this.cache.push(e);
 			return e;
 		case 106:
 			var name2 = this.unserialize();
 			var edecl1 = this.resolver.resolveEnum(name2);
-			if(edecl1 == null) throw new js__$Boot_HaxeError("Enum not found " + name2);
+			if(edecl1 == null) throw new js._Boot.HaxeError("Enum not found " + name2);
 			this.pos++;
 			var index = this.readDigits();
 			var tag = Type.getEnumConstructs(edecl1)[index];
-			if(tag == null) throw new js__$Boot_HaxeError("Unknown enum index " + name2 + "@" + index);
+			if(tag == null) throw new js._Boot.HaxeError("Unknown enum index " + name2 + "@" + index);
 			var e1 = this.unserializeEnum(edecl1,tag);
 			this.cache.push(e1);
 			return e1;
@@ -948,7 +932,7 @@ haxe_Unserializer.prototype = {
 			this.pos++;
 			return l;
 		case 98:
-			var h = new haxe_ds_StringMap();
+			var h = new haxe.ds.StringMap();
 			this.cache.push(h);
 			var buf2 = this.buf;
 			while(this.buf.charCodeAt(this.pos) != 104) {
@@ -958,7 +942,7 @@ haxe_Unserializer.prototype = {
 			this.pos++;
 			return h;
 		case 113:
-			var h1 = new haxe_ds_IntMap();
+			var h1 = new haxe.ds.IntMap();
 			this.cache.push(h1);
 			var buf3 = this.buf;
 			var c1 = this.get(this.pos++);
@@ -967,10 +951,10 @@ haxe_Unserializer.prototype = {
 				h1.set(i,this.unserialize());
 				c1 = this.get(this.pos++);
 			}
-			if(c1 != 104) throw new js__$Boot_HaxeError("Invalid IntMap format");
+			if(c1 != 104) throw new js._Boot.HaxeError("Invalid IntMap format");
 			return h1;
 		case 77:
-			var h2 = new haxe_ds_ObjectMap();
+			var h2 = new haxe.ds.ObjectMap();
 			this.cache.push(h2);
 			var buf4 = this.buf;
 			while(this.buf.charCodeAt(this.pos) != 104) {
@@ -996,18 +980,18 @@ haxe_Unserializer.prototype = {
 		case 115:
 			var len1 = this.readDigits();
 			var buf5 = this.buf;
-			if(this.get(this.pos++) != 58 || this.length - this.pos < len1) throw new js__$Boot_HaxeError("Invalid bytes length");
-			var codes = haxe_Unserializer.CODES;
+			if(this.get(this.pos++) != 58 || this.length - this.pos < len1) throw new js._Boot.HaxeError("Invalid bytes length");
+			var codes = haxe.Unserializer.CODES;
 			if(codes == null) {
-				codes = haxe_Unserializer.initCodes();
-				haxe_Unserializer.CODES = codes;
+				codes = haxe.Unserializer.initCodes();
+				haxe.Unserializer.CODES = codes;
 			}
 			var i1 = this.pos;
 			var rest = len1 & 3;
 			var size;
 			size = (len1 >> 2) * 3 + (rest >= 2?rest - 1:0);
 			var max = i1 + (len1 - rest);
-			var bytes = haxe_io_Bytes.alloc(size);
+			var bytes = haxe.io.Bytes.alloc(size);
 			var bpos = 0;
 			while(i1 < max) {
 				var c11 = codes[StringTools.fastCodeAt(buf5,i1++)];
@@ -1033,39 +1017,39 @@ haxe_Unserializer.prototype = {
 		case 67:
 			var name3 = this.unserialize();
 			var cl1 = this.resolver.resolveClass(name3);
-			if(cl1 == null) throw new js__$Boot_HaxeError("Class not found " + name3);
+			if(cl1 == null) throw new js._Boot.HaxeError("Class not found " + name3);
 			var o2 = Type.createEmptyInstance(cl1);
 			this.cache.push(o2);
 			o2.hxUnserialize(this);
-			if(this.get(this.pos++) != 103) throw new js__$Boot_HaxeError("Invalid custom data");
+			if(this.get(this.pos++) != 103) throw new js._Boot.HaxeError("Invalid custom data");
 			return o2;
 		case 65:
 			var name4 = this.unserialize();
 			var cl2 = this.resolver.resolveClass(name4);
-			if(cl2 == null) throw new js__$Boot_HaxeError("Class not found " + name4);
+			if(cl2 == null) throw new js._Boot.HaxeError("Class not found " + name4);
 			return cl2;
 		case 66:
 			var name5 = this.unserialize();
 			var e2 = this.resolver.resolveEnum(name5);
-			if(e2 == null) throw new js__$Boot_HaxeError("Enum not found " + name5);
+			if(e2 == null) throw new js._Boot.HaxeError("Enum not found " + name5);
 			return e2;
 		default:
 		}
 		this.pos--;
-		throw new js__$Boot_HaxeError("Invalid char " + this.buf.charAt(this.pos) + " at position " + this.pos);
+		throw new js._Boot.HaxeError("Invalid char " + this.buf.charAt(this.pos) + " at position " + this.pos);
 	}
-	,__class__: haxe_Unserializer
+	,__class__: haxe.Unserializer
 };
-var haxe_crypto_Md5 = function() {
+if(!haxe.crypto) haxe.crypto = {};
+haxe.crypto.Md5 = $hxClasses["haxe.crypto.Md5"] = function() {
 };
-$hxClasses["haxe.crypto.Md5"] = haxe_crypto_Md5;
-haxe_crypto_Md5.__name__ = ["haxe","crypto","Md5"];
-haxe_crypto_Md5.encode = function(s) {
-	var m = new haxe_crypto_Md5();
-	var h = m.doEncode(haxe_crypto_Md5.str2blks(s));
+haxe.crypto.Md5.__name__ = ["haxe","crypto","Md5"];
+haxe.crypto.Md5.encode = function(s) {
+	var m = new haxe.crypto.Md5();
+	var h = m.doEncode(haxe.crypto.Md5.str2blks(s));
 	return m.hex(h);
 };
-haxe_crypto_Md5.str2blks = function(str) {
+haxe.crypto.Md5.str2blks = function(str) {
 	var nblk = (str.length + 8 >> 6) + 1;
 	var blks = [];
 	var blksSize = nblk * 16;
@@ -1088,7 +1072,7 @@ haxe_crypto_Md5.str2blks = function(str) {
 	blks[k] |= (l >>> 24 & 255) << 24;
 	return blks;
 };
-haxe_crypto_Md5.prototype = {
+haxe.crypto.Md5.prototype = {
 	bitOR: function(a,b) {
 		var lsb = a & 1 | b & 1;
 		var msb31 = a >>> 1 | b >>> 1;
@@ -1227,15 +1211,15 @@ haxe_crypto_Md5.prototype = {
 		}
 		return [a,b,c,d];
 	}
-	,__class__: haxe_crypto_Md5
+	,__class__: haxe.crypto.Md5
 };
-var haxe_ds_IntMap = function() {
+if(!haxe.ds) haxe.ds = {};
+haxe.ds.IntMap = $hxClasses["haxe.ds.IntMap"] = function() {
 	this.h = { };
 };
-$hxClasses["haxe.ds.IntMap"] = haxe_ds_IntMap;
-haxe_ds_IntMap.__name__ = ["haxe","ds","IntMap"];
-haxe_ds_IntMap.__interfaces__ = [haxe_IMap];
-haxe_ds_IntMap.prototype = {
+haxe.ds.IntMap.__name__ = ["haxe","ds","IntMap"];
+haxe.ds.IntMap.__interfaces__ = [haxe.IMap];
+haxe.ds.IntMap.prototype = {
 	h: null
 	,set: function(key,value) {
 		this.h[key] = value;
@@ -1266,19 +1250,18 @@ haxe_ds_IntMap.prototype = {
 			return this.ref[i];
 		}};
 	}
-	,__class__: haxe_ds_IntMap
+	,__class__: haxe.ds.IntMap
 };
-var haxe_ds_ObjectMap = function() {
+haxe.ds.ObjectMap = $hxClasses["haxe.ds.ObjectMap"] = function() {
 	this.h = { };
 	this.h.__keys__ = { };
 };
-$hxClasses["haxe.ds.ObjectMap"] = haxe_ds_ObjectMap;
-haxe_ds_ObjectMap.__name__ = ["haxe","ds","ObjectMap"];
-haxe_ds_ObjectMap.__interfaces__ = [haxe_IMap];
-haxe_ds_ObjectMap.prototype = {
+haxe.ds.ObjectMap.__name__ = ["haxe","ds","ObjectMap"];
+haxe.ds.ObjectMap.__interfaces__ = [haxe.IMap];
+haxe.ds.ObjectMap.prototype = {
 	h: null
 	,set: function(key,value) {
-		var id = key.__id__ || (key.__id__ = ++haxe_ds_ObjectMap.count);
+		var id = key.__id__ || (key.__id__ = ++haxe.ds.ObjectMap.count);
 		this.h[id] = value;
 		this.h.__keys__[id] = key;
 	}
@@ -1310,17 +1293,17 @@ haxe_ds_ObjectMap.prototype = {
 			return this.ref[i.__id__];
 		}};
 	}
-	,__class__: haxe_ds_ObjectMap
+	,__class__: haxe.ds.ObjectMap
 };
-var haxe_ds__$StringMap_StringMapIterator = function(map,keys) {
+if(!haxe.ds._StringMap) haxe.ds._StringMap = {};
+haxe.ds._StringMap.StringMapIterator = $hxClasses["haxe.ds._StringMap.StringMapIterator"] = function(map,keys) {
 	this.map = map;
 	this.keys = keys;
 	this.index = 0;
 	this.count = keys.length;
 };
-$hxClasses["haxe.ds._StringMap.StringMapIterator"] = haxe_ds__$StringMap_StringMapIterator;
-haxe_ds__$StringMap_StringMapIterator.__name__ = ["haxe","ds","_StringMap","StringMapIterator"];
-haxe_ds__$StringMap_StringMapIterator.prototype = {
+haxe.ds._StringMap.StringMapIterator.__name__ = ["haxe","ds","_StringMap","StringMapIterator"];
+haxe.ds._StringMap.StringMapIterator.prototype = {
 	map: null
 	,keys: null
 	,index: null
@@ -1331,15 +1314,14 @@ haxe_ds__$StringMap_StringMapIterator.prototype = {
 	,next: function() {
 		return this.map.get(this.keys[this.index++]);
 	}
-	,__class__: haxe_ds__$StringMap_StringMapIterator
+	,__class__: haxe.ds._StringMap.StringMapIterator
 };
-var haxe_ds_StringMap = function() {
+haxe.ds.StringMap = $hxClasses["haxe.ds.StringMap"] = function() {
 	this.h = { };
 };
-$hxClasses["haxe.ds.StringMap"] = haxe_ds_StringMap;
-haxe_ds_StringMap.__name__ = ["haxe","ds","StringMap"];
-haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
-haxe_ds_StringMap.prototype = {
+haxe.ds.StringMap.__name__ = ["haxe","ds","StringMap"];
+haxe.ds.StringMap.__interfaces__ = [haxe.IMap];
+haxe.ds.StringMap.prototype = {
 	h: null
 	,rh: null
 	,set: function(key,value) {
@@ -1393,7 +1375,7 @@ haxe_ds_StringMap.prototype = {
 		return out;
 	}
 	,iterator: function() {
-		return new haxe_ds__$StringMap_StringMapIterator(this,this.arrayKeys());
+		return new haxe.ds._StringMap.StringMapIterator(this,this.arrayKeys());
 	}
 	,toString: function() {
 		var s = new StringBuf();
@@ -1412,25 +1394,25 @@ haxe_ds_StringMap.prototype = {
 		s.b += "}";
 		return s.b;
 	}
-	,__class__: haxe_ds_StringMap
+	,__class__: haxe.ds.StringMap
 };
-var haxe_io_Bytes = function(length,b) {
+if(!haxe.io) haxe.io = {};
+haxe.io.Bytes = $hxClasses["haxe.io.Bytes"] = function(length,b) {
 	this.length = length;
 	this.b = b;
 };
-$hxClasses["haxe.io.Bytes"] = haxe_io_Bytes;
-haxe_io_Bytes.__name__ = ["haxe","io","Bytes"];
-haxe_io_Bytes.alloc = function(length) {
-	return new haxe_io_Bytes(length,new Buffer(length));
+haxe.io.Bytes.__name__ = ["haxe","io","Bytes"];
+haxe.io.Bytes.alloc = function(length) {
+	return new haxe.io.Bytes(length,new Buffer(length));
 };
-haxe_io_Bytes.ofString = function(s) {
+haxe.io.Bytes.ofString = function(s) {
 	var nb = new Buffer(s,"utf8");
-	return new haxe_io_Bytes(nb.length,nb);
+	return new haxe.io.Bytes(nb.length,nb);
 };
-haxe_io_Bytes.ofData = function(b) {
-	return new haxe_io_Bytes(b.length,b);
+haxe.io.Bytes.ofData = function(b) {
+	return new haxe.io.Bytes(b.length,b);
 };
-haxe_io_Bytes.prototype = {
+haxe.io.Bytes.prototype = {
 	length: null
 	,b: null
 	,get: function(pos) {
@@ -1440,15 +1422,15 @@ haxe_io_Bytes.prototype = {
 		this.b[pos] = v;
 	}
 	,blit: function(pos,src,srcpos,len) {
-		if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw new js._Boot.HaxeError(haxe.io.Error.OutsideBounds);
 		src.b.copy(this.b,pos,srcpos,srcpos + len);
 	}
 	,sub: function(pos,len) {
-		if(pos < 0 || len < 0 || pos + len > this.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		if(pos < 0 || len < 0 || pos + len > this.length) throw new js._Boot.HaxeError(haxe.io.Error.OutsideBounds);
 		var nb = new Buffer(len);
 		var slice = this.b.slice(pos,pos + len);
 		slice.copy(nb,0,0,len);
-		return new haxe_io_Bytes(len,nb);
+		return new haxe.io.Bytes(len,nb);
 	}
 	,compare: function(other) {
 		var b1 = this.b;
@@ -1463,7 +1445,7 @@ haxe_io_Bytes.prototype = {
 		return this.length - other.length;
 	}
 	,getString: function(pos,len) {
-		if(pos < 0 || len < 0 || pos + len > this.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		if(pos < 0 || len < 0 || pos + len > this.length) throw new js._Boot.HaxeError(haxe.io.Error.OutsideBounds);
 		var s = "";
 		var b = this.b;
 		var fcc = String.fromCharCode;
@@ -1514,45 +1496,45 @@ haxe_io_Bytes.prototype = {
 	,getData: function() {
 		return this.b;
 	}
-	,__class__: haxe_io_Bytes
+	,__class__: haxe.io.Bytes
 };
-var haxe_io_Error = $hxClasses["haxe.io.Error"] = { __ename__ : ["haxe","io","Error"], __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] };
-haxe_io_Error.Blocked = ["Blocked",0];
-haxe_io_Error.Blocked.toString = $estr;
-haxe_io_Error.Blocked.__enum__ = haxe_io_Error;
-haxe_io_Error.Overflow = ["Overflow",1];
-haxe_io_Error.Overflow.toString = $estr;
-haxe_io_Error.Overflow.__enum__ = haxe_io_Error;
-haxe_io_Error.OutsideBounds = ["OutsideBounds",2];
-haxe_io_Error.OutsideBounds.toString = $estr;
-haxe_io_Error.OutsideBounds.__enum__ = haxe_io_Error;
-haxe_io_Error.Custom = function(e) { var $x = ["Custom",3,e]; $x.__enum__ = haxe_io_Error; $x.toString = $estr; return $x; };
-var js__$Boot_HaxeError = function(val) {
+haxe.io.Error = $hxClasses["haxe.io.Error"] = { __ename__ : ["haxe","io","Error"], __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] };
+haxe.io.Error.Blocked = ["Blocked",0];
+haxe.io.Error.Blocked.toString = $estr;
+haxe.io.Error.Blocked.__enum__ = haxe.io.Error;
+haxe.io.Error.Overflow = ["Overflow",1];
+haxe.io.Error.Overflow.toString = $estr;
+haxe.io.Error.Overflow.__enum__ = haxe.io.Error;
+haxe.io.Error.OutsideBounds = ["OutsideBounds",2];
+haxe.io.Error.OutsideBounds.toString = $estr;
+haxe.io.Error.OutsideBounds.__enum__ = haxe.io.Error;
+haxe.io.Error.Custom = function(e) { var $x = ["Custom",3,e]; $x.__enum__ = haxe.io.Error; $x.toString = $estr; return $x; };
+var js = js || {};
+if(!js._Boot) js._Boot = {};
+js._Boot.HaxeError = $hxClasses["js._Boot.HaxeError"] = function(val) {
 	Error.call(this);
 	this.val = val;
 	this.message = String(val);
-	if(Error.captureStackTrace) Error.captureStackTrace(this,js__$Boot_HaxeError);
+	if(Error.captureStackTrace) Error.captureStackTrace(this,js._Boot.HaxeError);
 };
-$hxClasses["js._Boot.HaxeError"] = js__$Boot_HaxeError;
-js__$Boot_HaxeError.__name__ = ["js","_Boot","HaxeError"];
-js__$Boot_HaxeError.__super__ = Error;
-js__$Boot_HaxeError.prototype = $extend(Error.prototype,{
+js._Boot.HaxeError.__name__ = ["js","_Boot","HaxeError"];
+js._Boot.HaxeError.__super__ = Error;
+js._Boot.HaxeError.prototype = $extend(Error.prototype,{
 	val: null
-	,__class__: js__$Boot_HaxeError
+	,__class__: js._Boot.HaxeError
 });
-var js_Boot = function() { };
-$hxClasses["js.Boot"] = js_Boot;
-js_Boot.__name__ = ["js","Boot"];
-js_Boot.getClass = function(o) {
+js.Boot = $hxClasses["js.Boot"] = function() { };
+js.Boot.__name__ = ["js","Boot"];
+js.Boot.getClass = function(o) {
 	if((o instanceof Array) && o.__enum__ == null) return Array; else {
 		var cl = o.__class__;
 		if(cl != null) return cl;
-		var name = js_Boot.__nativeClassName(o);
-		if(name != null) return js_Boot.__resolveNativeClass(name);
+		var name = js.Boot.__nativeClassName(o);
+		if(name != null) return js.Boot.__resolveNativeClass(name);
 		return null;
 	}
 };
-js_Boot.__string_rec = function(o,s) {
+js.Boot.__string_rec = function(o,s) {
 	if(o == null) return "null";
 	if(s.length >= 5) return "<...>";
 	var t = typeof(o);
@@ -1568,7 +1550,7 @@ js_Boot.__string_rec = function(o,s) {
 				var _g = o.length;
 				while(_g1 < _g) {
 					var i1 = _g1++;
-					if(i1 != 2) str2 += "," + js_Boot.__string_rec(o[i1],s); else str2 += js_Boot.__string_rec(o[i1],s);
+					if(i1 != 2) str2 += "," + js.Boot.__string_rec(o[i1],s); else str2 += js.Boot.__string_rec(o[i1],s);
 				}
 				return str2 + ")";
 			}
@@ -1579,7 +1561,7 @@ js_Boot.__string_rec = function(o,s) {
 			var _g2 = 0;
 			while(_g2 < l) {
 				var i2 = _g2++;
-				str1 += (i2 > 0?",":"") + js_Boot.__string_rec(o[i2],s);
+				str1 += (i2 > 0?",":"") + js.Boot.__string_rec(o[i2],s);
 			}
 			str1 += "]";
 			return str1;
@@ -1588,7 +1570,7 @@ js_Boot.__string_rec = function(o,s) {
 		try {
 			tostr = o.toString;
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
+			if (e instanceof js._Boot.HaxeError) e = e.val;
 			return "???";
 		}
 		if(tostr != null && tostr != Object.toString && typeof(tostr) == "function") {
@@ -1607,7 +1589,7 @@ js_Boot.__string_rec = function(o,s) {
 			continue;
 		}
 		if(str.length != 2) str += ", \n";
-		str += s + k + " : " + js_Boot.__string_rec(o[k],s);
+		str += s + k + " : " + js.Boot.__string_rec(o[k],s);
 		}
 		s = s.substring(1);
 		str += "\n" + s + "}";
@@ -1620,7 +1602,7 @@ js_Boot.__string_rec = function(o,s) {
 		return String(o);
 	}
 };
-js_Boot.__interfLoop = function(cc,cl) {
+js.Boot.__interfLoop = function(cc,cl) {
 	if(cc == null) return false;
 	if(cc == cl) return true;
 	var intf = cc.__interfaces__;
@@ -1630,12 +1612,12 @@ js_Boot.__interfLoop = function(cc,cl) {
 		while(_g1 < _g) {
 			var i = _g1++;
 			var i1 = intf[i];
-			if(i1 == cl || js_Boot.__interfLoop(i1,cl)) return true;
+			if(i1 == cl || js.Boot.__interfLoop(i1,cl)) return true;
 		}
 	}
-	return js_Boot.__interfLoop(cc.__super__,cl);
+	return js.Boot.__interfLoop(cc.__super__,cl);
 };
-js_Boot.__instanceof = function(o,cl) {
+js.Boot.__instanceof = function(o,cl) {
 	if(cl == null) return false;
 	switch(cl) {
 	case Int:
@@ -1654,8 +1636,8 @@ js_Boot.__instanceof = function(o,cl) {
 		if(o != null) {
 			if(typeof(cl) == "function") {
 				if(o instanceof cl) return true;
-				if(js_Boot.__interfLoop(js_Boot.getClass(o),cl)) return true;
-			} else if(typeof(cl) == "object" && js_Boot.__isNativeObj(cl)) {
+				if(js.Boot.__interfLoop(js.Boot.getClass(o),cl)) return true;
+			} else if(typeof(cl) == "object" && js.Boot.__isNativeObj(cl)) {
 				if(o instanceof cl) return true;
 			}
 		} else return false;
@@ -1664,145 +1646,144 @@ js_Boot.__instanceof = function(o,cl) {
 		return o.__enum__ == cl;
 	}
 };
-js_Boot.__cast = function(o,t) {
-	if(js_Boot.__instanceof(o,t)) return o; else throw new js__$Boot_HaxeError("Cannot cast " + Std.string(o) + " to " + Std.string(t));
+js.Boot.__cast = function(o,t) {
+	if(js.Boot.__instanceof(o,t)) return o; else throw new js._Boot.HaxeError("Cannot cast " + Std.string(o) + " to " + Std.string(t));
 };
-js_Boot.__nativeClassName = function(o) {
-	var name = js_Boot.__toStr.call(o).slice(8,-1);
+js.Boot.__nativeClassName = function(o) {
+	var name = js.Boot.__toStr.call(o).slice(8,-1);
 	if(name == "Object" || name == "Function" || name == "Math" || name == "JSON") return null;
 	return name;
 };
-js_Boot.__isNativeObj = function(o) {
-	return js_Boot.__nativeClassName(o) != null;
+js.Boot.__isNativeObj = function(o) {
+	return js.Boot.__nativeClassName(o) != null;
 };
-js_Boot.__resolveNativeClass = function(name) {
+js.Boot.__resolveNativeClass = function(name) {
 	return $global[name];
 };
-var js_NodeC = function() { };
-$hxClasses["js.NodeC"] = js_NodeC;
-js_NodeC.__name__ = ["js","NodeC"];
-var js_Node = function() { };
-$hxClasses["js.Node"] = js_Node;
-js_Node.__name__ = ["js","Node"];
-js_Node.get_assert = function() {
-	return js_Node.require("assert");
+js.NodeC = $hxClasses["js.NodeC"] = function() { };
+js.NodeC.__name__ = ["js","NodeC"];
+js.Node = $hxClasses["js.Node"] = function() { };
+js.Node.__name__ = ["js","Node"];
+js.Node.get_assert = function() {
+	return js.Node.require("assert");
 };
-js_Node.get_child_process = function() {
-	return js_Node.require("child_process");
+js.Node.get_child_process = function() {
+	return js.Node.require("child_process");
 };
-js_Node.get_cluster = function() {
-	return js_Node.require("cluster");
+js.Node.get_cluster = function() {
+	return js.Node.require("cluster");
 };
-js_Node.get_crypto = function() {
-	return js_Node.require("crypto");
+js.Node.get_crypto = function() {
+	return js.Node.require("crypto");
 };
-js_Node.get_dgram = function() {
-	return js_Node.require("dgram");
+js.Node.get_dgram = function() {
+	return js.Node.require("dgram");
 };
-js_Node.get_dns = function() {
-	return js_Node.require("dns");
+js.Node.get_dns = function() {
+	return js.Node.require("dns");
 };
-js_Node.get_fs = function() {
-	return js_Node.require("fs");
+js.Node.get_fs = function() {
+	return js.Node.require("fs");
 };
-js_Node.get_http = function() {
-	return js_Node.require("http");
+js.Node.get_http = function() {
+	return js.Node.require("http");
 };
-js_Node.get_https = function() {
-	return js_Node.require("https");
+js.Node.get_https = function() {
+	return js.Node.require("https");
 };
-js_Node.get_net = function() {
-	return js_Node.require("net");
+js.Node.get_net = function() {
+	return js.Node.require("net");
 };
-js_Node.get_os = function() {
-	return js_Node.require("os");
+js.Node.get_os = function() {
+	return js.Node.require("os");
 };
-js_Node.get_path = function() {
-	return js_Node.require("path");
+js.Node.get_path = function() {
+	return js.Node.require("path");
 };
-js_Node.get_querystring = function() {
-	return js_Node.require("querystring");
+js.Node.get_querystring = function() {
+	return js.Node.require("querystring");
 };
-js_Node.get_repl = function() {
-	return js_Node.require("repl");
+js.Node.get_repl = function() {
+	return js.Node.require("repl");
 };
-js_Node.get_tls = function() {
-	return js_Node.require("tls");
+js.Node.get_tls = function() {
+	return js.Node.require("tls");
 };
-js_Node.get_url = function() {
-	return js_Node.require("url");
+js.Node.get_url = function() {
+	return js.Node.require("url");
 };
-js_Node.get_util = function() {
-	return js_Node.require("util");
+js.Node.get_util = function() {
+	return js.Node.require("util");
 };
-js_Node.get_vm = function() {
-	return js_Node.require("vm");
+js.Node.get_vm = function() {
+	return js.Node.require("vm");
 };
-js_Node.get_zlib = function() {
-	return js_Node.require("zlib");
+js.Node.get_zlib = function() {
+	return js.Node.require("zlib");
 };
-js_Node.get___filename = function() {
+js.Node.get___filename = function() {
 	return __filename;
 };
-js_Node.get___dirname = function() {
+js.Node.get___dirname = function() {
 	return __dirname;
 };
-js_Node.get_json = function() {
+js.Node.get_json = function() {
 	return JSON;
 };
-js_Node.newSocket = function(options) {
+js.Node.newSocket = function(options) {
 	return new js.Node.net.Socket(options);
 };
-js_Node.isNodeWebkit = function() {
+js.Node.isNodeWebkit = function() {
 	return (typeof process == "object");
 };
-var saturn_app_SaturnServer = function() {
+var saturn = saturn || {};
+if(!saturn.app) saturn.app = {};
+saturn.app.SaturnServer = $hxClasses["saturn.app.SaturnServer"] = function() {
 	this.usingEncryption = false;
 	this.__dirname = __dirname;
-	this.restify = js_Node.require("restify");
-	this.osLib = js_Node.require("os");
-	this.execLib = js_Node.require("child_process");
-	this.domainLib = js_Node.require("domain");
-	this.httpLib = js_Node.require("http");
-	this.cryptoLib = js_Node.require("crypto");
-	this.tempLib = js_Node.require("temp");
-	this.pathLib = js_Node.require("path");
-	this.fsExtraLib = js_Node.require("fs-extra");
-	this.fsLib = js_Node.require("fs");
-	this.serviceConfigs = new haxe_ds_StringMap();
+	this.restify = js.Node.require("restify");
+	this.osLib = js.Node.require("os");
+	this.execLib = js.Node.require("child_process");
+	this.domainLib = js.Node.require("domain");
+	this.httpLib = js.Node.require("http");
+	this.cryptoLib = js.Node.require("crypto");
+	this.tempLib = js.Node.require("temp");
+	this.pathLib = js.Node.require("path");
+	this.fsExtraLib = js.Node.require("fs-extra");
+	this.fsLib = js.Node.require("fs");
+	this.serviceConfigs = new haxe.ds.StringMap();
 	this.socketPlugins = [];
 	this.plugins = [];
-	if(js_Node.process.argv.length == 3) {
-		this.servicesFile = js_Node.process.argv[2];
+	if(js.Node.process.argv.length == 3) {
+		this.servicesFile = js.Node.process.argv[2];
 		this.loadServiceDefinition(function() {
 		});
 	} else {
 		this.debug("Usage\tServices File\n");
-		js_Node.process.exit(-1);
+		js.Node.process.exit(-1);
 	}
 };
-$hxClasses["saturn.app.SaturnServer"] = saturn_app_SaturnServer;
-saturn_app_SaturnServer.__name__ = ["saturn","app","SaturnServer"];
-saturn_app_SaturnServer.main = function() {
-	saturn_app_SaturnServer.defaultServer = new saturn_app_SaturnServer();
+saturn.app.SaturnServer.__name__ = ["saturn","app","SaturnServer"];
+saturn.app.SaturnServer.main = function() {
+	saturn.app.SaturnServer.defaultServer = new saturn.app.SaturnServer();
 };
-saturn_app_SaturnServer.getDefaultServer = function() {
-	return saturn_app_SaturnServer.defaultServer;
+saturn.app.SaturnServer.getDefaultServer = function() {
+	return saturn.app.SaturnServer.defaultServer;
 };
-saturn_app_SaturnServer.debuglog = function(name,value) {
-	saturn_app_SaturnServer.DEBUG(name,value);
+saturn.app.SaturnServer.debuglog = function(name,value) {
+	saturn.app.SaturnServer.DEBUG(name,value);
 };
-saturn_app_SaturnServer.getStandardUserInputError = function() {
+saturn.app.SaturnServer.getStandardUserInputError = function() {
 	return "Invalid User Input";
 };
-saturn_app_SaturnServer.makeStaticAvailable = function(filePath,cb) {
-	var outputPath = saturn_app_SaturnServer.getDefaultServer().getRelativePublicOuputFolder() + "/" + Std.string(saturn_app_SaturnServer.getDefaultServer().pathLib.basename(filePath)) + ".txt";
-	var remotePath = saturn_app_SaturnServer.getDefaultServer().getRelativePublicOuputURL() + "/" + Std.string(saturn_app_SaturnServer.getDefaultServer().pathLib.basename(filePath)) + ".txt";
-	bindings_NodeFSExtra.copy(filePath,outputPath,function(err) {
+saturn.app.SaturnServer.makeStaticAvailable = function(filePath,cb) {
+	var outputPath = saturn.app.SaturnServer.getDefaultServer().getRelativePublicOuputFolder() + "/" + Std.string(saturn.app.SaturnServer.getDefaultServer().pathLib.basename(filePath)) + ".txt";
+	var remotePath = saturn.app.SaturnServer.getDefaultServer().getRelativePublicOuputURL() + "/" + Std.string(saturn.app.SaturnServer.getDefaultServer().pathLib.basename(filePath)) + ".txt";
+	bindings.NodeFSExtra.copy(filePath,outputPath,function(err) {
 		cb(err,remotePath);
 	});
 };
-saturn_app_SaturnServer.prototype = {
+saturn.app.SaturnServer.prototype = {
 	fsLib: null
 	,fsExtraLib: null
 	,pathLib: null
@@ -1853,7 +1834,7 @@ saturn_app_SaturnServer.prototype = {
 		if(Object.prototype.hasOwnProperty.call(serverConfig,"internalConnectionHostName")) this.internalConnectionHostName = Reflect.field(serverConfig,"internalConnectionHostName"); else this.internalConnectionHostName = Reflect.field(serverConfig,"hostname");
 		if(Object.prototype.hasOwnProperty.call(serverConfig,"restify_http_options")) {
 			http_config = Reflect.field(serverConfig,"restify_http_options");
-			saturn_core_Util.debug(saturn_core_Util.string(http_config));
+			saturn.core.Util.debug(saturn.core.Util.string(http_config));
 			if(Object.prototype.hasOwnProperty.call(http_config,"cert")) {
 				var certificate = Reflect.field(http_config,"cert");
 				if(certificate != null && certificate != "") {
@@ -1864,7 +1845,7 @@ saturn_app_SaturnServer.prototype = {
 		} else this.server = this.restify.createServer();
 		this.server["use"](this.restify.plugins.queryParser({ mapParams : true}));
 		this.server["use"](this.restify.plugins.bodyParser({ mapParams : true}));
-		var CookieParser = js_Node.require("restify-cookies");
+		var CookieParser = js.Node.require("restify-cookies");
 		this.server["use"](CookieParser.parse);
 		this.installPlugins();
 		this.installSocketPlugins();
@@ -1875,11 +1856,11 @@ saturn_app_SaturnServer.prototype = {
 			return next(false);
 		});
 		this.configureRedisClient();
-		if(saturn_app_SaturnServer.beforeListen != null) saturn_app_SaturnServer.beforeListen();
+		if(saturn.app.SaturnServer.beforeListen != null) saturn.app.SaturnServer.beforeListen();
 		this.server.listen(this.port,serverConfig.hostname,function() {
 			_g.debug("Server listening at " + Std.string(_g.server.url));
 		});
-		if(saturn_app_SaturnServer.afterListen != null) saturn_app_SaturnServer.afterListen();
+		if(saturn.app.SaturnServer.afterListen != null) saturn.app.SaturnServer.afterListen();
 	}
 	,installSocketPlugins: function() {
 		var _g = this;
@@ -1893,7 +1874,7 @@ saturn_app_SaturnServer.prototype = {
 				var plugin = Type.createInstance(Type.resolveClass(pluginDef.clazz),[this,pluginDef]);
 				this.socketPlugins.push(plugin);
 			}
-			var Queue = js_Node.require("bull");
+			var Queue = js.Node.require("bull");
 			this.theServerSocket.sockets.on("connection",function(socket) {
 				var _g11 = 0;
 				var _g2 = _g.socketPlugins;
@@ -1921,7 +1902,7 @@ saturn_app_SaturnServer.prototype = {
 	,loadServiceDefinition: function(__return) {
 		var _g = this;
 		(function(__afterVar_0) {
-			js_Node.require("fs").readFile(_g.servicesFile,"utf8",function(__parameter_1,__parameter_2) {
+			js.Node.require("fs").readFile(_g.servicesFile,"utf8",function(__parameter_1,__parameter_2) {
 				__afterVar_0(__parameter_1,__parameter_2);
 			});
 		})(function(err,content) {
@@ -1940,23 +1921,23 @@ saturn_app_SaturnServer.prototype = {
 						__return();
 					} else {
 						_g.debug("Service config is missing redis_port property");
-						js_Node.process.exit(-1);
+						js.Node.process.exit(-1);
 						__return();
 					}
 				} else {
 					_g.debug("Service config is missing port property");
-					js_Node.process.exit(-1);
+					js.Node.process.exit(-1);
 					__return();
 				}
 			} else {
 				_g.debug(err);
-				js_Node.process.exit(-1);
+				js.Node.process.exit(-1);
 				__return();
 			}
 		});
 	}
 	,debug: function(msg) {
-		saturn_app_SaturnServer.DEBUG(msg);
+		saturn.app.SaturnServer.DEBUG(msg);
 	}
 	,getStandardErrorCode: function() {
 		return "H2IK";
@@ -1974,7 +1955,7 @@ saturn_app_SaturnServer.prototype = {
 		return this.getRelativePublicStorageURL() + "/out";
 	}
 	,getPythonPath: function() {
-		if(js_Node.require("os").platform() == "win32") return "C:/python27/Python.exe"; else return "/opt/python/python_builds/python-2.7.7/bin/python";
+		if(js.Node.require("os").platform() == "win32") return "C:/python27/Python.exe"; else return "/opt/python/python_builds/python-2.7.7/bin/python";
 	}
 	,getServer: function() {
 		return this.server;
@@ -2007,11 +1988,11 @@ saturn_app_SaturnServer.prototype = {
 	}
 	,configureRedisClient: function() {
 		var _g = this;
-		var redis = js_Node.require("redis");
+		var redis = js.Node.require("redis");
 		this.redisClient = redis.createClient(this.getRedisPort(),this.getHostname());
 		this.redisClient.on("error",function(err) {
 			_g.debug("Redis Error " + err);
-			js_Node.process.exit(-1);
+			js.Node.process.exit(-1);
 		});
 	}
 	,getRedisClient: function() {
@@ -2023,59 +2004,60 @@ saturn_app_SaturnServer.prototype = {
 	,getAuthenticationPlugin: function() {
 		return this.authPlugin;
 	}
-	,__class__: saturn_app_SaturnServer
+	,__class__: saturn.app.SaturnServer
 };
-var saturn_client_core_CommonCore = function() { };
-$hxClasses["saturn.client.core.CommonCore"] = saturn_client_core_CommonCore;
-saturn_client_core_CommonCore.__name__ = ["saturn","client","core","CommonCore"];
-saturn_client_core_CommonCore.setDefaultProvider = function(provider,name,defaultProvider) {
+if(!saturn.client) saturn.client = {};
+if(!saturn.client.core) saturn.client.core = {};
+saturn.client.core.CommonCore = $hxClasses["saturn.client.core.CommonCore"] = function() { };
+saturn.client.core.CommonCore.__name__ = ["saturn","client","core","CommonCore"];
+saturn.client.core.CommonCore.setDefaultProvider = function(provider,name,defaultProvider) {
 	if(name == null) name = "DEFAULT";
-	saturn_client_core_CommonCore.providers.set(name,provider);
-	if(defaultProvider) saturn_client_core_CommonCore.DEFAULT_POOL_NAME = name;
+	saturn.client.core.CommonCore.providers.set(name,provider);
+	if(defaultProvider) saturn.client.core.CommonCore.DEFAULT_POOL_NAME = name;
 };
-saturn_client_core_CommonCore.closeProviders = function() {
-	var $it0 = saturn_client_core_CommonCore.providers.keys();
+saturn.client.core.CommonCore.closeProviders = function() {
+	var $it0 = saturn.client.core.CommonCore.providers.keys();
 	while( $it0.hasNext() ) {
 		var name = $it0.next();
-		saturn_client_core_CommonCore.providers.get(name)._closeConnection();
+		saturn.client.core.CommonCore.providers.get(name)._closeConnection();
 	}
 };
-saturn_client_core_CommonCore.getStringError = function(error) {
+saturn.client.core.CommonCore.getStringError = function(error) {
 	var dwin = window;
 	dwin.error = error;
 	return error;
 };
-saturn_client_core_CommonCore.getCombinedModels = function() {
-	if(saturn_client_core_CommonCore.combinedModels == null) {
-		saturn_client_core_CommonCore.combinedModels = new haxe_ds_StringMap();
+saturn.client.core.CommonCore.getCombinedModels = function() {
+	if(saturn.client.core.CommonCore.combinedModels == null) {
+		saturn.client.core.CommonCore.combinedModels = new haxe.ds.StringMap();
 		var _g = 0;
-		var _g1 = saturn_client_core_CommonCore.getProviderNames();
+		var _g1 = saturn.client.core.CommonCore.getProviderNames();
 		while(_g < _g1.length) {
 			var name = _g1[_g];
 			++_g;
-			var models = saturn_client_core_CommonCore.getDefaultProvider(null,name).getModels();
+			var models = saturn.client.core.CommonCore.getDefaultProvider(null,name).getModels();
 			var $it0 = models.keys();
 			while( $it0.hasNext() ) {
 				var key = $it0.next();
 				var value;
 				value = __map_reserved[key] != null?models.getReserved(key):models.h[key];
-				saturn_client_core_CommonCore.combinedModels.set(key,value);
+				saturn.client.core.CommonCore.combinedModels.set(key,value);
 			}
 		}
 	}
-	return saturn_client_core_CommonCore.combinedModels;
+	return saturn.client.core.CommonCore.combinedModels;
 };
-saturn_client_core_CommonCore.getProviderNameForModel = function(name) {
-	var models = saturn_client_core_CommonCore.getCombinedModels();
+saturn.client.core.CommonCore.getProviderNameForModel = function(name) {
+	var models = saturn.client.core.CommonCore.getCombinedModels();
 	if(__map_reserved[name] != null?models.existsReserved(name):models.h.hasOwnProperty(name)) {
 		if((__map_reserved[name] != null?models.getReserved(name):models.h[name]).exists("provider_name")) return (__map_reserved[name] != null?models.getReserved(name):models.h[name]).get("provider_name"); else return null;
 	} else return null;
 };
-saturn_client_core_CommonCore.getProviderForNamedQuery = function(name) {
-	var $it0 = saturn_client_core_CommonCore.providers.keys();
+saturn.client.core.CommonCore.getProviderForNamedQuery = function(name) {
+	var $it0 = saturn.client.core.CommonCore.providers.keys();
 	while( $it0.hasNext() ) {
 		var providerName = $it0.next();
-		var provider = saturn_client_core_CommonCore.providers.get(providerName);
+		var provider = saturn.client.core.CommonCore.providers.get(providerName);
 		var config = provider.getConfig();
 		if(Object.prototype.hasOwnProperty.call(config,"named_queries")) {
 			if(Reflect.hasField(Reflect.field(config,"named_queries"),name)) return providerName;
@@ -2083,41 +2065,41 @@ saturn_client_core_CommonCore.getProviderForNamedQuery = function(name) {
 	}
 	return null;
 };
-saturn_client_core_CommonCore.getDefaultProvider = function(cb,name) {
-	if(name == null) name = saturn_client_core_CommonCore.getDefaultProviderName();
-	if(saturn_client_core_CommonCore.providers.exists(name)) {
-		if(cb != null) cb(null,saturn_client_core_CommonCore.providers.get(name));
-		return saturn_client_core_CommonCore.providers.get(name);
+saturn.client.core.CommonCore.getDefaultProvider = function(cb,name) {
+	if(name == null) name = saturn.client.core.CommonCore.getDefaultProviderName();
+	if(saturn.client.core.CommonCore.providers.exists(name)) {
+		if(cb != null) cb(null,saturn.client.core.CommonCore.providers.get(name));
+		return saturn.client.core.CommonCore.providers.get(name);
 	} else if(name != null) {
-		saturn_client_core_CommonCore.getResource(name,cb);
+		saturn.client.core.CommonCore.getResource(name,cb);
 		return -1;
 	}
 	return null;
 };
-saturn_client_core_CommonCore.getProviderNames = function() {
+saturn.client.core.CommonCore.getProviderNames = function() {
 	var names = [];
-	var $it0 = saturn_client_core_CommonCore.providers.keys();
+	var $it0 = saturn.client.core.CommonCore.providers.keys();
 	while( $it0.hasNext() ) {
 		var name = $it0.next();
 		names.push(name);
 	}
-	var $it1 = saturn_client_core_CommonCore.pools.keys();
+	var $it1 = saturn.client.core.CommonCore.pools.keys();
 	while( $it1.hasNext() ) {
 		var name1 = $it1.next();
 		names.push(name1);
 	}
 	return names;
 };
-saturn_client_core_CommonCore.getFileExtension = function(fileName) {
+saturn.client.core.CommonCore.getFileExtension = function(fileName) {
 	var r = new EReg("\\.(\\w+)","");
 	r.match(fileName);
 	return r.matched(1);
 };
-saturn_client_core_CommonCore.getBinaryFileAsArrayBuffer = function(file) {
+saturn.client.core.CommonCore.getBinaryFileAsArrayBuffer = function(file) {
 	var fileReader = new FileReader();
 	return fileReader.readAsArrayBuffer(file);
 };
-saturn_client_core_CommonCore.convertArrayBufferToBase64 = function(buffer) {
+saturn.client.core.CommonCore.convertArrayBufferToBase64 = function(buffer) {
 	var binary = "";
 	var bytes = new Uint8Array(buffer);
 	var len = bytes.byteLength;
@@ -2128,8 +2110,8 @@ saturn_client_core_CommonCore.convertArrayBufferToBase64 = function(buffer) {
 	}
 	return window.btoa(binary);
 };
-saturn_client_core_CommonCore.getFileAsText = function(file,cb) {
-	if(js_Boot.__instanceof(file,saturn_core_FileShim)) cb(file.getAsText()); else if(Object.prototype.hasOwnProperty.call(file,"_data")) cb(file.asText()); else {
+saturn.client.core.CommonCore.getFileAsText = function(file,cb) {
+	if(js.Boot.__instanceof(file,saturn.core.FileShim)) cb(file.getAsText()); else if(Object.prototype.hasOwnProperty.call(file,"_data")) cb(file.asText()); else {
 		var fileReader = new FileReader();
 		fileReader.onload = function(e) {
 			cb(e.target.result);
@@ -2137,7 +2119,7 @@ saturn_client_core_CommonCore.getFileAsText = function(file,cb) {
 		fileReader.readAsText(file);
 	}
 };
-saturn_client_core_CommonCore.getFileInChunks = function(file,chunkSize,cb) {
+saturn.client.core.CommonCore.getFileInChunks = function(file,chunkSize,cb) {
 	var offset = 0;
 	var fileSize = file.size;
 	var chunker = null;
@@ -2153,8 +2135,8 @@ saturn_client_core_CommonCore.getFileInChunks = function(file,chunkSize,cb) {
 	};
 	chunker();
 };
-saturn_client_core_CommonCore.getFileAsArrayBuffer = function(file,cb) {
-	if(js_Boot.__instanceof(file,saturn_core_FileShim)) cb(file.getAsArrayBuffer()); else if(Object.prototype.hasOwnProperty.call(file,"_data")) cb(file.asUint8Array()); else {
+saturn.client.core.CommonCore.getFileAsArrayBuffer = function(file,cb) {
+	if(js.Boot.__instanceof(file,saturn.core.FileShim)) cb(file.getAsArrayBuffer()); else if(Object.prototype.hasOwnProperty.call(file,"_data")) cb(file.asUint8Array()); else {
 		var fileReader = new FileReader();
 		fileReader.onload = function(e) {
 			cb(e.target.result);
@@ -2162,70 +2144,71 @@ saturn_client_core_CommonCore.getFileAsArrayBuffer = function(file,cb) {
 		fileReader.readAsArrayBuffer(file);
 	}
 };
-saturn_client_core_CommonCore.setPool = function(poolName,pool,isDefault) {
+saturn.client.core.CommonCore.setPool = function(poolName,pool,isDefault) {
 	if(poolName == null) poolName = "DEFAULT";
-	saturn_client_core_CommonCore.pools.set(poolName,pool);
-	if(isDefault) saturn_client_core_CommonCore.DEFAULT_POOL_NAME = poolName;
+	saturn.client.core.CommonCore.pools.set(poolName,pool);
+	if(isDefault) saturn.client.core.CommonCore.DEFAULT_POOL_NAME = poolName;
 };
-saturn_client_core_CommonCore.getPool = function(poolName) {
+saturn.client.core.CommonCore.getPool = function(poolName) {
 	if(poolName == null) poolName = "DEFAULT";
-	if(saturn_client_core_CommonCore.pools.exists(poolName)) return saturn_client_core_CommonCore.pools.get(poolName); else return null;
+	if(saturn.client.core.CommonCore.pools.exists(poolName)) return saturn.client.core.CommonCore.pools.get(poolName); else return null;
 };
-saturn_client_core_CommonCore.getResource = function(poolName,cb) {
+saturn.client.core.CommonCore.getResource = function(poolName,cb) {
 	if(poolName == null) poolName = "DEFAULT";
-	var pool = saturn_client_core_CommonCore.getPool(poolName);
+	var pool = saturn.client.core.CommonCore.getPool(poolName);
 	if(pool != null) pool.acquire(function(err,resource) {
-		if(err == null) saturn_client_core_CommonCore.resourceToPool.set(resource,poolName);
+		if(err == null) saturn.client.core.CommonCore.resourceToPool.set(resource,poolName);
 		cb(err,resource);
 	}); else cb("Invalid pool name",null);
 };
-saturn_client_core_CommonCore.releaseResource = function(resource) {
-	if(saturn_client_core_CommonCore.resourceToPool.exists(resource)) {
-		var poolName = saturn_client_core_CommonCore.resourceToPool.get(resource);
-		if(saturn_client_core_CommonCore.pools.exists(poolName)) {
-			var pool = saturn_client_core_CommonCore.pools.get(poolName);
+saturn.client.core.CommonCore.releaseResource = function(resource) {
+	if(saturn.client.core.CommonCore.resourceToPool.exists(resource)) {
+		var poolName = saturn.client.core.CommonCore.resourceToPool.get(resource);
+		if(saturn.client.core.CommonCore.pools.exists(poolName)) {
+			var pool = saturn.client.core.CommonCore.pools.get(poolName);
 			pool.release(resource);
 			return -3;
 		} else return -2;
 	} else return -1;
 };
-saturn_client_core_CommonCore.makeFullyQualified = function(path) {
+saturn.client.core.CommonCore.makeFullyQualified = function(path) {
 	var location = window.location;
 	return location.protocol + "//" + location.hostname + ":" + location.port + "/" + path;
 };
-saturn_client_core_CommonCore.getContent = function(url,onSuccess,onFailure) {
+saturn.client.core.CommonCore.getContent = function(url,onSuccess,onFailure) {
 	Ext.Ajax.request({ url : url, success : function(response,opts) {
 		onSuccess(response.responseText);
 	}, failure : function(response1,opts1) {
 		onFailure(response1);
 	}});
 };
-saturn_client_core_CommonCore.getDefaultProviderName = function() {
-	return saturn_client_core_CommonCore.DEFAULT_POOL_NAME;
+saturn.client.core.CommonCore.getDefaultProviderName = function() {
+	return saturn.client.core.CommonCore.DEFAULT_POOL_NAME;
 };
-var saturn_core_CutProductDirection = $hxClasses["saturn.core.CutProductDirection"] = { __ename__ : ["saturn","core","CutProductDirection"], __constructs__ : ["UPSTREAM","DOWNSTREAM","UPDOWN"] };
-saturn_core_CutProductDirection.UPSTREAM = ["UPSTREAM",0];
-saturn_core_CutProductDirection.UPSTREAM.toString = $estr;
-saturn_core_CutProductDirection.UPSTREAM.__enum__ = saturn_core_CutProductDirection;
-saturn_core_CutProductDirection.DOWNSTREAM = ["DOWNSTREAM",1];
-saturn_core_CutProductDirection.DOWNSTREAM.toString = $estr;
-saturn_core_CutProductDirection.DOWNSTREAM.__enum__ = saturn_core_CutProductDirection;
-saturn_core_CutProductDirection.UPDOWN = ["UPDOWN",2];
-saturn_core_CutProductDirection.UPDOWN.toString = $estr;
-saturn_core_CutProductDirection.UPDOWN.__enum__ = saturn_core_CutProductDirection;
-var saturn_core_molecule_Molecule = function(seq) {
+if(!saturn.core) saturn.core = {};
+saturn.core.CutProductDirection = $hxClasses["saturn.core.CutProductDirection"] = { __ename__ : ["saturn","core","CutProductDirection"], __constructs__ : ["UPSTREAM","DOWNSTREAM","UPDOWN"] };
+saturn.core.CutProductDirection.UPSTREAM = ["UPSTREAM",0];
+saturn.core.CutProductDirection.UPSTREAM.toString = $estr;
+saturn.core.CutProductDirection.UPSTREAM.__enum__ = saturn.core.CutProductDirection;
+saturn.core.CutProductDirection.DOWNSTREAM = ["DOWNSTREAM",1];
+saturn.core.CutProductDirection.DOWNSTREAM.toString = $estr;
+saturn.core.CutProductDirection.DOWNSTREAM.__enum__ = saturn.core.CutProductDirection;
+saturn.core.CutProductDirection.UPDOWN = ["UPDOWN",2];
+saturn.core.CutProductDirection.UPDOWN.toString = $estr;
+saturn.core.CutProductDirection.UPDOWN.__enum__ = saturn.core.CutProductDirection;
+if(!saturn.core.molecule) saturn.core.molecule = {};
+saturn.core.molecule.Molecule = $hxClasses["saturn.core.molecule.Molecule"] = function(seq) {
 	this.linked = false;
 	this.allowStar = false;
-	this.floatAttributes = new haxe_ds_StringMap();
-	this.stringAttributes = new haxe_ds_StringMap();
-	this.annotations = new haxe_ds_StringMap();
-	this.rawAnnotationData = new haxe_ds_StringMap();
-	this.annotationCRC = new haxe_ds_StringMap();
+	this.floatAttributes = new haxe.ds.StringMap();
+	this.stringAttributes = new haxe.ds.StringMap();
+	this.annotations = new haxe.ds.StringMap();
+	this.rawAnnotationData = new haxe.ds.StringMap();
+	this.annotationCRC = new haxe.ds.StringMap();
 	this.setSequence(seq);
 };
-$hxClasses["saturn.core.molecule.Molecule"] = saturn_core_molecule_Molecule;
-saturn_core_molecule_Molecule.__name__ = ["saturn","core","molecule","Molecule"];
-saturn_core_molecule_Molecule.prototype = {
+saturn.core.molecule.Molecule.__name__ = ["saturn","core","molecule","Molecule"];
+saturn.core.molecule.Molecule.prototype = {
 	sequence: null
 	,starPosition: null
 	,originalSequence: null
@@ -2261,7 +2244,7 @@ saturn_core_molecule_Molecule.prototype = {
 		this.crc = crc;
 	}
 	,updateCRC: function() {
-		if(this.sequence != null) this.crc = haxe_crypto_Md5.encode(this.sequence);
+		if(this.sequence != null) this.crc = haxe.crypto.Md5.encode(this.sequence);
 	}
 	,getAnnotationCRC: function(annotationName) {
 		return this.annotationCRC.get(annotationName);
@@ -2327,13 +2310,13 @@ saturn_core_molecule_Molecule.prototype = {
 	,setSequence: function(seq) {
 		if(seq != null) {
 			seq = seq.toUpperCase();
-			seq = saturn_core_molecule_Molecule.whiteSpaceReg.replace(seq,"");
-			seq = saturn_core_molecule_Molecule.newLineReg.replace(seq,"");
-			seq = saturn_core_molecule_Molecule.carLineReg.replace(seq,"");
+			seq = saturn.core.molecule.Molecule.whiteSpaceReg.replace(seq,"");
+			seq = saturn.core.molecule.Molecule.newLineReg.replace(seq,"");
+			seq = saturn.core.molecule.Molecule.carLineReg.replace(seq,"");
 			this.starPosition = seq.indexOf("*");
 			if(!this.allowStar) {
 				this.originalSequence = seq;
-				seq = saturn_core_molecule_Molecule.reg_starReplace.replace(seq,"");
+				seq = saturn.core.molecule.Molecule.reg_starReplace.replace(seq,"");
 			}
 			this.sequence = seq;
 		}
@@ -2426,7 +2409,7 @@ saturn_core_molecule_Molecule.prototype = {
 		}
 	}
 	,getCutProduct: function(template,direction) {
-		if(direction == saturn_core_CutProductDirection.UPSTREAM) return this.getBeforeCutSequence(template); else if(direction == saturn_core_CutProductDirection.DOWNSTREAM) return this.getAfterCutSequence(template); else if(direction == saturn_core_CutProductDirection.UPDOWN) {
+		if(direction == saturn.core.CutProductDirection.UPSTREAM) return this.getBeforeCutSequence(template); else if(direction == saturn.core.CutProductDirection.DOWNSTREAM) return this.getAfterCutSequence(template); else if(direction == saturn.core.CutProductDirection.UPDOWN) {
 			var startPos = this.getCutPosition(template);
 			var endPos = this.getLastCutPosition(template) - this.getLength();
 			return template.getSequence().substring(startPos,endPos);
@@ -2463,37 +2446,37 @@ saturn_core_molecule_Molecule.prototype = {
 		return;
 	}
 	,getMW: function() {
-		return this.getFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW);
+		return this.getFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW);
 	}
 	,findMatchingLocuses: function(locus,mode) {
 		var collookup_single = new EReg("^(\\d+)$","");
 		if(collookup_single.match(locus)) {
 			var num = collookup_single.matched(1);
-			var locusPosition = new saturn_core_LocusPosition();
+			var locusPosition = new saturn.core.LocusPosition();
 			locusPosition.start = Std.parseInt(num) - 1;
 			locusPosition.end = locusPosition.start;
 			return [locusPosition];
 		}
 		var collookup_double = new EReg("^(\\d+)-(\\d+)$","");
 		if(collookup_double.match(locus)) {
-			var locusPosition1 = new saturn_core_LocusPosition();
+			var locusPosition1 = new saturn.core.LocusPosition();
 			locusPosition1.start = Std.parseInt(collookup_double.matched(1)) - 1;
 			locusPosition1.end = Std.parseInt(collookup_double.matched(2)) - 1;
 			return [locusPosition1];
 		}
 		var collookup_toend = new EReg("^(\\d+)-$","");
 		if(collookup_toend.match(locus)) {
-			var locusPosition2 = new saturn_core_LocusPosition();
+			var locusPosition2 = new saturn.core.LocusPosition();
 			locusPosition2.start = Std.parseInt(collookup_toend.matched(1)) - 1;
 			locusPosition2.end = this.getLength() - 1;
 			return [locusPosition2];
 		}
 		var re_missMatchTotal = new EReg("^(\\d+)(.+)","");
 		if(mode == null) {
-			mode = saturn_core_molecule_MoleculeAlignMode.REGEX;
-			if(re_missMatchTotal.match(locus)) mode = saturn_core_molecule_MoleculeAlignMode.SIMPLE;
+			mode = saturn.core.molecule.MoleculeAlignMode.REGEX;
+			if(re_missMatchTotal.match(locus)) mode = saturn.core.molecule.MoleculeAlignMode.SIMPLE;
 		}
-		if(mode == saturn_core_molecule_MoleculeAlignMode.REGEX) return this.findMatchingLocusesRegEx(locus); else if(mode == saturn_core_molecule_MoleculeAlignMode.SIMPLE) {
+		if(mode == saturn.core.molecule.MoleculeAlignMode.REGEX) return this.findMatchingLocusesRegEx(locus); else if(mode == saturn.core.molecule.MoleculeAlignMode.SIMPLE) {
 			var missMatchesAllowed = 0;
 			if(re_missMatchTotal.match(locus)) {
 				missMatchesAllowed = Std.parseInt(re_missMatchTotal.matched(1));
@@ -2527,7 +2510,7 @@ saturn_core_molecule_Molecule.prototype = {
 				currentMissMatches = 0;
 				missMatchPositions = [];
 			} else if(lI == locus.length - 1) {
-				var locusPosition = new saturn_core_LocusPosition();
+				var locusPosition = new saturn.core.LocusPosition();
 				locusPosition.start = startPos;
 				locusPosition.end = seqI;
 				locusPosition.missMatchPositions = missMatchPositions;
@@ -2546,7 +2529,7 @@ saturn_core_molecule_Molecule.prototype = {
 		var offSet = 0;
 		var matchAgainst = this.sequence;
 		while(matchAgainst != null) if(r.match(matchAgainst)) {
-			var locusPosition = new saturn_core_LocusPosition();
+			var locusPosition = new saturn.core.LocusPosition();
 			var match = r.matchedPos();
 			locusPosition.start = match.pos + offSet;
 			locusPosition.end = match.pos + match.len - 1 + offSet;
@@ -2564,19 +2547,18 @@ saturn_core_molecule_Molecule.prototype = {
 	,getAtPosition: function(pos) {
 		return this.sequence.charAt(pos);
 	}
-	,__class__: saturn_core_molecule_Molecule
+	,__class__: saturn.core.molecule.Molecule
 };
-var saturn_core_DNA = function(seq) {
+saturn.core.DNA = $hxClasses["saturn.core.DNA"] = function(seq) {
 	this.reg_tReplace = new EReg("T","g");
-	this.proteins = new haxe_ds_StringMap();
-	saturn_core_molecule_Molecule.call(this,seq);
+	this.proteins = new haxe.ds.StringMap();
+	saturn.core.molecule.Molecule.call(this,seq);
 };
-$hxClasses["saturn.core.DNA"] = saturn_core_DNA;
-saturn_core_DNA.__name__ = ["saturn","core","DNA"];
-saturn_core_DNA.isDNA = function(sequence) {
+saturn.core.DNA.__name__ = ["saturn","core","DNA"];
+saturn.core.DNA.isDNA = function(sequence) {
 	var seqLen = sequence.length;
 	var valid_nucs;
-	var _g = new haxe_ds_StringMap();
+	var _g = new haxe.ds.StringMap();
 	if(__map_reserved.A != null) _g.setReserved("A",true); else _g.h["A"] = true;
 	if(__map_reserved.T != null) _g.setReserved("T",true); else _g.h["T"] = true;
 	if(__map_reserved.G != null) _g.setReserved("G",true); else _g.h["G"] = true;
@@ -2591,8 +2573,8 @@ saturn_core_DNA.isDNA = function(sequence) {
 	}
 	return true;
 };
-saturn_core_DNA.__super__ = saturn_core_molecule_Molecule;
-saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
+saturn.core.DNA.__super__ = saturn.core.molecule.Molecule;
+saturn.core.DNA.prototype = $extend(saturn.core.molecule.Molecule.prototype,{
 	protein: null
 	,proteins: null
 	,addProtein: function(name,protein) {
@@ -2628,16 +2610,16 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	,getMolecularWeight: function(phosphateAt5Prime) {
 		var dnaComposition = this.getComposition();
 		var seqMW = 0.0;
-		seqMW += dnaComposition.aCount * saturn_core_molecule_MoleculeConstants.aChainMW;
-		seqMW += dnaComposition.tCount * saturn_core_molecule_MoleculeConstants.tChainMW;
-		seqMW += dnaComposition.gCount * saturn_core_molecule_MoleculeConstants.gChainMW;
-		seqMW += dnaComposition.cCount * saturn_core_molecule_MoleculeConstants.cChainMW;
-		if(phosphateAt5Prime == false) seqMW -= saturn_core_molecule_MoleculeConstants.PO3;
-		seqMW += saturn_core_molecule_MoleculeConstants.OH;
+		seqMW += dnaComposition.aCount * saturn.core.molecule.MoleculeConstants.aChainMW;
+		seqMW += dnaComposition.tCount * saturn.core.molecule.MoleculeConstants.tChainMW;
+		seqMW += dnaComposition.gCount * saturn.core.molecule.MoleculeConstants.gChainMW;
+		seqMW += dnaComposition.cCount * saturn.core.molecule.MoleculeConstants.cChainMW;
+		if(phosphateAt5Prime == false) seqMW -= saturn.core.molecule.MoleculeConstants.PO3;
+		seqMW += saturn.core.molecule.MoleculeConstants.OH;
 		return seqMW;
 	}
 	,setSequence: function(sequence) {
-		saturn_core_molecule_Molecule.prototype.setSequence.call(this,sequence);
+		saturn.core.molecule.Molecule.prototype.setSequence.call(this,sequence);
 		if(this.isChild()) {
 			var p = this.getParent();
 			p.dnaSequenceUpdated(this.sequence);
@@ -2673,12 +2655,12 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 				break;
 			}
 		}
-		return new saturn_core_DNAComposition(aCount,tCount,gCount,cCount);
+		return new saturn.core.DNAComposition(aCount,tCount,gCount,cCount);
 	}
 	,getMeltingTemperature: function() {
 		var saltConc = 50;
 		var primerConc = 500;
-		var testTmCalc = new saturn_core_TmCalc();
+		var testTmCalc = new saturn.core.TmCalc();
 		return testTmCalc.tmCalculation(this,saltConc,primerConc);
 	}
 	,findPrimer: function(startPos,minLength,maxLength,minMelting,maxMelting,extensionSequence,minLengthExtended,minMeltingExtended,maxMeltingExtentded) {
@@ -2690,7 +2672,7 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 		var tCount;
 		var aCount = 0;
 		var seq = HxOverrides.substr(this.sequence,startPos - 1,minLength - 1);
-		var comp = new saturn_core_DNA(seq).getComposition();
+		var comp = new saturn.core.DNA(seq).getComposition();
 		cCount = comp.cCount;
 		gCount = comp.gCount;
 		tCount = comp.tCount;
@@ -2703,16 +2685,16 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 			var $char = this.sequence.charAt(i);
 			if($char == "C") cCount++; else if($char == "G") gCount++; else if($char == "A") aCount++; else if($char == "T") tCount++;
 			seq += $char;
-			var mt = new saturn_core_DNA(seq).getMeltingTemperature();
-			if(mt > maxMelting) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Maximum melting temperature exceeded")); else if(mt >= minMelting && mt <= maxMelting) {
+			var mt = new saturn.core.DNA(seq).getMeltingTemperature();
+			if(mt > maxMelting) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Maximum melting temperature exceeded")); else if(mt >= minMelting && mt <= maxMelting) {
 				if(extensionSequence == null) return seq; else {
-					var completeSequence = new saturn_core_DNA(extensionSequence + seq);
+					var completeSequence = new saturn.core.DNA(extensionSequence + seq);
 					var completeMT = completeSequence.getMeltingTemperature();
-					if(completeMT >= minMeltingExtended && completeMT <= maxMeltingExtentded && completeSequence.getLength() >= minLengthExtended) return seq; else if(completeMT < minMeltingExtended) continue; else if(completeMT > maxMeltingExtentded) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Maximum melting temperature for extended primer sequence exceeded")); else if(completeSequence.getLength() < minLengthExtended) continue;
+					if(completeMT >= minMeltingExtended && completeMT <= maxMeltingExtentded && completeSequence.getLength() >= minLengthExtended) return seq; else if(completeMT < minMeltingExtended) continue; else if(completeMT > maxMeltingExtentded) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Maximum melting temperature for extended primer sequence exceeded")); else if(completeSequence.getLength() < minLengthExtended) continue;
 				}
 			}
 		}
-		throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Unable to find region with required parameters"));
+		throw new js._Boot.HaxeError(new saturn.util.HaxeException("Unable to find region with required parameters"));
 	}
 	,getNumGC: function() {
 		var seqLen = this.sequence.length;
@@ -2789,7 +2771,7 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 		return newSequence_b;
 	}
 	,getFirstStartCodonPosition: function(geneticCode) {
-		var geneticCode1 = saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
+		var geneticCode1 = saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
 		var codons = geneticCode1.getStartCodons();
 		var minStartPos = -1;
 		var $it0 = codons.keys();
@@ -2804,11 +2786,11 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	}
 	,getTranslation: function(geneticCode,offSetPosition,stopAtFirstStop) {
 		if(offSetPosition == null) offSetPosition = 0;
-		if(!this.canHaveCodons()) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Unable to translate a sequence with less than 3 nucleotides"));
+		if(!this.canHaveCodons()) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Unable to translate a sequence with less than 3 nucleotides"));
 		var proteinSequenceBuffer_b = "";
 		var seqLength = this.sequence.length;
 		var finalCodonPosition = seqLength - (seqLength - offSetPosition) % 3;
-		var geneticCode1 = saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
+		var geneticCode1 = saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
 		var startIndex = offSetPosition;
 		var stopCodons = geneticCode1.getStopCodons();
 		while(startIndex < finalCodonPosition) {
@@ -2824,23 +2806,23 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	,getFrameTranslation: function(geneticCode,frame) {
 		if(this.sequence == null) return null;
 		var offSetPos = 0;
-		if(frame == saturn_core_Frame.TWO) offSetPos = 1; else if(frame == saturn_core_Frame.THREE) offSetPos = 2;
+		if(frame == saturn.core.Frame.TWO) offSetPos = 1; else if(frame == saturn.core.Frame.THREE) offSetPos = 2;
 		return this.getTranslation(geneticCode,offSetPos,true);
 	}
 	,getThreeFrameTranslation: function(geneticCode) {
-		var threeFrameTranslations = new haxe_ds_StringMap();
-		var value = this.getFrameTranslation(geneticCode,saturn_core_Frame.ONE);
-		threeFrameTranslations.set(Std.string(saturn_core_Frame.ONE),value);
-		var value1 = this.getFrameTranslation(geneticCode,saturn_core_Frame.TWO);
-		threeFrameTranslations.set(Std.string(saturn_core_Frame.TWO),value1);
-		var value2 = this.getFrameTranslation(geneticCode,saturn_core_Frame.THREE);
-		threeFrameTranslations.set(Std.string(saturn_core_Frame.THREE),value2);
+		var threeFrameTranslations = new haxe.ds.StringMap();
+		var value = this.getFrameTranslation(geneticCode,saturn.core.Frame.ONE);
+		threeFrameTranslations.set(Std.string(saturn.core.Frame.ONE),value);
+		var value1 = this.getFrameTranslation(geneticCode,saturn.core.Frame.TWO);
+		threeFrameTranslations.set(Std.string(saturn.core.Frame.TWO),value1);
+		var value2 = this.getFrameTranslation(geneticCode,saturn.core.Frame.THREE);
+		threeFrameTranslations.set(Std.string(saturn.core.Frame.THREE),value2);
 		return threeFrameTranslations;
 	}
 	,getSixFrameTranslation: function(geneticCode) {
 		var forwardFrames = this.getThreeFrameTranslation(geneticCode);
 		var dnaSeq = this.getInverseComplement();
-		var inverseComplementDNAObj = new saturn_core_DNA(dnaSeq);
+		var inverseComplementDNAObj = new saturn.core.DNA(dnaSeq);
 		var reverseFrames = inverseComplementDNAObj.getThreeFrameTranslation(geneticCode);
 		var value;
 		value = __map_reserved.ONE != null?reverseFrames.getReserved("ONE"):reverseFrames.h["ONE"];
@@ -2859,13 +2841,13 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	}
 	,getStartCodonPositions: function(geneticCode,frame,stopAtFirst) {
 		var offSet = 0;
-		if(frame == saturn_core_Frame.TWO) offSet = 1; else if(frame == saturn_core_Frame.THREE) offSet = 2;
+		if(frame == saturn.core.Frame.TWO) offSet = 1; else if(frame == saturn.core.Frame.THREE) offSet = 2;
 		var seqLength = this.sequence.length;
 		var startingIndex = offSet;
-		if(seqLength < startingIndex + 3) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Insufficient DNA length to find codon start position for frame " + Std.string(frame)));
+		if(seqLength < startingIndex + 3) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Insufficient DNA length to find codon start position for frame " + Std.string(frame)));
 		var startCodonPositions = [];
 		var finalCodonPosition = seqLength - (seqLength - offSet) % 3;
-		var geneticCode1 = saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
+		var geneticCode1 = saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
 		var startIndex = startingIndex;
 		while(startIndex < finalCodonPosition) {
 			var endIndex = startIndex + 3;
@@ -2884,13 +2866,13 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	}
 	,getStopCodonPositions: function(geneticCode,frame,stopAtFirst) {
 		var offSet = 0;
-		if(frame == saturn_core_Frame.TWO) offSet = 1; else if(frame == saturn_core_Frame.THREE) offSet = 2;
+		if(frame == saturn.core.Frame.TWO) offSet = 1; else if(frame == saturn.core.Frame.THREE) offSet = 2;
 		var seqLength = this.sequence.length;
 		var startingIndex = offSet;
-		if(seqLength < startingIndex + 3) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Insufficient DNA length to find codon start position for frame " + Std.string(frame)));
+		if(seqLength < startingIndex + 3) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Insufficient DNA length to find codon start position for frame " + Std.string(frame)));
 		var startCodonPositions = new List();
 		var finalCodonPosition = seqLength - (seqLength - offSet) % 3;
-		var geneticCode1 = saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
+		var geneticCode1 = saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
 		var startIndex = startingIndex;
 		while(startIndex < finalCodonPosition) {
 			var endIndex = startIndex + 3;
@@ -2909,13 +2891,13 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	,getFrameRegion: function(frame,start,stop) {
 		var dnaStart;
 		var dnaStop;
-		if(frame == saturn_core_Frame.ONE) {
+		if(frame == saturn.core.Frame.ONE) {
 			dnaStart = start * 3 - 2;
 			dnaStop = stop * 3;
-		} else if(frame == saturn_core_Frame.TWO) {
+		} else if(frame == saturn.core.Frame.TWO) {
 			dnaStart = start * 3 - 1;
 			dnaStop = stop * 3 + 1;
-		} else if(frame == saturn_core_Frame.THREE) {
+		} else if(frame == saturn.core.Frame.THREE) {
 			dnaStart = start * 3;
 			dnaStop = stop * 3 + 2;
 		} else return null;
@@ -2923,19 +2905,19 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 	}
 	,mutateResidue: function(frame,geneticCode,pos,mutAA) {
 		var nucPos = this.getCodonStartPosition(frame,pos);
-		if(nucPos >= this.sequence.length) throw new js__$Boot_HaxeError(new saturn_util_HaxeException("Sequence not long enough for requested frame and position"));
-		var geneticCode1 = saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
+		if(nucPos >= this.sequence.length) throw new js._Boot.HaxeError(new saturn.util.HaxeException("Sequence not long enough for requested frame and position"));
+		var geneticCode1 = saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(geneticCode);
 		var codon = geneticCode1.getFirstCodon(mutAA);
 		return this.sequence.substring(0,nucPos - 1) + codon + this.sequence.substring(nucPos + 2,this.sequence.length);
 	}
 	,getCodonStartPosition: function(frame,start) {
 		var dnaStart;
-		if(frame == saturn_core_Frame.ONE) dnaStart = start * 3 - 2; else if(frame == saturn_core_Frame.TWO) dnaStart = start * 3 - 1; else if(frame == saturn_core_Frame.THREE) dnaStart = start * 3; else return null;
+		if(frame == saturn.core.Frame.ONE) dnaStart = start * 3 - 2; else if(frame == saturn.core.Frame.TWO) dnaStart = start * 3 - 1; else if(frame == saturn.core.Frame.THREE) dnaStart = start * 3; else return null;
 		return dnaStart;
 	}
 	,getCodonStopPosition: function(frame,stop) {
 		var dnaStop;
-		if(frame == saturn_core_Frame.ONE) dnaStop = stop * 3; else if(frame == saturn_core_Frame.TWO) dnaStop = stop * 3 + 1; else if(frame == saturn_core_Frame.THREE) dnaStop = stop * 3 + 2; else return null;
+		if(frame == saturn.core.Frame.ONE) dnaStop = stop * 3; else if(frame == saturn.core.Frame.TWO) dnaStop = stop * 3 + 1; else if(frame == saturn.core.Frame.THREE) dnaStop = stop * 3 + 2; else return null;
 		return dnaStop;
 	}
 	,getRegion: function(start,stop) {
@@ -2945,9 +2927,9 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 		return HxOverrides.substr(this.sequence,start - 1,len);
 	}
 	,findMatchingLocuses: function(regex,mode) {
-		var direction = saturn_core_Direction.Forward;
+		var direction = saturn.core.Direction.Forward;
 		if(StringTools.startsWith(regex,"r")) {
-			var templateIC = new saturn_core_DNA(this.getInverseComplement());
+			var templateIC = new saturn.core.DNA(this.getInverseComplement());
 			var regexIC = regex.substring(1,regex.length);
 			var positions = templateIC.findMatchingLocuses(regexIC,mode);
 			var length = this.getLength();
@@ -2971,24 +2953,23 @@ saturn_core_DNA.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
 				}
 			}
 			return positions;
-		} else return saturn_core_molecule_Molecule.prototype.findMatchingLocuses.call(this,regex);
+		} else return saturn.core.molecule.Molecule.prototype.findMatchingLocuses.call(this,regex);
 	}
-	,__class__: saturn_core_DNA
+	,__class__: saturn.core.DNA
 });
-var saturn_core_Frame = $hxClasses["saturn.core.Frame"] = { __ename__ : ["saturn","core","Frame"], __constructs__ : ["ONE","TWO","THREE"] };
-saturn_core_Frame.ONE = ["ONE",0];
-saturn_core_Frame.ONE.toString = $estr;
-saturn_core_Frame.ONE.__enum__ = saturn_core_Frame;
-saturn_core_Frame.TWO = ["TWO",1];
-saturn_core_Frame.TWO.toString = $estr;
-saturn_core_Frame.TWO.__enum__ = saturn_core_Frame;
-saturn_core_Frame.THREE = ["THREE",2];
-saturn_core_Frame.THREE.toString = $estr;
-saturn_core_Frame.THREE.__enum__ = saturn_core_Frame;
-var saturn_core_Frames = function() { };
-$hxClasses["saturn.core.Frames"] = saturn_core_Frames;
-saturn_core_Frames.__name__ = ["saturn","core","Frames"];
-saturn_core_Frames.toInt = function(frame) {
+saturn.core.Frame = $hxClasses["saturn.core.Frame"] = { __ename__ : ["saturn","core","Frame"], __constructs__ : ["ONE","TWO","THREE"] };
+saturn.core.Frame.ONE = ["ONE",0];
+saturn.core.Frame.ONE.toString = $estr;
+saturn.core.Frame.ONE.__enum__ = saturn.core.Frame;
+saturn.core.Frame.TWO = ["TWO",1];
+saturn.core.Frame.TWO.toString = $estr;
+saturn.core.Frame.TWO.__enum__ = saturn.core.Frame;
+saturn.core.Frame.THREE = ["THREE",2];
+saturn.core.Frame.THREE.toString = $estr;
+saturn.core.Frame.THREE.__enum__ = saturn.core.Frame;
+saturn.core.Frames = $hxClasses["saturn.core.Frames"] = function() { };
+saturn.core.Frames.__name__ = ["saturn","core","Frames"];
+saturn.core.Frames.toInt = function(frame) {
 	switch(frame[1]) {
 	case 0:
 		return 0;
@@ -2998,38 +2979,36 @@ saturn_core_Frames.toInt = function(frame) {
 		return 2;
 	}
 };
-var saturn_core_Direction = $hxClasses["saturn.core.Direction"] = { __ename__ : ["saturn","core","Direction"], __constructs__ : ["Forward","Reverse"] };
-saturn_core_Direction.Forward = ["Forward",0];
-saturn_core_Direction.Forward.toString = $estr;
-saturn_core_Direction.Forward.__enum__ = saturn_core_Direction;
-saturn_core_Direction.Reverse = ["Reverse",1];
-saturn_core_Direction.Reverse.toString = $estr;
-saturn_core_Direction.Reverse.__enum__ = saturn_core_Direction;
-var saturn_core_DNAComposition = function(aCount,tCount,gCount,cCount) {
+saturn.core.Direction = $hxClasses["saturn.core.Direction"] = { __ename__ : ["saturn","core","Direction"], __constructs__ : ["Forward","Reverse"] };
+saturn.core.Direction.Forward = ["Forward",0];
+saturn.core.Direction.Forward.toString = $estr;
+saturn.core.Direction.Forward.__enum__ = saturn.core.Direction;
+saturn.core.Direction.Reverse = ["Reverse",1];
+saturn.core.Direction.Reverse.toString = $estr;
+saturn.core.Direction.Reverse.__enum__ = saturn.core.Direction;
+saturn.core.DNAComposition = $hxClasses["saturn.core.DNAComposition"] = function(aCount,tCount,gCount,cCount) {
 	this.aCount = aCount;
 	this.tCount = tCount;
 	this.gCount = gCount;
 	this.cCount = cCount;
 };
-$hxClasses["saturn.core.DNAComposition"] = saturn_core_DNAComposition;
-saturn_core_DNAComposition.__name__ = ["saturn","core","DNAComposition"];
-saturn_core_DNAComposition.prototype = {
+saturn.core.DNAComposition.__name__ = ["saturn","core","DNAComposition"];
+saturn.core.DNAComposition.prototype = {
 	aCount: null
 	,tCount: null
 	,gCount: null
 	,cCount: null
-	,__class__: saturn_core_DNAComposition
+	,__class__: saturn.core.DNAComposition
 };
-var saturn_core_GeneticCode = function() {
-	this.codonLookupTable = new haxe_ds_StringMap();
-	this.aaToCodonTable = new haxe_ds_StringMap();
-	this.startCodons = new haxe_ds_StringMap();
-	this.stopCodons = new haxe_ds_StringMap();
+saturn.core.GeneticCode = $hxClasses["saturn.core.GeneticCode"] = function() {
+	this.codonLookupTable = new haxe.ds.StringMap();
+	this.aaToCodonTable = new haxe.ds.StringMap();
+	this.startCodons = new haxe.ds.StringMap();
+	this.stopCodons = new haxe.ds.StringMap();
 	this.populateTable();
 };
-$hxClasses["saturn.core.GeneticCode"] = saturn_core_GeneticCode;
-saturn_core_GeneticCode.__name__ = ["saturn","core","GeneticCode"];
-saturn_core_GeneticCode.prototype = {
+saturn.core.GeneticCode.__name__ = ["saturn","core","GeneticCode"];
+saturn.core.GeneticCode.prototype = {
 	codonLookupTable: null
 	,aaToCodonTable: null
 	,startCodons: null
@@ -3056,7 +3035,7 @@ saturn_core_GeneticCode.prototype = {
 		return Lambda.count(this.codonLookupTable);
 	}
 	,getStartCodons: function() {
-		var clone = new haxe_ds_StringMap();
+		var clone = new haxe.ds.StringMap();
 		var $it0 = this.startCodons.keys();
 		while( $it0.hasNext() ) {
 			var key = $it0.next();
@@ -3082,22 +3061,21 @@ saturn_core_GeneticCode.prototype = {
 			return codons.first();
 		} else return null;
 	}
-	,__class__: saturn_core_GeneticCode
+	,__class__: saturn.core.GeneticCode
 };
-var saturn_core_StandardGeneticCode = function() {
-	saturn_core_GeneticCode.call(this);
-	saturn_core_GeneticCode.prototype.addStartCodon.call(this,"ATG");
-	saturn_core_GeneticCode.prototype.addStopCodon.call(this,"TAA");
-	saturn_core_GeneticCode.prototype.addStopCodon.call(this,"TGA");
-	saturn_core_GeneticCode.prototype.addStopCodon.call(this,"TAG");
+saturn.core.StandardGeneticCode = $hxClasses["saturn.core.StandardGeneticCode"] = function() {
+	saturn.core.GeneticCode.call(this);
+	saturn.core.GeneticCode.prototype.addStartCodon.call(this,"ATG");
+	saturn.core.GeneticCode.prototype.addStopCodon.call(this,"TAA");
+	saturn.core.GeneticCode.prototype.addStopCodon.call(this,"TGA");
+	saturn.core.GeneticCode.prototype.addStopCodon.call(this,"TAG");
 };
-$hxClasses["saturn.core.StandardGeneticCode"] = saturn_core_StandardGeneticCode;
-saturn_core_StandardGeneticCode.__name__ = ["saturn","core","StandardGeneticCode"];
-saturn_core_StandardGeneticCode.getDefaultInstance = function() {
-	return saturn_core_StandardGeneticCode.instance;
+saturn.core.StandardGeneticCode.__name__ = ["saturn","core","StandardGeneticCode"];
+saturn.core.StandardGeneticCode.getDefaultInstance = function() {
+	return saturn.core.StandardGeneticCode.instance;
 };
-saturn_core_StandardGeneticCode.__super__ = saturn_core_GeneticCode;
-saturn_core_StandardGeneticCode.prototype = $extend(saturn_core_GeneticCode.prototype,{
+saturn.core.StandardGeneticCode.__super__ = saturn.core.GeneticCode;
+saturn.core.StandardGeneticCode.prototype = $extend(saturn.core.GeneticCode.prototype,{
 	populateTable: function() {
 		this.codonLookupTable.set("TTT","F");
 		this.codonLookupTable.set("TTC","F");
@@ -3174,26 +3152,25 @@ saturn_core_StandardGeneticCode.prototype = $extend(saturn_core_GeneticCode.prot
 			this.aaToCodonTable.get(aa).add(key);
 		}
 	}
-	,__class__: saturn_core_StandardGeneticCode
+	,__class__: saturn.core.StandardGeneticCode
 });
-var saturn_core_GeneticCodes = $hxClasses["saturn.core.GeneticCodes"] = { __ename__ : ["saturn","core","GeneticCodes"], __constructs__ : ["STANDARD"] };
-saturn_core_GeneticCodes.STANDARD = ["STANDARD",0];
-saturn_core_GeneticCodes.STANDARD.toString = $estr;
-saturn_core_GeneticCodes.STANDARD.__enum__ = saturn_core_GeneticCodes;
-var saturn_core_GeneticCodeRegistry = function() {
-	this.shortNameToCodeObj = new haxe_ds_StringMap();
-	var value = saturn_core_StandardGeneticCode.getDefaultInstance();
-	this.shortNameToCodeObj.set(Std.string(saturn_core_GeneticCodes.STANDARD),value);
+saturn.core.GeneticCodes = $hxClasses["saturn.core.GeneticCodes"] = { __ename__ : ["saturn","core","GeneticCodes"], __constructs__ : ["STANDARD"] };
+saturn.core.GeneticCodes.STANDARD = ["STANDARD",0];
+saturn.core.GeneticCodes.STANDARD.toString = $estr;
+saturn.core.GeneticCodes.STANDARD.__enum__ = saturn.core.GeneticCodes;
+saturn.core.GeneticCodeRegistry = $hxClasses["saturn.core.GeneticCodeRegistry"] = function() {
+	this.shortNameToCodeObj = new haxe.ds.StringMap();
+	var value = saturn.core.StandardGeneticCode.getDefaultInstance();
+	this.shortNameToCodeObj.set(Std.string(saturn.core.GeneticCodes.STANDARD),value);
 };
-$hxClasses["saturn.core.GeneticCodeRegistry"] = saturn_core_GeneticCodeRegistry;
-saturn_core_GeneticCodeRegistry.__name__ = ["saturn","core","GeneticCodeRegistry"];
-saturn_core_GeneticCodeRegistry.getRegistry = function() {
-	return saturn_core_GeneticCodeRegistry.CODE_REGISTRY;
+saturn.core.GeneticCodeRegistry.__name__ = ["saturn","core","GeneticCodeRegistry"];
+saturn.core.GeneticCodeRegistry.getRegistry = function() {
+	return saturn.core.GeneticCodeRegistry.CODE_REGISTRY;
 };
-saturn_core_GeneticCodeRegistry.getDefault = function() {
-	return saturn_core_GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(saturn_core_GeneticCodes.STANDARD);
+saturn.core.GeneticCodeRegistry.getDefault = function() {
+	return saturn.core.GeneticCodeRegistry.getRegistry().getGeneticCodeByEnum(saturn.core.GeneticCodes.STANDARD);
 };
-saturn_core_GeneticCodeRegistry.prototype = {
+saturn.core.GeneticCodeRegistry.prototype = {
 	shortNameToCodeObj: null
 	,getGeneticCodeNames: function() {
 		var nameList = new List();
@@ -3205,19 +3182,19 @@ saturn_core_GeneticCodeRegistry.prototype = {
 		return nameList;
 	}
 	,getGeneticCodeByName: function(shortName) {
-		if(!this.shortNameToCodeObj.exists(shortName)) throw new js__$Boot_HaxeError(new saturn_core_InvalidGeneticCodeException(shortName + " doesn't correspond to a genetic code in the main registry.")); else return this.shortNameToCodeObj.get(shortName);
+		if(!this.shortNameToCodeObj.exists(shortName)) throw new js._Boot.HaxeError(new saturn.core.InvalidGeneticCodeException(shortName + " doesn't correspond to a genetic code in the main registry.")); else return this.shortNameToCodeObj.get(shortName);
 	}
 	,getGeneticCodeByEnum: function(code) {
 		return this.getGeneticCodeByName(Std.string(code));
 	}
-	,__class__: saturn_core_GeneticCodeRegistry
+	,__class__: saturn.core.GeneticCodeRegistry
 };
-var saturn_util_HaxeException = function(message) {
+if(!saturn.util) saturn.util = {};
+saturn.util.HaxeException = $hxClasses["saturn.util.HaxeException"] = function(message) {
 	this.errorMessage = message;
 };
-$hxClasses["saturn.util.HaxeException"] = saturn_util_HaxeException;
-saturn_util_HaxeException.__name__ = ["saturn","util","HaxeException"];
-saturn_util_HaxeException.prototype = {
+saturn.util.HaxeException.__name__ = ["saturn","util","HaxeException"];
+saturn.util.HaxeException.prototype = {
 	errorMessage: null
 	,getMessage: function() {
 		return this.errorMessage;
@@ -3225,40 +3202,37 @@ saturn_util_HaxeException.prototype = {
 	,toString: function() {
 		return this.errorMessage;
 	}
-	,__class__: saturn_util_HaxeException
+	,__class__: saturn.util.HaxeException
 };
-var saturn_core_InvalidGeneticCodeException = function(message) {
-	saturn_util_HaxeException.call(this,message);
+saturn.core.InvalidGeneticCodeException = $hxClasses["saturn.core.InvalidGeneticCodeException"] = function(message) {
+	saturn.util.HaxeException.call(this,message);
 };
-$hxClasses["saturn.core.InvalidGeneticCodeException"] = saturn_core_InvalidGeneticCodeException;
-saturn_core_InvalidGeneticCodeException.__name__ = ["saturn","core","InvalidGeneticCodeException"];
-saturn_core_InvalidGeneticCodeException.__super__ = saturn_util_HaxeException;
-saturn_core_InvalidGeneticCodeException.prototype = $extend(saturn_util_HaxeException.prototype,{
-	__class__: saturn_core_InvalidGeneticCodeException
+saturn.core.InvalidGeneticCodeException.__name__ = ["saturn","core","InvalidGeneticCodeException"];
+saturn.core.InvalidGeneticCodeException.__super__ = saturn.util.HaxeException;
+saturn.core.InvalidGeneticCodeException.prototype = $extend(saturn.util.HaxeException.prototype,{
+	__class__: saturn.core.InvalidGeneticCodeException
 });
-var saturn_core_InvalidCodonException = function(message) {
-	saturn_util_HaxeException.call(this,message);
+saturn.core.InvalidCodonException = $hxClasses["saturn.core.InvalidCodonException"] = function(message) {
+	saturn.util.HaxeException.call(this,message);
 };
-$hxClasses["saturn.core.InvalidCodonException"] = saturn_core_InvalidCodonException;
-saturn_core_InvalidCodonException.__name__ = ["saturn","core","InvalidCodonException"];
-saturn_core_InvalidCodonException.__super__ = saturn_util_HaxeException;
-saturn_core_InvalidCodonException.prototype = $extend(saturn_util_HaxeException.prototype,{
-	__class__: saturn_core_InvalidCodonException
+saturn.core.InvalidCodonException.__name__ = ["saturn","core","InvalidCodonException"];
+saturn.core.InvalidCodonException.__super__ = saturn.util.HaxeException;
+saturn.core.InvalidCodonException.prototype = $extend(saturn.util.HaxeException.prototype,{
+	__class__: saturn.core.InvalidCodonException
 });
-var saturn_core_EUtils = function() {
+saturn.core.EUtils = $hxClasses["saturn.core.EUtils"] = function() {
 };
-$hxClasses["saturn.core.EUtils"] = saturn_core_EUtils;
-saturn_core_EUtils.__name__ = ["saturn","core","EUtils"];
-saturn_core_EUtils.getProteinsForGene = function(geneId,cb) {
-	saturn_core_EUtils.getProteinGIsForGene(geneId,function(err,ids) {
-		if(err != null) cb(err,null); else saturn_core_EUtils.getProteinInfo(ids,true,function(err1,objs) {
+saturn.core.EUtils.__name__ = ["saturn","core","EUtils"];
+saturn.core.EUtils.getProteinsForGene = function(geneId,cb) {
+	saturn.core.EUtils.getProteinGIsForGene(geneId,function(err,ids) {
+		if(err != null) cb(err,null); else saturn.core.EUtils.getProteinInfo(ids,true,function(err1,objs) {
 			cb(err1,objs);
 		});
 	});
 };
-saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
+saturn.core.EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 	if(lookupDNA == null) lookupDNA = false;
-	var c1 = saturn_core_EUtils.eutils.efetch({ db : "protein", id : ids, retmode : "xml"}).then(function(d) {
+	var c1 = saturn.core.EUtils.eutils.efetch({ db : "protein", id : ids, retmode : "xml"}).then(function(d) {
 		if(!Object.prototype.hasOwnProperty.call(d,"GBSet")) {
 			cb("Unable to retrieve proteins for  " + ids.toString(),null);
 			return;
@@ -3274,7 +3248,7 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 		while(_g < objs.length) {
 			var seqObj = objs[_g];
 			++_g;
-			var protein = new saturn_core_Protein(seqObj.GBSeq_sequence);
+			var protein = new saturn.core.Protein(seqObj.GBSeq_sequence);
 			protObjs.push(protein);
 			protein.setMoleculeName(Reflect.field(seqObj,"GBSeq_accession-version"));
 			if(Object.prototype.hasOwnProperty.call(seqObj,"GBSeq_other-seqids")) {
@@ -3310,7 +3284,7 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 									cb("Parts greater than two for  " + protein.getMoleculeName(),null);
 									return;
 								} else {
-									var dna = new saturn_core_DNA(null);
+									var dna = new saturn.core.DNA(null);
 									var name = parts[0];
 									dna.setMoleculeName(name);
 									dna.addProtein("default",protein);
@@ -3330,9 +3304,9 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 				++_g3;
 				dnaRefs.push(protObj.getDNA().getMoleculeName());
 			}
-			saturn_core_EUtils.getDNAForAccessions(dnaRefs,function(err,dnaObjs) {
+			saturn.core.EUtils.getDNAForAccessions(dnaRefs,function(err,dnaObjs) {
 				if(err != null) cb(err,null); else {
-					var refMap = new haxe_ds_StringMap();
+					var refMap = new haxe.ds.StringMap();
 					var _g4 = 0;
 					while(_g4 < dnaObjs.length) {
 						var obj = dnaObjs[_g4];
@@ -3355,7 +3329,7 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 								return;
 							}
 							dna1.setSequence(dna1.getRegion(Std.parseInt(coords[0]),Std.parseInt(coords[1])));
-							var protSeq = dna1.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE);
+							var protSeq = dna1.getFrameTranslation(saturn.core.GeneticCodes.STANDARD,saturn.core.Frame.ONE);
 						} else {
 							cb(dnaAccession + " not found",null);
 							return;
@@ -3368,8 +3342,8 @@ saturn_core_EUtils.getProteinInfo = function(ids,lookupDNA,cb) {
 	});
 	c1.catch(function(d){cb(d)});;
 };
-saturn_core_EUtils.getDNAForAccessions = function(accessions,cb) {
-	var c1 = saturn_core_EUtils.eutils.efetch({ db : "nucleotide", id : accessions, retmode : "xml"}).then(function(d) {
+saturn.core.EUtils.getDNAForAccessions = function(accessions,cb) {
+	var c1 = saturn.core.EUtils.eutils.efetch({ db : "nucleotide", id : accessions, retmode : "xml"}).then(function(d) {
 		var objs;
 		if((d.GBSet.GBSeq instanceof Array) && d.GBSet.GBSeq.__enum__ == null) objs = d.GBSet.GBSeq; else objs = [d.GBSet.GBSeq];
 		if(objs == null || objs.length == 0) {
@@ -3381,7 +3355,7 @@ saturn_core_EUtils.getDNAForAccessions = function(accessions,cb) {
 		while(_g < objs.length) {
 			var seqObj = objs[_g];
 			++_g;
-			var dna = new saturn_core_DNA(seqObj.GBSeq_sequence);
+			var dna = new saturn.core.DNA(seqObj.GBSeq_sequence);
 			dnaObjs.push(dna);
 			dna.setMoleculeName(Reflect.field(seqObj,"GBSeq_accession-version"));
 			if(Object.prototype.hasOwnProperty.call(seqObj,"GBSeq_other-seqids")) {
@@ -3402,9 +3376,9 @@ saturn_core_EUtils.getDNAForAccessions = function(accessions,cb) {
 	});
 	c1.catch(function(d){cb(d)});;
 };
-saturn_core_EUtils.getProteinGIsForGene = function(geneId,cb) {
-	var c1 = saturn_core_EUtils.eutils.esearch({ db : "gene", term : geneId}).then(saturn_core_EUtils.eutils.elink({ dbto : "protein"})).then(function(d) {
-		saturn_core_Util.debug("");
+saturn.core.EUtils.getProteinGIsForGene = function(geneId,cb) {
+	var c1 = saturn.core.EUtils.eutils.esearch({ db : "gene", term : geneId}).then(saturn.core.EUtils.eutils.elink({ dbto : "protein"})).then(function(d) {
+		saturn.core.Util.debug("");
 		var found = false;
 		if(Object.prototype.hasOwnProperty.call(d,"linksets")) {
 			var linksets = d.linksets;
@@ -3431,21 +3405,21 @@ saturn_core_EUtils.getProteinGIsForGene = function(geneId,cb) {
 	});
 	c1.catch(function(d){cb(d)});;
 };
-saturn_core_EUtils.insertProteins = function(objs,cb) {
+saturn.core.EUtils.insertProteins = function(objs,cb) {
 	var run = null;
 	run = function() {
 		if(objs.length == 0) return;
 		var protein = objs.pop();
-		saturn_core_Util.debug("Inserting: " + protein.getMoleculeName());
-		saturn_core_Protein.insertTranslation(protein.getDNA().getMoleculeName(),protein.getDNA().getAlternativeName(),protein.getDNA().getSequence(),"NUCLEOTIDE",protein.getMoleculeName(),protein.getAlternativeName(),protein.getSequence(),"PROTEIN","7158","GENE",function(err) {
-			if(err != null) saturn_core_Util.debug(err); else run();
+		saturn.core.Util.debug("Inserting: " + protein.getMoleculeName());
+		saturn.core.Protein.insertTranslation(protein.getDNA().getMoleculeName(),protein.getDNA().getAlternativeName(),protein.getDNA().getSequence(),"NUCLEOTIDE",protein.getMoleculeName(),protein.getAlternativeName(),protein.getSequence(),"PROTEIN","7158","GENE",function(err) {
+			if(err != null) saturn.core.Util.debug(err); else run();
 		});
 	};
 	run();
 };
-saturn_core_EUtils.getGeneInfo = function(geneId,cb) {
-	saturn_core_Util.debug("Fetching gene record (tends to be very slow)");
-	var c1 = saturn_core_EUtils.eutils.efetch({ db : "gene", id : geneId}).then(function(d) {
+saturn.core.EUtils.getGeneInfo = function(geneId,cb) {
+	saturn.core.Util.debug("Fetching gene record (tends to be very slow)");
+	var c1 = saturn.core.EUtils.eutils.efetch({ db : "gene", id : geneId}).then(function(d) {
 		var set1 = Reflect.field(d,"Entrezgene-Set");
 		var set2 = Reflect.field(set1,"Entrezgene");
 		var set3 = Reflect.field(set2,"Entrezgene_gene");
@@ -3454,25 +3428,23 @@ saturn_core_EUtils.getGeneInfo = function(geneId,cb) {
 	});
 	c1.catch(function(d){cb(d)});;
 };
-saturn_core_EUtils.prototype = {
-	__class__: saturn_core_EUtils
+saturn.core.EUtils.prototype = {
+	__class__: saturn.core.EUtils
 };
-var saturn_core_EntityType = function() {
+saturn.core.EntityType = $hxClasses["saturn.core.EntityType"] = function() {
 };
-$hxClasses["saturn.core.EntityType"] = saturn_core_EntityType;
-saturn_core_EntityType.__name__ = ["saturn","core","EntityType"];
-saturn_core_EntityType.prototype = {
+saturn.core.EntityType.__name__ = ["saturn","core","EntityType"];
+saturn.core.EntityType.prototype = {
 	id: null
 	,name: null
-	,__class__: saturn_core_EntityType
+	,__class__: saturn.core.EntityType
 };
-var saturn_core_FileShim = function(name,base64) {
+saturn.core.FileShim = $hxClasses["saturn.core.FileShim"] = function(name,base64) {
 	this.name = name;
 	this.base64 = base64;
 };
-$hxClasses["saturn.core.FileShim"] = saturn_core_FileShim;
-saturn_core_FileShim.__name__ = ["saturn","core","FileShim"];
-saturn_core_FileShim.prototype = {
+saturn.core.FileShim.__name__ = ["saturn","core","FileShim"];
+saturn.core.FileShim.prototype = {
 	name: null
 	,base64: null
 	,getAsText: function() {
@@ -3489,18 +3461,17 @@ saturn_core_FileShim.prototype = {
 		}
 		return buffer;
 	}
-	,__class__: saturn_core_FileShim
+	,__class__: saturn.core.FileShim
 };
-var saturn_core_Generator = function(limit) {
+saturn.core.Generator = $hxClasses["saturn.core.Generator"] = function(limit) {
 	this.limit = limit;
 	this.processed = 0;
 	this.done = false;
 	this.items = [];
 	this.maxAtOnce = 1;
 };
-$hxClasses["saturn.core.Generator"] = saturn_core_Generator;
-saturn_core_Generator.__name__ = ["saturn","core","Generator"];
-saturn_core_Generator.prototype = {
+saturn.core.Generator.__name__ = ["saturn","core","Generator"];
+saturn.core.Generator.prototype = {
 	limit: null
 	,processed: null
 	,done: null
@@ -3515,7 +3486,7 @@ saturn_core_Generator.prototype = {
 		return this.items.pop();
 	}
 	,die: function(err) {
-		saturn_core_Util.debug(err);
+		saturn.core.Util.debug(err);
 		this.stop(err);
 	}
 	,stop: function(err) {
@@ -3539,18 +3510,18 @@ saturn_core_Generator.prototype = {
 					if(added == this.maxAtOnce) break;
 				}
 				this.cb(list,function() {
-					haxe_Timer.delay($bind(_g,_g.next),1);
+					haxe.Timer.delay($bind(_g,_g.next),1);
 				},this);
 			} else {
 				var item1 = this.items.pop();
 				this.processed++;
 				this.cb(item1,function() {
-					haxe_Timer.delay($bind(_g,_g.next),1);
+					haxe.Timer.delay($bind(_g,_g.next),1);
 				},this);
 			}
 		} else {
-			saturn_core_Util.debug("waiting");
-			haxe_Timer.delay($bind(this,this.next),100);
+			saturn.core.Util.debug("waiting");
+			haxe.Timer.delay($bind(this,this.next),100);
 		}
 	}
 	,count: function() {
@@ -3572,25 +3543,24 @@ saturn_core_Generator.prototype = {
 	,finished: function() {
 		this.done = true;
 	}
-	,__class__: saturn_core_Generator
+	,__class__: saturn.core.Generator
 };
-var saturn_core_LocusPosition = function() {
+saturn.core.LocusPosition = $hxClasses["saturn.core.LocusPosition"] = function() {
 };
-$hxClasses["saturn.core.LocusPosition"] = saturn_core_LocusPosition;
-saturn_core_LocusPosition.__name__ = ["saturn","core","LocusPosition"];
-saturn_core_LocusPosition.prototype = {
+saturn.core.LocusPosition.__name__ = ["saturn","core","LocusPosition"];
+saturn.core.LocusPosition.prototype = {
 	start: null
 	,end: null
 	,missMatchPositions: null
-	,__class__: saturn_core_LocusPosition
+	,__class__: saturn.core.LocusPosition
 };
-var saturn_core_Protein = function(seq) {
+saturn.core.Protein = $hxClasses["saturn.core.Protein"] = function(seq) {
 	this.max_pH = 13;
 	this.min_pH = 3;
 	this.threshold = 0.1;
 	this.lu_extinction = (function($this) {
 		var $r;
-		var _g = new haxe_ds_StringMap();
+		var _g = new haxe.ds.StringMap();
 		if(__map_reserved.Y != null) _g.setReserved("Y",1490); else _g.h["Y"] = 1490;
 		if(__map_reserved.W != null) _g.setReserved("W",5500); else _g.h["W"] = 5500;
 		if(__map_reserved.C != null) _g.setReserved("C",125); else _g.h["C"] = 125;
@@ -3599,7 +3569,7 @@ var saturn_core_Protein = function(seq) {
 	}(this));
 	this.lu_charge = (function($this) {
 		var $r;
-		var _g = new haxe_ds_StringMap();
+		var _g = new haxe.ds.StringMap();
 		if(__map_reserved.D != null) _g.setReserved("D",-1); else _g.h["D"] = -1;
 		if(__map_reserved.E != null) _g.setReserved("E",-1); else _g.h["E"] = -1;
 		if(__map_reserved.H != null) _g.setReserved("H",1); else _g.h["H"] = 1;
@@ -3614,7 +3584,7 @@ var saturn_core_Protein = function(seq) {
 	}(this));
 	this.lu_pKa = (function($this) {
 		var $r;
-		var _g = new haxe_ds_StringMap();
+		var _g = new haxe.ds.StringMap();
 		if(__map_reserved.D != null) _g.setReserved("D",4.05); else _g.h["D"] = 4.05;
 		if(__map_reserved.E != null) _g.setReserved("E",4.45); else _g.h["E"] = 4.45;
 		if(__map_reserved.H != null) _g.setReserved("H",5.98); else _g.h["H"] = 5.98;
@@ -3629,7 +3599,7 @@ var saturn_core_Protein = function(seq) {
 	}(this));
 	this.hydrophobicityLookUp = (function($this) {
 		var $r;
-		var _g = new haxe_ds_StringMap();
+		var _g = new haxe.ds.StringMap();
 		if(__map_reserved.A != null) _g.setReserved("A",1.8); else _g.h["A"] = 1.8;
 		if(__map_reserved.G != null) _g.setReserved("G",-0.4); else _g.h["G"] = -0.4;
 		if(__map_reserved.M != null) _g.setReserved("M",1.9); else _g.h["M"] = 1.9;
@@ -3653,21 +3623,20 @@ var saturn_core_Protein = function(seq) {
 		$r = _g;
 		return $r;
 	}(this));
-	saturn_core_molecule_Molecule.call(this,seq);
+	saturn.core.molecule.Molecule.call(this,seq);
 };
-$hxClasses["saturn.core.Protein"] = saturn_core_Protein;
-saturn_core_Protein.__name__ = ["saturn","core","Protein"];
-saturn_core_Protein._insertGene = function(geneId,source,cb) {
-	var provider = saturn_core_Util.getProvider();
-	provider.getById(geneId,saturn_core_domain_Entity,function(obj,err) {
+saturn.core.Protein.__name__ = ["saturn","core","Protein"];
+saturn.core.Protein._insertGene = function(geneId,source,cb) {
+	var provider = saturn.core.Util.getProvider();
+	provider.getById(geneId,saturn.core.domain.Entity,function(obj,err) {
 		if(err != null) cb(err); else if(obj != null) cb(null); else {
-			var gene = new saturn_core_domain_Entity();
+			var gene = new saturn.core.domain.Entity();
 			gene.entityId = geneId;
-			gene.source = new saturn_core_domain_DataSource();
+			gene.source = new saturn.core.domain.DataSource();
 			gene.source.name = source;
-			gene.entityType = new saturn_core_EntityType();
+			gene.entityType = new saturn.core.EntityType();
 			gene.entityType.name = "DNA";
-			saturn_core_EUtils.getGeneInfo(Std.parseInt(geneId),function(err1,info) {
+			saturn.core.EUtils.getGeneInfo(Std.parseInt(geneId),function(err1,info) {
 				gene.altName = info.symbol;
 				gene.description = info.description;
 				provider.insertObjects([gene],function(err2) {
@@ -3677,44 +3646,44 @@ saturn_core_Protein._insertGene = function(geneId,source,cb) {
 		}
 	});
 };
-saturn_core_Protein.insertTranslation = function(dnaId,dnaAltName,dnaSeq,dnaSource,protId,protAltName,protSeq,protSource,geneId,geneSource,cb) {
-	var provider = saturn_core_Util.getProvider();
-	saturn_core_Protein._insertGene(geneId,geneSource,function(err) {
+saturn.core.Protein.insertTranslation = function(dnaId,dnaAltName,dnaSeq,dnaSource,protId,protAltName,protSeq,protSource,geneId,geneSource,cb) {
+	var provider = saturn.core.Util.getProvider();
+	saturn.core.Protein._insertGene(geneId,geneSource,function(err) {
 		if(err != null) cb(err); else {
-			var dna = new saturn_core_domain_Entity();
+			var dna = new saturn.core.domain.Entity();
 			dna.entityId = dnaId;
 			dna.altName = dnaAltName;
-			dna.source = new saturn_core_domain_DataSource();
+			dna.source = new saturn.core.domain.DataSource();
 			dna.source.name = dnaSource;
-			dna.entityType = new saturn_core_EntityType();
+			dna.entityType = new saturn.core.EntityType();
 			dna.entityType.name = "DNA";
-			var dna_mol = new saturn_core_domain_Molecule();
+			var dna_mol = new saturn.core.domain.Molecule();
 			dna_mol.entity = dna;
 			dna_mol.sequence = dnaSeq;
-			var annotation = new saturn_core_domain_MoleculeAnnotation();
+			var annotation = new saturn.core.domain.MoleculeAnnotation();
 			annotation.entity = dna;
-			annotation.referent = new saturn_core_domain_Entity();
+			annotation.referent = new saturn.core.domain.Entity();
 			annotation.referent.entityId = geneId;
-			annotation.referent.source = new saturn_core_domain_DataSource();
+			annotation.referent.source = new saturn.core.domain.DataSource();
 			annotation.referent.source.name = "GENE";
-			var prot = new saturn_core_domain_Entity();
+			var prot = new saturn.core.domain.Entity();
 			prot.entityId = protId;
 			prot.altName = protAltName;
-			prot.source = new saturn_core_domain_DataSource();
+			prot.source = new saturn.core.domain.DataSource();
 			prot.source.name = protSource;
-			prot.entityType = new saturn_core_EntityType();
+			prot.entityType = new saturn.core.EntityType();
 			prot.entityType.name = "PROTEIN";
-			var prot_mol = new saturn_core_domain_Molecule();
+			var prot_mol = new saturn.core.domain.Molecule();
 			prot_mol.entity = prot;
 			prot_mol.sequence = protSeq;
-			var reaction = new saturn_core_Reaction();
+			var reaction = new saturn.core.Reaction();
 			reaction.name = dnaId + "-TRANS";
-			reaction.reactionType = new saturn_core_ReactionType();
+			reaction.reactionType = new saturn.core.ReactionType();
 			reaction.reactionType.name = "TRANSLATION";
 			prot.reaction = reaction;
-			var reactionComp = new saturn_core_ReactionComponent();
+			var reactionComp = new saturn.core.ReactionComponent();
 			reactionComp.entity = dna;
-			reactionComp.reactionRole = new saturn_core_ReactionRole();
+			reactionComp.reactionRole = new saturn.core.ReactionRole();
 			reactionComp.reactionRole.name = "TEMPLATE";
 			reactionComp.reaction = reaction;
 			reactionComp.position = 1;
@@ -3725,7 +3694,7 @@ saturn_core_Protein.insertTranslation = function(dnaId,dnaAltName,dnaSeq,dnaSour
 							if(err4 != null) cb(err4); else provider.insertObjects([prot],function(err5) {
 								if(err5 != null) cb(err5); else provider.insertObjects([prot_mol],function(err6) {
 									if(err6 != null) cb(err6); else provider.insertObjects([annotation],function(err7) {
-										if(err7 != null) saturn_core_Util.debug(err7);
+										if(err7 != null) saturn.core.Util.debug(err7);
 										cb(err7);
 									});
 								});
@@ -3737,9 +3706,9 @@ saturn_core_Protein.insertTranslation = function(dnaId,dnaAltName,dnaSeq,dnaSour
 		}
 	});
 };
-saturn_core_Protein.isProtein = function(sequence) {
+saturn.core.Protein.isProtein = function(sequence) {
 	var seqLen = sequence.length;
-	var valid_res = saturn_core_GeneticCodeRegistry.getDefault().getAAToCodonTable();
+	var valid_res = saturn.core.GeneticCodeRegistry.getDefault().getAAToCodonTable();
 	var _g = 0;
 	while(_g < seqLen) {
 		var i = _g++;
@@ -3748,8 +3717,8 @@ saturn_core_Protein.isProtein = function(sequence) {
 	}
 	return true;
 };
-saturn_core_Protein.__super__ = saturn_core_molecule_Molecule;
-saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,{
+saturn.core.Protein.__super__ = saturn.core.molecule.Molecule;
+saturn.core.Protein.prototype = $extend(saturn.core.molecule.Molecule.prototype,{
 	dna: null
 	,coordinates: null
 	,hydrophobicityLookUp: null
@@ -3760,21 +3729,21 @@ saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,
 	,min_pH: null
 	,max_pH: null
 	,setSequence: function(sequence) {
-		saturn_core_molecule_Molecule.prototype.setSequence.call(this,sequence);
+		saturn.core.molecule.Molecule.prototype.setSequence.call(this,sequence);
 		if(sequence != null) {
-			var mSet = saturn_core_molecule_MoleculeSetRegistry.getStandardMoleculeSet();
-			var mw = mSet.getMolecule("H2O").getFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW);
+			var mSet = saturn.core.molecule.MoleculeSetRegistry.getStandardMoleculeSet();
+			var mw = mSet.getMolecule("H2O").getFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW);
 			var _g1 = 0;
 			var _g = this.sequence.length;
 			while(_g1 < _g) {
 				var i = _g1++;
 				var molecule = mSet.getMolecule(this.sequence.charAt(i));
-				if(molecule != null) mw += molecule.getFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW_CONDESATION); else {
+				if(molecule != null) mw += molecule.getFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW_CONDESATION); else {
 					mw = -1;
 					break;
 				}
 			}
-			this.setFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW,mw);
+			this.setFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW,mw);
 		}
 		if(this.isLinked()) {
 			var d = this.getParent();
@@ -3870,24 +3839,22 @@ saturn_core_Protein.prototype = $extend(saturn_core_molecule_Molecule.prototype,
 		}
 		return extinctionReduced;
 	}
-	,__class__: saturn_core_Protein
+	,__class__: saturn.core.Protein
 });
-var saturn_core_Reaction = function() {
+saturn.core.Reaction = $hxClasses["saturn.core.Reaction"] = function() {
 };
-$hxClasses["saturn.core.Reaction"] = saturn_core_Reaction;
-saturn_core_Reaction.__name__ = ["saturn","core","Reaction"];
-saturn_core_Reaction.prototype = {
+saturn.core.Reaction.__name__ = ["saturn","core","Reaction"];
+saturn.core.Reaction.prototype = {
 	id: null
 	,name: null
 	,reactionTypeId: null
 	,reactionType: null
-	,__class__: saturn_core_Reaction
+	,__class__: saturn.core.Reaction
 };
-var saturn_core_ReactionComponent = function() {
+saturn.core.ReactionComponent = $hxClasses["saturn.core.ReactionComponent"] = function() {
 };
-$hxClasses["saturn.core.ReactionComponent"] = saturn_core_ReactionComponent;
-saturn_core_ReactionComponent.__name__ = ["saturn","core","ReactionComponent"];
-saturn_core_ReactionComponent.prototype = {
+saturn.core.ReactionComponent.__name__ = ["saturn","core","ReactionComponent"];
+saturn.core.ReactionComponent.prototype = {
 	id: null
 	,position: null
 	,reactionRoleId: null
@@ -3896,41 +3863,37 @@ saturn_core_ReactionComponent.prototype = {
 	,reaction: null
 	,reactionRole: null
 	,entity: null
-	,__class__: saturn_core_ReactionComponent
+	,__class__: saturn.core.ReactionComponent
 };
-var saturn_core_ReactionRole = function() {
+saturn.core.ReactionRole = $hxClasses["saturn.core.ReactionRole"] = function() {
 };
-$hxClasses["saturn.core.ReactionRole"] = saturn_core_ReactionRole;
-saturn_core_ReactionRole.__name__ = ["saturn","core","ReactionRole"];
-saturn_core_ReactionRole.prototype = {
+saturn.core.ReactionRole.__name__ = ["saturn","core","ReactionRole"];
+saturn.core.ReactionRole.prototype = {
 	id: null
 	,name: null
-	,__class__: saturn_core_ReactionRole
+	,__class__: saturn.core.ReactionRole
 };
-var saturn_core_ReactionType = function() {
+saturn.core.ReactionType = $hxClasses["saturn.core.ReactionType"] = function() {
 };
-$hxClasses["saturn.core.ReactionType"] = saturn_core_ReactionType;
-saturn_core_ReactionType.__name__ = ["saturn","core","ReactionType"];
-saturn_core_ReactionType.prototype = {
+saturn.core.ReactionType.__name__ = ["saturn","core","ReactionType"];
+saturn.core.ReactionType.prototype = {
 	id: null
 	,name: null
-	,__class__: saturn_core_ReactionType
+	,__class__: saturn.core.ReactionType
 };
-var saturn_core_RestrictionSite = function(seq) {
-	saturn_core_DNA.call(this,seq);
+saturn.core.RestrictionSite = $hxClasses["saturn.core.RestrictionSite"] = function(seq) {
+	saturn.core.DNA.call(this,seq);
 };
-$hxClasses["saturn.core.RestrictionSite"] = saturn_core_RestrictionSite;
-saturn_core_RestrictionSite.__name__ = ["saturn","core","RestrictionSite"];
-saturn_core_RestrictionSite.__super__ = saturn_core_DNA;
-saturn_core_RestrictionSite.prototype = $extend(saturn_core_DNA.prototype,{
-	__class__: saturn_core_RestrictionSite
+saturn.core.RestrictionSite.__name__ = ["saturn","core","RestrictionSite"];
+saturn.core.RestrictionSite.__super__ = saturn.core.DNA;
+saturn.core.RestrictionSite.prototype = $extend(saturn.core.DNA.prototype,{
+	__class__: saturn.core.RestrictionSite
 });
-var saturn_core_molecule_MoleculeSet = function() {
-	this.moleculeSet = new haxe_ds_StringMap();
+saturn.core.molecule.MoleculeSet = $hxClasses["saturn.core.molecule.MoleculeSet"] = function() {
+	this.moleculeSet = new haxe.ds.StringMap();
 };
-$hxClasses["saturn.core.molecule.MoleculeSet"] = saturn_core_molecule_MoleculeSet;
-saturn_core_molecule_MoleculeSet.__name__ = ["saturn","core","molecule","MoleculeSet"];
-saturn_core_molecule_MoleculeSet.prototype = {
+saturn.core.molecule.MoleculeSet.__name__ = ["saturn","core","molecule","MoleculeSet"];
+saturn.core.molecule.MoleculeSet.prototype = {
 	moleculeSet: null
 	,setMolecule: function(name,molecule) {
 		this.moleculeSet.set(name,molecule);
@@ -3938,18 +3901,18 @@ saturn_core_molecule_MoleculeSet.prototype = {
 	,getMolecule: function(name) {
 		return this.moleculeSet.get(name);
 	}
-	,__class__: saturn_core_molecule_MoleculeSet
+	,__class__: saturn.core.molecule.MoleculeSet
 };
-var saturn_core_StandardMoleculeSet = function() {
-	saturn_core_molecule_MoleculeSet.call(this);
+saturn.core.StandardMoleculeSet = $hxClasses["saturn.core.StandardMoleculeSet"] = function() {
+	saturn.core.molecule.MoleculeSet.call(this);
 	var mMap = [{ 'NAME' : "A", 'MW' : 71.0788},{ 'NAME' : "R", 'MW' : 156.1875},{ 'NAME' : "N", 'MW' : 114.1038},{ 'NAME' : "D", 'MW' : 115.0886},{ 'NAME' : "C", 'MW' : 103.1448},{ 'NAME' : "E", 'MW' : 129.1155},{ 'NAME' : "Q", 'MW' : 128.1308},{ 'NAME' : "G", 'MW' : 57.052},{ 'NAME' : "H", 'MW' : 137.1412},{ 'NAME' : "I", 'MW' : 113.1595},{ 'NAME' : "L", 'MW' : 113.1595},{ 'NAME' : "K", 'MW' : 128.1742},{ 'NAME' : "M", 'MW' : 131.1986},{ 'NAME' : "F", 'MW' : 147.1766},{ 'NAME' : "P", 'MW' : 97.1167},{ 'NAME' : "S", 'MW' : 87.0782},{ 'NAME' : "T", 'MW' : 101.1051},{ 'NAME' : "W", 'MW' : 186.2133},{ 'NAME' : "Y", 'MW' : 163.176},{ 'NAME' : "V", 'MW' : 99.1326}];
 	var _g = 0;
 	while(_g < mMap.length) {
 		var mDef = mMap[_g];
 		++_g;
-		var m = new saturn_core_molecule_Molecule(mDef.NAME);
-		m.setFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW_CONDESATION,mDef.MW);
-		m.setStringAttribute(saturn_core_molecule_MoleculeStringAttribute.NAME,mDef.NAME);
+		var m = new saturn.core.molecule.Molecule(mDef.NAME);
+		m.setFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW_CONDESATION,mDef.MW);
+		m.setStringAttribute(saturn.core.molecule.MoleculeStringAttribute.NAME,mDef.NAME);
 		this.setMolecule(mDef.NAME,m);
 	}
 	mMap = [{ 'NAME' : "H2O", 'MW' : 18.02}];
@@ -3957,31 +3920,29 @@ var saturn_core_StandardMoleculeSet = function() {
 	while(_g1 < mMap.length) {
 		var mDef1 = mMap[_g1];
 		++_g1;
-		var m1 = new saturn_core_molecule_Molecule(mDef1.NAME);
-		m1.setFloatAttribute(saturn_core_molecule_MoleculeFloatAttribute.MW,mDef1.MW);
-		m1.setStringAttribute(saturn_core_molecule_MoleculeStringAttribute.NAME,mDef1.NAME);
+		var m1 = new saturn.core.molecule.Molecule(mDef1.NAME);
+		m1.setFloatAttribute(saturn.core.molecule.MoleculeFloatAttribute.MW,mDef1.MW);
+		m1.setStringAttribute(saturn.core.molecule.MoleculeStringAttribute.NAME,mDef1.NAME);
 		this.setMolecule(mDef1.NAME,m1);
 	}
 };
-$hxClasses["saturn.core.StandardMoleculeSet"] = saturn_core_StandardMoleculeSet;
-saturn_core_StandardMoleculeSet.__name__ = ["saturn","core","StandardMoleculeSet"];
-saturn_core_StandardMoleculeSet.__super__ = saturn_core_molecule_MoleculeSet;
-saturn_core_StandardMoleculeSet.prototype = $extend(saturn_core_molecule_MoleculeSet.prototype,{
-	__class__: saturn_core_StandardMoleculeSet
+saturn.core.StandardMoleculeSet.__name__ = ["saturn","core","StandardMoleculeSet"];
+saturn.core.StandardMoleculeSet.__super__ = saturn.core.molecule.MoleculeSet;
+saturn.core.StandardMoleculeSet.prototype = $extend(saturn.core.molecule.MoleculeSet.prototype,{
+	__class__: saturn.core.StandardMoleculeSet
 });
-var saturn_core_TmCalc = function() {
-	this.deltaHTable = new haxe_ds_StringMap();
-	this.deltaSTable = new haxe_ds_StringMap();
-	this.endHTable = new haxe_ds_StringMap();
-	this.endSTable = new haxe_ds_StringMap();
+saturn.core.TmCalc = $hxClasses["saturn.core.TmCalc"] = function() {
+	this.deltaHTable = new haxe.ds.StringMap();
+	this.deltaSTable = new haxe.ds.StringMap();
+	this.endHTable = new haxe.ds.StringMap();
+	this.endSTable = new haxe.ds.StringMap();
 	this.populateDeltaHTable();
 	this.populateDeltaSTable();
 	this.populateEndHTable();
 	this.populateEndSTable();
 };
-$hxClasses["saturn.core.TmCalc"] = saturn_core_TmCalc;
-saturn_core_TmCalc.__name__ = ["saturn","core","TmCalc"];
-saturn_core_TmCalc.prototype = {
+saturn.core.TmCalc.__name__ = ["saturn","core","TmCalc"];
+saturn.core.TmCalc.prototype = {
 	deltaHTable: null
 	,deltaSTable: null
 	,endHTable: null
@@ -4089,13 +4050,12 @@ saturn_core_TmCalc.prototype = {
 		var tmCelcius = tmKelvin - 273.15;
 		if(tmCelcius > 75) return 75; else return tmCelcius;
 	}
-	,__class__: saturn_core_TmCalc
+	,__class__: saturn.core.TmCalc
 };
-var saturn_core_User = function() {
+saturn.core.User = $hxClasses["saturn.core.User"] = function() {
 };
-$hxClasses["saturn.core.User"] = saturn_core_User;
-saturn_core_User.__name__ = ["saturn","core","User"];
-saturn_core_User.prototype = {
+saturn.core.User.__name__ = ["saturn","core","User"];
+saturn.core.User.prototype = {
 	id: null
 	,username: null
 	,password: null
@@ -4106,65 +4066,64 @@ saturn_core_User.prototype = {
 	,uuid: null
 	,token: null
 	,projects: null
-	,__class__: saturn_core_User
+	,__class__: saturn.core.User
 };
-var saturn_core_Util = function() {
+saturn.core.Util = $hxClasses["saturn.core.Util"] = function() {
 };
-$hxClasses["saturn.core.Util"] = saturn_core_Util;
-saturn_core_Util.__name__ = ["saturn","core","Util"];
-saturn_core_Util.debug = function(msg) {
-	saturn_app_SaturnServer.getDefaultServer().debug(msg);
+saturn.core.Util.__name__ = ["saturn","core","Util"];
+saturn.core.Util.debug = function(msg) {
+	saturn.app.SaturnServer.getDefaultServer().debug(msg);
 };
-saturn_core_Util.inspect = function(obj) {
-	js_Node.console.log(obj);
+saturn.core.Util.inspect = function(obj) {
+	js.Node.console.log(obj);
 };
-saturn_core_Util.print = function(msg) {
-	js_Node.console.log(msg);
+saturn.core.Util.print = function(msg) {
+	js.Node.console.log(msg);
 };
-saturn_core_Util.openw = function(path) {
-	return saturn_core_Util.fs.createWriteStream(path);
+saturn.core.Util.openw = function(path) {
+	return saturn.core.Util.fs.createWriteStream(path);
 };
-saturn_core_Util.opentemp = function(prefix,cb) {
-	saturn_core_Util.temp.open(prefix,function(error,info) {
-		cb(error,new saturn_core_Stream(info.fd),info.path);
+saturn.core.Util.opentemp = function(prefix,cb) {
+	saturn.core.Util.temp.open(prefix,function(error,info) {
+		cb(error,new saturn.core.Stream(info.fd),info.path);
 	});
 };
-saturn_core_Util.isHostEnvironmentAvailable = function() {
+saturn.core.Util.isHostEnvironmentAvailable = function() {
 	return false;
 };
-saturn_core_Util.exec = function(program,args,cb) {
-	var proc = js_Node.require("child_process").spawn(program,args);
+saturn.core.Util.exec = function(program,args,cb) {
+	var proc = js.Node.require("child_process").spawn(program,args);
 	proc.stderr.on("data",function(error) {
-		saturn_core_Util.debug(error.toString("utf8"));
+		saturn.core.Util.debug(error.toString("utf8"));
 	});
 	proc.stdout.on("data",function(msg) {
-		saturn_core_Util.debug(msg.toString("utf8"));
+		saturn.core.Util.debug(msg.toString("utf8"));
 	});
 	proc.on("close",function(code) {
-		saturn_core_Util.debug("Closed");
+		saturn.core.Util.debug("Closed");
 		cb(code);
 	});
 	proc.on("error",function(error1) {
-		saturn_core_Util.debug(error1);
+		saturn.core.Util.debug(error1);
 		cb(-1);
 	});
-	saturn_core_Util.debug("Hello X");
+	saturn.core.Util.debug("Hello X");
 };
-saturn_core_Util.getNewExternalProcess = function(cb) {
+saturn.core.Util.getNewExternalProcess = function(cb) {
 };
-saturn_core_Util.getNewFileDialog = function(cb) {
+saturn.core.Util.getNewFileDialog = function(cb) {
 };
-saturn_core_Util.saveFileAsDialog = function(contents,cb) {
+saturn.core.Util.saveFileAsDialog = function(contents,cb) {
 };
-saturn_core_Util.saveFile = function(fileName,contents,cb) {
+saturn.core.Util.saveFile = function(fileName,contents,cb) {
 };
-saturn_core_Util.jsImports = function(paths,cb) {
-	var errs = new haxe_ds_StringMap();
+saturn.core.Util.jsImports = function(paths,cb) {
+	var errs = new haxe.ds.StringMap();
 	var next = null;
 	next = function() {
 		if(paths.length == 0) cb(errs); else {
 			var path = paths.pop();
-			saturn_core_Util.jsImport(path,function(err) {
+			saturn.core.Util.jsImport(path,function(err) {
 				if(__map_reserved[path] != null) errs.setReserved(path,err); else errs.h[path] = err;
 				next();
 			});
@@ -4172,14 +4131,14 @@ saturn_core_Util.jsImports = function(paths,cb) {
 	};
 	next();
 };
-saturn_core_Util.jsImport = function(path,cb) {
+saturn.core.Util.jsImport = function(path,cb) {
 };
-saturn_core_Util.openFileAsDialog = function(cb) {
+saturn.core.Util.openFileAsDialog = function(cb) {
 };
-saturn_core_Util.readFile = function(fileName,cb) {
+saturn.core.Util.readFile = function(fileName,cb) {
 };
-saturn_core_Util.open = function(path,cb) {
-	saturn_core_Util.fs.createReadStream(path).pipe(saturn_core_Util.split()).on("data",function(line) {
+saturn.core.Util.open = function(path,cb) {
+	saturn.core.Util.fs.createReadStream(path).pipe(saturn.core.Util.split()).on("data",function(line) {
 		cb(null,line);
 	}).on("error",function(err) {
 		cb(err,null);
@@ -4187,59 +4146,58 @@ saturn_core_Util.open = function(path,cb) {
 		cb(null,null);
 	});
 };
-saturn_core_Util.getProvider = function() {
-	return saturn_client_core_CommonCore.getDefaultProvider();
+saturn.core.Util.getProvider = function() {
+	return saturn.client.core.CommonCore.getDefaultProvider();
 };
-saturn_core_Util.string = function(a) {
+saturn.core.Util.string = function(a) {
 	return Std.string(a);
 };
-saturn_core_Util.clone = function(obj) {
-	var ser = haxe_Serializer.run(obj);
-	return haxe_Unserializer.run(ser);
+saturn.core.Util.clone = function(obj) {
+	var ser = haxe.Serializer.run(obj);
+	return haxe.Unserializer.run(ser);
 };
-saturn_core_Util.prototype = {
-	__class__: saturn_core_Util
+saturn.core.Util.prototype = {
+	__class__: saturn.core.Util
 };
-var saturn_core_Stream = function(streamId) {
+saturn.core.Stream = $hxClasses["saturn.core.Stream"] = function(streamId) {
 	this.streamId = streamId;
 };
-$hxClasses["saturn.core.Stream"] = saturn_core_Stream;
-saturn_core_Stream.__name__ = ["saturn","core","Stream"];
-saturn_core_Stream.prototype = {
+saturn.core.Stream.__name__ = ["saturn","core","Stream"];
+saturn.core.Stream.prototype = {
 	streamId: null
 	,write: function(content) {
-		saturn_core_Util.fs.write(this.streamId,content);
+		saturn.core.Util.fs.write(this.streamId,content);
 	}
 	,end: function(cb) {
-		saturn_core_Util.fs.close(this.streamId,cb);
+		saturn.core.Util.fs.close(this.streamId,cb);
 	}
-	,__class__: saturn_core_Stream
+	,__class__: saturn.core.Stream
 };
-var saturn_core_domain_DataSource = function() {
+if(!saturn.core.domain) saturn.core.domain = {};
+saturn.core.domain.DataSource = $hxClasses["saturn.core.domain.DataSource"] = function() {
 };
-$hxClasses["saturn.core.domain.DataSource"] = saturn_core_domain_DataSource;
-saturn_core_domain_DataSource.__name__ = ["saturn","core","domain","DataSource"];
-saturn_core_domain_DataSource.getEntities = function(source,cb) {
-	var p = saturn_core_Util.getProvider();
-	p.getById(source,saturn_core_domain_DataSource,function(obj,err) {
+saturn.core.domain.DataSource.__name__ = ["saturn","core","domain","DataSource"];
+saturn.core.domain.DataSource.getEntities = function(source,cb) {
+	var p = saturn.core.Util.getProvider();
+	p.getById(source,saturn.core.domain.DataSource,function(obj,err) {
 		if(err != null) cb(err,null); else if(obj == null) cb("Data source not found " + source,null); else {
-			saturn_core_Util.debug("Retreiving records for source " + source);
-			p.getByValues([saturn_core_Util.string(obj.id)],saturn_core_domain_Entity,"dataSourceId",function(objs,error) {
-				saturn_core_Util.debug("Entities retrieved for source " + source);
+			saturn.core.Util.debug("Retreiving records for source " + source);
+			p.getByValues([saturn.core.Util.string(obj.id)],saturn.core.domain.Entity,"dataSourceId",function(objs,error) {
+				saturn.core.Util.debug("Entities retrieved for source " + source);
 				if(error != null) cb("An error occurred retrieving data source " + source + " entities\n" + error,null); else cb(null,objs);
 			});
 		}
 	});
 };
-saturn_core_domain_DataSource.getSource = function(source,insert,cb) {
-	var p = saturn_core_Util.getProvider();
-	p.getById(source,saturn_core_domain_DataSource,function(obj,err) {
+saturn.core.domain.DataSource.getSource = function(source,insert,cb) {
+	var p = saturn.core.Util.getProvider();
+	p.getById(source,saturn.core.domain.DataSource,function(obj,err) {
 		if(err != null) cb("An error occurred looking for source: " + source + "\n" + err,null); else if(obj == null) {
 			if(insert) {
-				var obj1 = new saturn_core_domain_DataSource();
+				var obj1 = new saturn.core.domain.DataSource();
 				obj1.name = source;
 				p.insert(source,function(err1) {
-					if(err1 != null) cb("An error occurred inserting source: " + source + "\n" + err1,null); else p.getById(source,saturn_core_domain_DataSource,function(obj2,err2) {
+					if(err1 != null) cb("An error occurred inserting source: " + source + "\n" + err1,null); else p.getById(source,saturn.core.domain.DataSource,function(obj2,err2) {
 						if(err2 != null) cb("An error occurred looking for source: " + source + "\n" + err2,null); else if(obj2 == null) cb("Inserted source " + source + " could not be found",null); else cb(null,obj2);
 					});
 				});
@@ -4247,17 +4205,16 @@ saturn_core_domain_DataSource.getSource = function(source,insert,cb) {
 		} else cb(null,obj);
 	});
 };
-saturn_core_domain_DataSource.prototype = {
+saturn.core.domain.DataSource.prototype = {
 	id: null
 	,name: null
-	,__class__: saturn_core_domain_DataSource
+	,__class__: saturn.core.domain.DataSource
 };
-var saturn_core_domain_Entity = function() {
+saturn.core.domain.Entity = $hxClasses["saturn.core.domain.Entity"] = function() {
 };
-$hxClasses["saturn.core.domain.Entity"] = saturn_core_domain_Entity;
-saturn_core_domain_Entity.__name__ = ["saturn","core","domain","Entity"];
-saturn_core_domain_Entity.insertList = function(ids,source,cb) {
-	var uqx = new haxe_ds_StringMap();
+saturn.core.domain.Entity.__name__ = ["saturn","core","domain","Entity"];
+saturn.core.domain.Entity.insertList = function(ids,source,cb) {
+	var uqx = new haxe.ds.StringMap();
 	var _g = 0;
 	while(_g < ids.length) {
 		var id = ids[_g];
@@ -4270,34 +4227,34 @@ saturn_core_domain_Entity.insertList = function(ids,source,cb) {
 		var id1 = $it0.next();
 		ids.push(id1);
 	}
-	saturn_core_domain_DataSource.getSource(source,false,function(err,sourceObj) {
+	saturn.core.domain.DataSource.getSource(source,false,function(err,sourceObj) {
 		if(err != null) cb(err,null); else if(sourceObj == null) cb("Unable to find source " + source,null); else {
 			var objs = [];
 			var _g1 = 0;
 			while(_g1 < ids.length) {
 				var id2 = ids[_g1];
 				++_g1;
-				var entity = new saturn_core_domain_Entity();
+				var entity = new saturn.core.domain.Entity();
 				entity.entityId = id2;
 				entity.dataSourceId = sourceObj.id;
 				objs.push(entity);
 			}
-			var p = saturn_core_Util.getProvider();
+			var p = saturn.core.Util.getProvider();
 			p.insertObjects(objs,function(err1) {
-				if(err1 != null) cb("An error occurred inserting entities\n" + err1,null); else p.getByIds(ids,saturn_core_domain_Entity,function(objs1,err2) {
+				if(err1 != null) cb("An error occurred inserting entities\n" + err1,null); else p.getByIds(ids,saturn.core.domain.Entity,function(objs1,err2) {
 					if(err2 != null) cb("An error occurred looking for inserted objects\n" + err2,null); else cb(null,objs1);
 				});
 			});
 		}
 	});
 };
-saturn_core_domain_Entity.getObjects = function(ids,cb) {
-	var p = saturn_core_Util.getProvider();
-	p.getByIds(ids,saturn_core_domain_Entity,function(objs,err) {
+saturn.core.domain.Entity.getObjects = function(ids,cb) {
+	var p = saturn.core.Util.getProvider();
+	p.getByIds(ids,saturn.core.domain.Entity,function(objs,err) {
 		if(err != null) cb(err,null); else cb(null,objs);
 	});
 };
-saturn_core_domain_Entity.prototype = {
+saturn.core.domain.Entity.prototype = {
 	id: null
 	,entityId: null
 	,dataSourceId: null
@@ -4308,34 +4265,31 @@ saturn_core_domain_Entity.prototype = {
 	,source: null
 	,reaction: null
 	,entityType: null
-	,__class__: saturn_core_domain_Entity
+	,__class__: saturn.core.domain.Entity
 };
-var saturn_core_domain_FileProxy = function() {
+saturn.core.domain.FileProxy = $hxClasses["saturn.core.domain.FileProxy"] = function() {
 };
-$hxClasses["saturn.core.domain.FileProxy"] = saturn_core_domain_FileProxy;
-saturn_core_domain_FileProxy.__name__ = ["saturn","core","domain","FileProxy"];
-saturn_core_domain_FileProxy.prototype = {
+saturn.core.domain.FileProxy.__name__ = ["saturn","core","domain","FileProxy"];
+saturn.core.domain.FileProxy.prototype = {
 	path: null
 	,content: null
-	,__class__: saturn_core_domain_FileProxy
+	,__class__: saturn.core.domain.FileProxy
 };
-var saturn_core_domain_Molecule = function() {
+saturn.core.domain.Molecule = $hxClasses["saturn.core.domain.Molecule"] = function() {
 };
-$hxClasses["saturn.core.domain.Molecule"] = saturn_core_domain_Molecule;
-saturn_core_domain_Molecule.__name__ = ["saturn","core","domain","Molecule"];
-saturn_core_domain_Molecule.prototype = {
+saturn.core.domain.Molecule.__name__ = ["saturn","core","domain","Molecule"];
+saturn.core.domain.Molecule.prototype = {
 	id: null
 	,name: null
 	,sequence: null
 	,entityId: null
 	,entity: null
-	,__class__: saturn_core_domain_Molecule
+	,__class__: saturn.core.domain.Molecule
 };
-var saturn_core_domain_MoleculeAnnotation = function() {
+saturn.core.domain.MoleculeAnnotation = $hxClasses["saturn.core.domain.MoleculeAnnotation"] = function() {
 };
-$hxClasses["saturn.core.domain.MoleculeAnnotation"] = saturn_core_domain_MoleculeAnnotation;
-saturn_core_domain_MoleculeAnnotation.__name__ = ["saturn","core","domain","MoleculeAnnotation"];
-saturn_core_domain_MoleculeAnnotation.prototype = {
+saturn.core.domain.MoleculeAnnotation.__name__ = ["saturn","core","domain","MoleculeAnnotation"];
+saturn.core.domain.MoleculeAnnotation.prototype = {
 	id: null
 	,entityId: null
 	,labelId: null
@@ -4345,16 +4299,15 @@ saturn_core_domain_MoleculeAnnotation.prototype = {
 	,altevalue: null
 	,entity: null
 	,referent: null
-	,__class__: saturn_core_domain_MoleculeAnnotation
+	,__class__: saturn.core.domain.MoleculeAnnotation
 };
-var saturn_core_domain_Uploader = function(source,evalue) {
+saturn.core.domain.Uploader = $hxClasses["saturn.core.domain.Uploader"] = function(source,evalue) {
 	this.initialised = false;
 	this.source = source;
 	this.cutoff = evalue;
 };
-$hxClasses["saturn.core.domain.Uploader"] = saturn_core_domain_Uploader;
-saturn_core_domain_Uploader.__name__ = ["saturn","core","domain","Uploader"];
-saturn_core_domain_Uploader.prototype = {
+saturn.core.domain.Uploader.__name__ = ["saturn","core","domain","Uploader"];
+saturn.core.domain.Uploader.prototype = {
 	referentMap: null
 	,provider: null
 	,generator: null
@@ -4365,7 +4318,7 @@ saturn_core_domain_Uploader.prototype = {
 		var _g = this;
 		this.generator = generator;
 		if(this.initialised == false) {
-			this.provider = saturn_core_Util.getProvider();
+			this.provider = saturn.core.Util.getProvider();
 			this.setupReferentMap(function(err) {
 				if(err != null) generator.die(err); else {
 					_g.initialised = true;
@@ -4374,8 +4327,8 @@ saturn_core_domain_Uploader.prototype = {
 			});
 		} else {
 			if(items.length == 0) return;
-			var ids = saturn_db_Model.generateUniqueListWithField(items,"entity.entityId");
-			var acList = saturn_db_Model.generateUniqueListWithField(items,"referent.entityId");
+			var ids = saturn.db.Model.generateUniqueListWithField(items,"entity.entityId");
+			var acList = saturn.db.Model.generateUniqueListWithField(items,"referent.entityId");
 			var newReferents = [];
 			var _g1 = 0;
 			while(_g1 < acList.length) {
@@ -4398,16 +4351,16 @@ saturn_core_domain_Uploader.prototype = {
 	}
 	,setupReferentMap: function(cb) {
 		var _g = this;
-		saturn_core_domain_DataSource.getEntities(this.source,function(err,objs) {
+		saturn.core.domain.DataSource.getEntities(this.source,function(err,objs) {
 			if(err != null) cb(err); else {
-				_g.referentMap = saturn_db_Model.generateIDMap(objs);
+				_g.referentMap = saturn.db.Model.generateIDMap(objs);
 				cb(null);
 			}
 		});
 	}
 	,insertReferents: function(accessions,cb) {
 		var _g1 = this;
-		if(accessions.length == 0) cb(null); else saturn_core_domain_Entity.insertList(accessions,this.source,function(err,objs) {
+		if(accessions.length == 0) cb(null); else saturn.core.domain.Entity.insertList(accessions,this.source,function(err,objs) {
 			if(err == null) {
 				var _g = 0;
 				while(_g < objs.length) {
@@ -4419,16 +4372,15 @@ saturn_core_domain_Uploader.prototype = {
 			cb(err);
 		});
 	}
-	,__class__: saturn_core_domain_Uploader
+	,__class__: saturn.core.domain.Uploader
 };
-var saturn_core_domain_SgcAllele = $hx_exports.saturn.core.domain.SgcAllele = function() {
-	saturn_core_DNA.call(this,null);
+saturn.core.domain.SgcAllele = $hxClasses["saturn.core.domain.SgcAllele"] = function() {
+	saturn.core.DNA.call(this,null);
 	this.setup();
 };
-$hxClasses["saturn.core.domain.SgcAllele"] = saturn_core_domain_SgcAllele;
-saturn_core_domain_SgcAllele.__name__ = ["saturn","core","domain","SgcAllele"];
-saturn_core_domain_SgcAllele.__super__ = saturn_core_DNA;
-saturn_core_domain_SgcAllele.prototype = $extend(saturn_core_DNA.prototype,{
+saturn.core.domain.SgcAllele.__name__ = ["saturn","core","domain","SgcAllele"];
+saturn.core.domain.SgcAllele.__super__ = saturn.core.DNA;
+saturn.core.domain.SgcAllele.prototype = $extend(saturn.core.DNA.prototype,{
 	alleleId: null
 	,id: null
 	,entryCloneId: null
@@ -4448,7 +4400,7 @@ saturn_core_domain_SgcAllele.prototype = $extend(saturn_core_DNA.prototype,{
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
 		this.sequenceField = "dnaSeq";
-		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn_core_Protein(null);
+		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn.core.Protein(null);
 		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,getMoleculeName: function() {
@@ -4460,16 +4412,15 @@ saturn_core_domain_SgcAllele.prototype = $extend(saturn_core_DNA.prototype,{
 		cb(this.proteinSequenceObj);
 	}
 	,setSequence: function(sequence) {
-		saturn_core_DNA.prototype.setSequence.call(this,sequence);
+		saturn.core.DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSeq = sequence;
 	}
-	,__class__: saturn_core_domain_SgcAllele
+	,__class__: saturn.core.domain.SgcAllele
 });
-var saturn_core_domain_SgcAllelePlate = function() {
+saturn.core.domain.SgcAllelePlate = $hxClasses["saturn.core.domain.SgcAllelePlate"] = function() {
 };
-$hxClasses["saturn.core.domain.SgcAllelePlate"] = saturn_core_domain_SgcAllelePlate;
-saturn_core_domain_SgcAllelePlate.__name__ = ["saturn","core","domain","SgcAllelePlate"];
-saturn_core_domain_SgcAllelePlate.prototype = {
+saturn.core.domain.SgcAllelePlate.__name__ = ["saturn","core","domain","SgcAllelePlate"];
+saturn.core.domain.SgcAllelePlate.prototype = {
 	plateName: null
 	,id: null
 	,elnRef: null
@@ -4477,16 +4428,15 @@ saturn_core_domain_SgcAllelePlate.prototype = {
 	}
 	,loadPlate: function(cb) {
 	}
-	,__class__: saturn_core_domain_SgcAllelePlate
+	,__class__: saturn.core.domain.SgcAllelePlate
 };
-var saturn_core_domain_SgcEntryClone = function() {
-	saturn_core_DNA.call(this,null);
+saturn.core.domain.SgcEntryClone = $hxClasses["saturn.core.domain.SgcEntryClone"] = function() {
+	saturn.core.DNA.call(this,null);
 	this.setup();
 };
-$hxClasses["saturn.core.domain.SgcEntryClone"] = saturn_core_domain_SgcEntryClone;
-saturn_core_domain_SgcEntryClone.__name__ = ["saturn","core","domain","SgcEntryClone"];
-saturn_core_domain_SgcEntryClone.__super__ = saturn_core_DNA;
-saturn_core_domain_SgcEntryClone.prototype = $extend(saturn_core_DNA.prototype,{
+saturn.core.domain.SgcEntryClone.__name__ = ["saturn","core","domain","SgcEntryClone"];
+saturn.core.domain.SgcEntryClone.__super__ = saturn.core.DNA;
+saturn.core.domain.SgcEntryClone.prototype = $extend(saturn.core.DNA.prototype,{
 	entryCloneId: null
 	,id: null
 	,dnaSeq: null
@@ -4502,28 +4452,27 @@ saturn_core_domain_SgcEntryClone.prototype = $extend(saturn_core_DNA.prototype,{
 	}
 	,setup: function() {
 		this.setSequence(this.dnaSeq);
-		if(this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj = new saturn_core_Protein(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE)); else this.proteinSequenceObj = new saturn_core_Protein(null);
+		if(this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj = new saturn.core.Protein(this.getFrameTranslation(saturn.core.GeneticCodes.STANDARD,saturn.core.Frame.ONE)); else this.proteinSequenceObj = new saturn.core.Protein(null);
 		this.proteinSequenceObj.setDNA(this);
 		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,setSequence: function(sequence) {
-		saturn_core_DNA.prototype.setSequence.call(this,sequence);
+		saturn.core.DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSeq = sequence;
-		if(this.proteinSequenceObj != null && this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj.setSequence(this.getFrameTranslation(saturn_core_GeneticCodes.STANDARD,saturn_core_Frame.ONE));
+		if(this.proteinSequenceObj != null && this.dnaSeq != null && this.dnaSeq != "" && this.dnaSeq.length > 2) this.proteinSequenceObj.setSequence(this.getFrameTranslation(saturn.core.GeneticCodes.STANDARD,saturn.core.Frame.ONE));
 	}
 	,loadTranslation: function(cb) {
 		this.proteinSequenceObj.setName(this.entryCloneId + " (Protein)");
 		cb(this.proteinSequenceObj);
 	}
-	,__class__: saturn_core_domain_SgcEntryClone
+	,__class__: saturn.core.domain.SgcEntryClone
 });
-var saturn_core_domain_SgcForwardPrimer = function() {
-	saturn_core_DNA.call(this,null);
+saturn.core.domain.SgcForwardPrimer = $hxClasses["saturn.core.domain.SgcForwardPrimer"] = function() {
+	saturn.core.DNA.call(this,null);
 };
-$hxClasses["saturn.core.domain.SgcForwardPrimer"] = saturn_core_domain_SgcForwardPrimer;
-saturn_core_domain_SgcForwardPrimer.__name__ = ["saturn","core","domain","SgcForwardPrimer"];
-saturn_core_domain_SgcForwardPrimer.__super__ = saturn_core_DNA;
-saturn_core_domain_SgcForwardPrimer.prototype = $extend(saturn_core_DNA.prototype,{
+saturn.core.domain.SgcForwardPrimer.__name__ = ["saturn","core","domain","SgcForwardPrimer"];
+saturn.core.domain.SgcForwardPrimer.__super__ = saturn.core.DNA;
+saturn.core.domain.SgcForwardPrimer.prototype = $extend(saturn.core.DNA.prototype,{
 	primerId: null
 	,id: null
 	,dnaSequence: null
@@ -4535,18 +4484,17 @@ saturn_core_domain_SgcForwardPrimer.prototype = $extend(saturn_core_DNA.prototyp
 		return this.primerId;
 	}
 	,setSequence: function(sequence) {
-		saturn_core_DNA.prototype.setSequence.call(this,sequence);
+		saturn.core.DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSequence = sequence;
 	}
-	,__class__: saturn_core_domain_SgcForwardPrimer
+	,__class__: saturn.core.domain.SgcForwardPrimer
 });
-var saturn_core_domain_SgcReversePrimer = function() {
-	saturn_core_DNA.call(this,null);
+saturn.core.domain.SgcReversePrimer = $hxClasses["saturn.core.domain.SgcReversePrimer"] = function() {
+	saturn.core.DNA.call(this,null);
 };
-$hxClasses["saturn.core.domain.SgcReversePrimer"] = saturn_core_domain_SgcReversePrimer;
-saturn_core_domain_SgcReversePrimer.__name__ = ["saturn","core","domain","SgcReversePrimer"];
-saturn_core_domain_SgcReversePrimer.__super__ = saturn_core_DNA;
-saturn_core_domain_SgcReversePrimer.prototype = $extend(saturn_core_DNA.prototype,{
+saturn.core.domain.SgcReversePrimer.__name__ = ["saturn","core","domain","SgcReversePrimer"];
+saturn.core.domain.SgcReversePrimer.__super__ = saturn.core.DNA;
+saturn.core.domain.SgcReversePrimer.prototype = $extend(saturn.core.DNA.prototype,{
 	primerId: null
 	,id: null
 	,dnaSequence: null
@@ -4558,19 +4506,18 @@ saturn_core_domain_SgcReversePrimer.prototype = $extend(saturn_core_DNA.prototyp
 		return this.primerId;
 	}
 	,setSequence: function(sequence) {
-		saturn_core_DNA.prototype.setSequence.call(this,sequence);
+		saturn.core.DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSequence = sequence;
 	}
-	,__class__: saturn_core_domain_SgcReversePrimer
+	,__class__: saturn.core.domain.SgcReversePrimer
 });
-var saturn_core_domain_SgcTarget = function() {
-	saturn_core_DNA.call(this,null);
+saturn.core.domain.SgcTarget = $hxClasses["saturn.core.domain.SgcTarget"] = function() {
+	saturn.core.DNA.call(this,null);
 	this.setup();
 };
-$hxClasses["saturn.core.domain.SgcTarget"] = saturn_core_domain_SgcTarget;
-saturn_core_domain_SgcTarget.__name__ = ["saturn","core","domain","SgcTarget"];
-saturn_core_domain_SgcTarget.__super__ = saturn_core_DNA;
-saturn_core_domain_SgcTarget.prototype = $extend(saturn_core_DNA.prototype,{
+saturn.core.domain.SgcTarget.__name__ = ["saturn","core","domain","SgcTarget"];
+saturn.core.domain.SgcTarget.__super__ = saturn.core.DNA;
+saturn.core.domain.SgcTarget.prototype = $extend(saturn.core.DNA.prototype,{
 	targetId: null
 	,id: null
 	,gi: null
@@ -4588,55 +4535,53 @@ saturn_core_domain_SgcTarget.prototype = $extend(saturn_core_DNA.prototype,{
 		this.setSequence(this.dnaSeq);
 		this.setName(this.targetId);
 		this.sequenceField = "dnaSeq";
-		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn_core_Protein(null);
+		if(this.proteinSequenceObj == null) this.proteinSequenceObj = new saturn.core.Protein(null);
 		this.addProtein("Translation",this.proteinSequenceObj);
 	}
 	,proteinSequenceUpdated: function(sequence) {
 		this.proteinSeq = sequence;
 	}
 	,setSequence: function(sequence) {
-		saturn_core_DNA.prototype.setSequence.call(this,sequence);
+		saturn.core.DNA.prototype.setSequence.call(this,sequence);
 		this.dnaSeq = sequence;
 	}
 	,loadWonka: function() {
 	}
-	,__class__: saturn_core_domain_SgcTarget
+	,__class__: saturn.core.domain.SgcTarget
 });
-var saturn_core_molecule_MoleculeFloatAttribute = $hxClasses["saturn.core.molecule.MoleculeFloatAttribute"] = { __ename__ : ["saturn","core","molecule","MoleculeFloatAttribute"], __constructs__ : ["MW","MW_CONDESATION"] };
-saturn_core_molecule_MoleculeFloatAttribute.MW = ["MW",0];
-saturn_core_molecule_MoleculeFloatAttribute.MW.toString = $estr;
-saturn_core_molecule_MoleculeFloatAttribute.MW.__enum__ = saturn_core_molecule_MoleculeFloatAttribute;
-saturn_core_molecule_MoleculeFloatAttribute.MW_CONDESATION = ["MW_CONDESATION",1];
-saturn_core_molecule_MoleculeFloatAttribute.MW_CONDESATION.toString = $estr;
-saturn_core_molecule_MoleculeFloatAttribute.MW_CONDESATION.__enum__ = saturn_core_molecule_MoleculeFloatAttribute;
-var saturn_core_molecule_MoleculeStringAttribute = $hxClasses["saturn.core.molecule.MoleculeStringAttribute"] = { __ename__ : ["saturn","core","molecule","MoleculeStringAttribute"], __constructs__ : ["NAME"] };
-saturn_core_molecule_MoleculeStringAttribute.NAME = ["NAME",0];
-saturn_core_molecule_MoleculeStringAttribute.NAME.toString = $estr;
-saturn_core_molecule_MoleculeStringAttribute.NAME.__enum__ = saturn_core_molecule_MoleculeStringAttribute;
-var saturn_core_molecule_MoleculeAlignMode = $hxClasses["saturn.core.molecule.MoleculeAlignMode"] = { __ename__ : ["saturn","core","molecule","MoleculeAlignMode"], __constructs__ : ["REGEX","SIMPLE"] };
-saturn_core_molecule_MoleculeAlignMode.REGEX = ["REGEX",0];
-saturn_core_molecule_MoleculeAlignMode.REGEX.toString = $estr;
-saturn_core_molecule_MoleculeAlignMode.REGEX.__enum__ = saturn_core_molecule_MoleculeAlignMode;
-saturn_core_molecule_MoleculeAlignMode.SIMPLE = ["SIMPLE",1];
-saturn_core_molecule_MoleculeAlignMode.SIMPLE.toString = $estr;
-saturn_core_molecule_MoleculeAlignMode.SIMPLE.__enum__ = saturn_core_molecule_MoleculeAlignMode;
-var saturn_core_molecule_MoleculeConstants = function() { };
-$hxClasses["saturn.core.molecule.MoleculeConstants"] = saturn_core_molecule_MoleculeConstants;
-saturn_core_molecule_MoleculeConstants.__name__ = ["saturn","core","molecule","MoleculeConstants"];
-var saturn_core_molecule_MoleculeSets = $hxClasses["saturn.core.molecule.MoleculeSets"] = { __ename__ : ["saturn","core","molecule","MoleculeSets"], __constructs__ : ["STANDARD"] };
-saturn_core_molecule_MoleculeSets.STANDARD = ["STANDARD",0];
-saturn_core_molecule_MoleculeSets.STANDARD.toString = $estr;
-saturn_core_molecule_MoleculeSets.STANDARD.__enum__ = saturn_core_molecule_MoleculeSets;
-var saturn_core_molecule_MoleculeSetRegistry = function() {
-	this.moleculeSets = new haxe_ds_StringMap();
-	this.register(saturn_core_molecule_MoleculeSets.STANDARD,new saturn_core_StandardMoleculeSet());
+saturn.core.molecule.MoleculeFloatAttribute = $hxClasses["saturn.core.molecule.MoleculeFloatAttribute"] = { __ename__ : ["saturn","core","molecule","MoleculeFloatAttribute"], __constructs__ : ["MW","MW_CONDESATION"] };
+saturn.core.molecule.MoleculeFloatAttribute.MW = ["MW",0];
+saturn.core.molecule.MoleculeFloatAttribute.MW.toString = $estr;
+saturn.core.molecule.MoleculeFloatAttribute.MW.__enum__ = saturn.core.molecule.MoleculeFloatAttribute;
+saturn.core.molecule.MoleculeFloatAttribute.MW_CONDESATION = ["MW_CONDESATION",1];
+saturn.core.molecule.MoleculeFloatAttribute.MW_CONDESATION.toString = $estr;
+saturn.core.molecule.MoleculeFloatAttribute.MW_CONDESATION.__enum__ = saturn.core.molecule.MoleculeFloatAttribute;
+saturn.core.molecule.MoleculeStringAttribute = $hxClasses["saturn.core.molecule.MoleculeStringAttribute"] = { __ename__ : ["saturn","core","molecule","MoleculeStringAttribute"], __constructs__ : ["NAME"] };
+saturn.core.molecule.MoleculeStringAttribute.NAME = ["NAME",0];
+saturn.core.molecule.MoleculeStringAttribute.NAME.toString = $estr;
+saturn.core.molecule.MoleculeStringAttribute.NAME.__enum__ = saturn.core.molecule.MoleculeStringAttribute;
+saturn.core.molecule.MoleculeAlignMode = $hxClasses["saturn.core.molecule.MoleculeAlignMode"] = { __ename__ : ["saturn","core","molecule","MoleculeAlignMode"], __constructs__ : ["REGEX","SIMPLE"] };
+saturn.core.molecule.MoleculeAlignMode.REGEX = ["REGEX",0];
+saturn.core.molecule.MoleculeAlignMode.REGEX.toString = $estr;
+saturn.core.molecule.MoleculeAlignMode.REGEX.__enum__ = saturn.core.molecule.MoleculeAlignMode;
+saturn.core.molecule.MoleculeAlignMode.SIMPLE = ["SIMPLE",1];
+saturn.core.molecule.MoleculeAlignMode.SIMPLE.toString = $estr;
+saturn.core.molecule.MoleculeAlignMode.SIMPLE.__enum__ = saturn.core.molecule.MoleculeAlignMode;
+saturn.core.molecule.MoleculeConstants = $hxClasses["saturn.core.molecule.MoleculeConstants"] = function() { };
+saturn.core.molecule.MoleculeConstants.__name__ = ["saturn","core","molecule","MoleculeConstants"];
+saturn.core.molecule.MoleculeSets = $hxClasses["saturn.core.molecule.MoleculeSets"] = { __ename__ : ["saturn","core","molecule","MoleculeSets"], __constructs__ : ["STANDARD"] };
+saturn.core.molecule.MoleculeSets.STANDARD = ["STANDARD",0];
+saturn.core.molecule.MoleculeSets.STANDARD.toString = $estr;
+saturn.core.molecule.MoleculeSets.STANDARD.__enum__ = saturn.core.molecule.MoleculeSets;
+saturn.core.molecule.MoleculeSetRegistry = $hxClasses["saturn.core.molecule.MoleculeSetRegistry"] = function() {
+	this.moleculeSets = new haxe.ds.StringMap();
+	this.register(saturn.core.molecule.MoleculeSets.STANDARD,new saturn.core.StandardMoleculeSet());
 };
-$hxClasses["saturn.core.molecule.MoleculeSetRegistry"] = saturn_core_molecule_MoleculeSetRegistry;
-saturn_core_molecule_MoleculeSetRegistry.__name__ = ["saturn","core","molecule","MoleculeSetRegistry"];
-saturn_core_molecule_MoleculeSetRegistry.getStandardMoleculeSet = function() {
-	return saturn_core_molecule_MoleculeSetRegistry.defaultRegistry.get(saturn_core_molecule_MoleculeSets.STANDARD);
+saturn.core.molecule.MoleculeSetRegistry.__name__ = ["saturn","core","molecule","MoleculeSetRegistry"];
+saturn.core.molecule.MoleculeSetRegistry.getStandardMoleculeSet = function() {
+	return saturn.core.molecule.MoleculeSetRegistry.defaultRegistry.get(saturn.core.molecule.MoleculeSets.STANDARD);
 };
-saturn_core_molecule_MoleculeSetRegistry.prototype = {
+saturn.core.molecule.MoleculeSetRegistry.prototype = {
 	moleculeSets: null
 	,register: function(setType,set) {
 		this.registerSet(Std.string(setType),set);
@@ -4650,12 +4595,13 @@ saturn_core_molecule_MoleculeSetRegistry.prototype = {
 	,getSet: function(name) {
 		return this.moleculeSets.get(name);
 	}
-	,__class__: saturn_core_molecule_MoleculeSetRegistry
+	,__class__: saturn.core.molecule.MoleculeSetRegistry
 };
-var saturn_core_parsers_BaseParser = function(path,handler,done) {
+if(!saturn.core.parsers) saturn.core.parsers = {};
+saturn.core.parsers.BaseParser = $hxClasses["saturn.core.parsers.BaseParser"] = function(path,handler,done) {
 	this.lineCount = 0;
 	var _g = this;
-	saturn_core_Generator.call(this,-1);
+	saturn.core.Generator.call(this,-1);
 	this.doneCB = done;
 	this.path = path;
 	this.setMaxAtOnce(200);
@@ -4665,10 +4611,9 @@ var saturn_core_parsers_BaseParser = function(path,handler,done) {
 	});
 	if(path != null) this.read();
 };
-$hxClasses["saturn.core.parsers.BaseParser"] = saturn_core_parsers_BaseParser;
-saturn_core_parsers_BaseParser.__name__ = ["saturn","core","parsers","BaseParser"];
-saturn_core_parsers_BaseParser.__super__ = saturn_core_Generator;
-saturn_core_parsers_BaseParser.prototype = $extend(saturn_core_Generator.prototype,{
+saturn.core.parsers.BaseParser.__name__ = ["saturn","core","parsers","BaseParser"];
+saturn.core.parsers.BaseParser.__super__ = saturn.core.Generator;
+saturn.core.parsers.BaseParser.prototype = $extend(saturn.core.Generator.prototype,{
 	doneCB: null
 	,path: null
 	,content: null
@@ -4679,11 +4624,11 @@ saturn_core_parsers_BaseParser.prototype = $extend(saturn_core_Generator.prototy
 	}
 	,read: function() {
 		var _g = this;
-		if(this.path != null) saturn_core_Util.open(this.path,function(err,line) {
+		if(this.path != null) saturn.core.Util.open(this.path,function(err,line) {
 			if(err != null) _g.die("Error reading file"); else {
 				_g.lineCount++;
 				if(line == null) {
-					saturn_core_Util.debug("Lines read: " + _g.lineCount);
+					saturn.core.Util.debug("Lines read: " + _g.lineCount);
 					_g.finished();
 				} else {
 					var obj = _g.parseLine(line);
@@ -4705,18 +4650,18 @@ saturn_core_parsers_BaseParser.prototype = $extend(saturn_core_Generator.prototy
 	,parseLine: function(line) {
 		return null;
 	}
-	,__class__: saturn_core_parsers_BaseParser
+	,__class__: saturn.core.parsers.BaseParser
 });
-var saturn_db_BatchFetch = function(onError) {
-	this.items = new haxe_ds_StringMap();
+if(!saturn.db) saturn.db = {};
+saturn.db.BatchFetch = $hxClasses["saturn.db.BatchFetch"] = function(onError) {
+	this.items = new haxe.ds.StringMap();
 	this.fetchList = [];
-	this.retrieved = new haxe_ds_StringMap();
+	this.retrieved = new haxe.ds.StringMap();
 	this.position = 0;
 	this.onError = onError;
 };
-$hxClasses["saturn.db.BatchFetch"] = saturn_db_BatchFetch;
-saturn_db_BatchFetch.__name__ = ["saturn","db","BatchFetch"];
-saturn_db_BatchFetch.prototype = {
+saturn.db.BatchFetch.__name__ = ["saturn","db","BatchFetch"];
+saturn.db.BatchFetch.prototype = {
 	fetchList: null
 	,userOnError: null
 	,userOnComplete: null
@@ -4735,7 +4680,7 @@ saturn_db_BatchFetch.prototype = {
 		return this.getByIds(list,clazz,key,callBack);
 	}
 	,getByIds: function(objectIds,clazz,key,callBack) {
-		var work = new haxe_ds_StringMap();
+		var work = new haxe.ds.StringMap();
 		if(__map_reserved.IDS != null) work.setReserved("IDS",objectIds); else work.h["IDS"] = objectIds;
 		if(__map_reserved.CLASS != null) work.setReserved("CLASS",clazz); else work.h["CLASS"] = clazz;
 		if(__map_reserved.TYPE != null) work.setReserved("TYPE","getByIds"); else work.h["TYPE"] = "getByIds";
@@ -4751,7 +4696,7 @@ saturn_db_BatchFetch.prototype = {
 		return this.getByValues(list,clazz,field,key,callBack);
 	}
 	,getByValues: function(values,clazz,field,key,callBack) {
-		var work = new haxe_ds_StringMap();
+		var work = new haxe.ds.StringMap();
 		if(__map_reserved.VALUES != null) work.setReserved("VALUES",values); else work.h["VALUES"] = values;
 		if(__map_reserved.CLASS != null) work.setReserved("CLASS",clazz); else work.h["CLASS"] = clazz;
 		if(__map_reserved.FIELD != null) work.setReserved("FIELD",field); else work.h["FIELD"] = field;
@@ -4768,7 +4713,7 @@ saturn_db_BatchFetch.prototype = {
 		return this.getByPkeys(list,clazz,key,callBack);
 	}
 	,getByPkeys: function(objectIds,clazz,key,callBack) {
-		var work = new haxe_ds_StringMap();
+		var work = new haxe.ds.StringMap();
 		if(__map_reserved.IDS != null) work.setReserved("IDS",objectIds); else work.h["IDS"] = objectIds;
 		if(__map_reserved.CLASS != null) work.setReserved("CLASS",clazz); else work.h["CLASS"] = clazz;
 		if(__map_reserved.TYPE != null) work.setReserved("TYPE","getByPkeys"); else work.h["TYPE"] = "getByPkeys";
@@ -4795,13 +4740,13 @@ saturn_db_BatchFetch.prototype = {
 	,execute: function(cb) {
 		var _g = this;
 		var provider = this.provider;
-		if(provider == null) provider = saturn_client_core_CommonCore.getDefaultProvider();
+		if(provider == null) provider = saturn.client.core.CommonCore.getDefaultProvider();
 		if(cb != null) this.onFinish(cb);
 		var $it0 = this.items.keys();
 		while( $it0.hasNext() ) {
 			var key = $it0.next();
 			var units = this.items.get(key);
-			var work1 = new haxe_ds_StringMap();
+			var work1 = new haxe.ds.StringMap();
 			if(__map_reserved.TYPE != null) work1.setReserved("TYPE","FETCHITEM"); else work1.h["TYPE"] = "FETCHITEM";
 			work1.set("FIELD",units[0].field);
 			work1.set("CLASS",units[0].clazz);
@@ -4847,7 +4792,7 @@ saturn_db_BatchFetch.prototype = {
 		}); else if(type == "FETCHITEM") {
 			var items;
 			items = __map_reserved.ITEMS != null?work.getReserved("ITEMS"):work.h["ITEMS"];
-			var itemMap = new haxe_ds_StringMap();
+			var itemMap = new haxe.ds.StringMap();
 			var _g1 = 0;
 			while(_g1 < items.length) {
 				var item = items[_g1];
@@ -4892,22 +4837,20 @@ saturn_db_BatchFetch.prototype = {
 	,getObject: function(key) {
 		return this.retrieved.get(key);
 	}
-	,__class__: saturn_db_BatchFetch
+	,__class__: saturn.db.BatchFetch
 };
-var saturn_db_Connection = function() { };
-$hxClasses["saturn.db.Connection"] = saturn_db_Connection;
-saturn_db_Connection.__name__ = ["saturn","db","Connection"];
-saturn_db_Connection.prototype = {
+saturn.db.Connection = $hxClasses["saturn.db.Connection"] = function() { };
+saturn.db.Connection.__name__ = ["saturn","db","Connection"];
+saturn.db.Connection.prototype = {
 	execute: null
 	,close: null
 	,commit: null
 	,setAutoCommit: null
-	,__class__: saturn_db_Connection
+	,__class__: saturn.db.Connection
 };
-var saturn_db_Provider = function() { };
-$hxClasses["saturn.db.Provider"] = saturn_db_Provider;
-saturn_db_Provider.__name__ = ["saturn","db","Provider"];
-saturn_db_Provider.prototype = {
+saturn.db.Provider = $hxClasses["saturn.db.Provider"] = function() { };
+saturn.db.Provider.__name__ = ["saturn","db","Provider"];
+saturn.db.Provider.prototype = {
 	getById: null
 	,getByIds: null
 	,getByPkey: null
@@ -4969,12 +4912,12 @@ saturn_db_Provider.prototype = {
 	,getConnection: null
 	,uploadFile: null
 	,addHook: null
-	,__class__: saturn_db_Provider
+	,__class__: saturn.db.Provider
 };
-var saturn_db_DefaultProvider = function(binding_map,config,autoClose) {
+saturn.db.DefaultProvider = $hxClasses["saturn.db.DefaultProvider"] = function(binding_map,config,autoClose) {
 	this.user = null;
-	this.namedQueryHookConfigs = new haxe_ds_StringMap();
-	this.namedQueryHooks = new haxe_ds_StringMap();
+	this.namedQueryHookConfigs = new haxe.ds.StringMap();
+	this.namedQueryHooks = new haxe.ds.StringMap();
 	this.connectWithUserCreds = false;
 	this.enableBinding = true;
 	this.useCache = true;
@@ -4982,18 +4925,17 @@ var saturn_db_DefaultProvider = function(binding_map,config,autoClose) {
 	if(binding_map != null) this.setModels(binding_map);
 	this.config = config;
 	this.autoClose = autoClose;
-	this.namedQueryHooks = new haxe_ds_StringMap();
+	this.namedQueryHooks = new haxe.ds.StringMap();
 	if(config != null && Object.prototype.hasOwnProperty.call(config,"named_query_hooks")) this.addHooks(Reflect.field(config,"named_query_hooks"));
 	var $it0 = this.namedQueryHooks.keys();
 	while( $it0.hasNext() ) {
 		var hook = $it0.next();
-		saturn_core_Util.debug("Installed hook: " + hook + "/" + Std.string(this.namedQueryHooks.get(hook)));
+		saturn.core.Util.debug("Installed hook: " + hook + "/" + Std.string(this.namedQueryHooks.get(hook)));
 	}
 };
-$hxClasses["saturn.db.DefaultProvider"] = saturn_db_DefaultProvider;
-saturn_db_DefaultProvider.__name__ = ["saturn","db","DefaultProvider"];
-saturn_db_DefaultProvider.__interfaces__ = [saturn_db_Provider];
-saturn_db_DefaultProvider.prototype = {
+saturn.db.DefaultProvider.__name__ = ["saturn","db","DefaultProvider"];
+saturn.db.DefaultProvider.__interfaces__ = [saturn.db.Provider];
+saturn.db.DefaultProvider.prototype = {
 	theBindingMap: null
 	,fieldIndexMap: null
 	,objectCache: null
@@ -5045,7 +4987,7 @@ saturn_db_DefaultProvider.prototype = {
 	,_closeConnection: function() {
 	}
 	,generatedLinkedClone: function() {
-		var clazz = js_Boot.getClass(this);
+		var clazz = js.Boot.getClass(this);
 		var provider = Type.createEmptyInstance(clazz);
 		provider.theBindingMap = this.theBindingMap;
 		provider.fieldIndexMap = this.fieldIndexMap;
@@ -5062,7 +5004,7 @@ saturn_db_DefaultProvider.prototype = {
 		provider.regexs = this.regexs;
 		provider.namedQueryHookConfigs = this.namedQueryHookConfigs;
 		provider.config = this.config;
-		provider.objectCache = new haxe_ds_StringMap();
+		provider.objectCache = new haxe.ds.StringMap();
 		return provider;
 	}
 	,enableCache: function(cached) {
@@ -5095,7 +5037,7 @@ saturn_db_DefaultProvider.prototype = {
 				}(this))) {
 					var this3;
 					this3 = __map_reserved[clazz] != null?binding_map.getReserved(clazz):binding_map.h[clazz];
-					var value = new haxe_ds_StringMap();
+					var value = new haxe.ds.StringMap();
 					this3.set("fields.synthetic",value);
 				}
 				var d;
@@ -5123,20 +5065,20 @@ saturn_db_DefaultProvider.prototype = {
 			var d = this.theBindingMap.get(class_name);
 			var value = this.getName();
 			d.set("provider_name",value);
-			saturn_core_Util.debug(class_name + " on " + this.getName());
+			saturn.core.Util.debug(class_name + " on " + this.getName());
 		}
-		if(this.isModel(saturn_core_domain_FileProxy)) {
-			var this1 = this.getModel(saturn_core_domain_FileProxy).getOptions();
+		if(this.isModel(saturn.core.domain.FileProxy)) {
+			var this1 = this.getModel(saturn.core.domain.FileProxy).getOptions();
 			this.winConversions = this1.get("windows_conversions");
-			var this2 = this.getModel(saturn_core_domain_FileProxy).getOptions();
+			var this2 = this.getModel(saturn.core.domain.FileProxy).getOptions();
 			this.linConversions = this2.get("linux_conversions");
 			if(this.platform == "windows") {
 				this.conversions = this.winConversions;
-				var this3 = this.getModel(saturn_core_domain_FileProxy).getOptions();
+				var this3 = this.getModel(saturn.core.domain.FileProxy).getOptions();
 				this.regexs = this3.get("windows_allowed_paths_regex");
 			} else if(this.platform == "linux") {
 				this.conversions = this.linConversions;
-				var this4 = this.getModel(saturn_core_domain_FileProxy).getOptions();
+				var this4 = this.getModel(saturn.core.domain.FileProxy).getOptions();
 				this.regexs = this4.get("linux_allowed_paths_regex");
 			}
 			if(this.regexs != null) {
@@ -5144,7 +5086,7 @@ saturn_db_DefaultProvider.prototype = {
 				while( $it1.hasNext() ) {
 					var key = $it1.next();
 					var s;
-					s = js_Boot.__cast(this.regexs.get(key) , String);
+					s = js.Boot.__cast(this.regexs.get(key) , String);
 					var value1 = new EReg(s,"");
 					this.regexs.set(key,value1);
 				}
@@ -5155,15 +5097,15 @@ saturn_db_DefaultProvider.prototype = {
 		return this.theBindingMap;
 	}
 	,resetCache: function() {
-		this.objectCache = new haxe_ds_StringMap();
+		this.objectCache = new haxe.ds.StringMap();
 		if(this.theBindingMap != null) {
 			var $it0 = this.theBindingMap.keys();
 			while( $it0.hasNext() ) {
 				var className = $it0.next();
 				var this1 = this.theBindingMap.get(className);
-				var value = new haxe_ds_StringMap();
+				var value = new haxe.ds.StringMap();
 				this1.set("statements",value);
-				var value1 = new haxe_ds_StringMap();
+				var value1 = new haxe.ds.StringMap();
 				this.objectCache.set(className,value1);
 				if((function($this) {
 					var $r;
@@ -5184,13 +5126,13 @@ saturn_db_DefaultProvider.prototype = {
 					while( $it1.hasNext() ) {
 						var field = $it1.next();
 						var this5 = this.objectCache.get(className);
-						var value2 = new haxe_ds_StringMap();
+						var value2 = new haxe.ds.StringMap();
 						this5.set(field,value2);
 					}
 				}
 			}
 		}
-		this.namedQueryCache = new haxe_ds_StringMap();
+		this.namedQueryCache = new haxe.ds.StringMap();
 	}
 	,getObjectFromCache: function(clazz,field,val) {
 		var className = Type.getClassName(clazz);
@@ -5223,7 +5165,7 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,initialiseObjects: function(idsToFetch,toBind,prefetched,exception,callBack,clazz,bindField,cache,allowAutoBind) {
 		if(allowAutoBind == null) allowAutoBind = true;
-		if(idsToFetch.length > 0 && toBind == null || clazz == null || toBind != null && toBind.length > 0 && clazz != null && js_Boot.__instanceof(toBind[0],clazz)) callBack(toBind,exception); else {
+		if(idsToFetch.length > 0 && toBind == null || clazz == null || toBind != null && toBind.length > 0 && clazz != null && js.Boot.__instanceof(toBind[0],clazz)) callBack(toBind,exception); else {
 			var model = this.getModel(clazz);
 			if(model == null) {
 				var boundObjs1 = [];
@@ -5346,9 +5288,9 @@ saturn_db_DefaultProvider.prototype = {
 		var _g = this;
 		var prefetched = null;
 		var idsToFetch = null;
-		saturn_core_Util.debug("Using cache " + Std.string(this.useCache));
+		saturn.core.Util.debug("Using cache " + Std.string(this.useCache));
 		if(this.useCache) {
-			saturn_core_Util.debug("Using cache " + Std.string(this.useCache));
+			saturn.core.Util.debug("Using cache " + Std.string(this.useCache));
 			var model = this.getModel(clazz);
 			if(model != null) {
 				prefetched = [];
@@ -5423,16 +5365,16 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,getByNamedQuery: function(queryId,parameters,clazz,cache,callBack) {
 		var _g = this;
-		saturn_core_Util.debug("In getByNamedQuery " + (cache == null?"null":"" + cache));
+		saturn.core.Util.debug("In getByNamedQuery " + (cache == null?"null":"" + cache));
 		try {
 			if(cache) {
-				saturn_core_Util.debug("Looking for cached result");
+				saturn.core.Util.debug("Looking for cached result");
 				var queries = this.namedQueryCache.get(queryId);
-				var serialParamString = haxe_Serializer.run(parameters);
-				var crc1 = haxe_crypto_Md5.encode(queryId + "/" + serialParamString);
+				var serialParamString = haxe.Serializer.run(parameters);
+				var crc1 = haxe.crypto.Md5.encode(queryId + "/" + serialParamString);
 				if(this.namedQueryCache.exists(crc1)) {
 					var qResults = this.namedQueryCache.get(crc1).queryResults;
-					saturn_core_Util.debug("Use cached result");
+					saturn.core.Util.debug("Use cached result");
 					callBack(qResults,null);
 					return;
 				}
@@ -5440,13 +5382,13 @@ saturn_db_DefaultProvider.prototype = {
 			var privateCB = function(toBind,exception) {
 				if(toBind == null) callBack(toBind,exception); else _g.initialiseObjects([],toBind,[],exception,function(objs,err) {
 					if(_g.useCache) {
-						saturn_core_Util.debug("Caching result");
-						var namedQuery = new saturn_db_NamedQueryCache();
+						saturn.core.Util.debug("Caching result");
+						var namedQuery = new saturn.db.NamedQueryCache();
 						namedQuery.queryName = queryId;
 						namedQuery.queryParams = parameters;
-						namedQuery.queryParamSerial = haxe_Serializer.run(parameters);
+						namedQuery.queryParamSerial = haxe.Serializer.run(parameters);
 						namedQuery.queryResults = objs;
-						var crc = haxe_crypto_Md5.encode(queryId + "/" + namedQuery.queryParamSerial);
+						var crc = haxe.crypto.Md5.encode(queryId + "/" + namedQuery.queryParamSerial);
 						_g.namedQueryCache.set(crc,namedQuery);
 					}
 					callBack(objs,err);
@@ -5455,24 +5397,24 @@ saturn_db_DefaultProvider.prototype = {
 			if(queryId == "saturn.workflow") {
 				var jobName = parameters[0];
 				var config = parameters[1];
-				saturn_core_Util.debug("Got workflow query " + jobName);
-				saturn_core_Util.debug(Type.getClassName(config == null?null:js_Boot.getClass(config)));
+				saturn.core.Util.debug("Got workflow query " + jobName);
+				saturn.core.Util.debug(Type.getClassName(config == null?null:js.Boot.getClass(config)));
 				if(this.namedQueryHooks.exists(jobName)) this.namedQueryHooks.get(jobName)(config,function(object,error) {
 					privateCB([object],object.getError());
 				}); else {
-					saturn_core_Util.debug("Unknown workflow query");
+					saturn.core.Util.debug("Unknown workflow query");
 					this._getByNamedQuery(queryId,parameters,clazz,privateCB);
 				}
 			} else if(this.namedQueryHooks.exists(queryId)) {
 				var config1 = null;
 				if(this.namedQueryHookConfigs.exists(queryId)) config1 = this.namedQueryHookConfigs.get(queryId);
-				saturn_core_Util.debug("Calling hook");
+				saturn.core.Util.debug("Calling hook");
 				this.namedQueryHooks.get(queryId)(queryId,parameters,clazz,privateCB,config1);
 			} else this._getByNamedQuery(queryId,parameters,clazz,privateCB);
 		} catch( ex ) {
-			if (ex instanceof js__$Boot_HaxeError) ex = ex.val;
+			if (ex instanceof js._Boot.HaxeError) ex = ex.val;
 			callBack(null,"An unexpected exception has occurred");
-			saturn_core_Util.debug(ex);
+			saturn.core.Util.debug(ex);
 		}
 	}
 	,addHooks: function(hooks) {
@@ -5500,14 +5442,14 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,getByIdStartsWith: function(id,field,clazz,limit,callBack) {
 		var _g = this;
-		saturn_core_Util.debug("Starts with using cache " + Std.string(this.useCache));
+		saturn.core.Util.debug("Starts with using cache " + Std.string(this.useCache));
 		var queryId = "__STARTSWITH_" + Type.getClassName(clazz);
 		var parameters = [];
 		parameters.push(field);
 		parameters.push(id);
 		var crc = null;
 		if(this.useCache) {
-			var crc1 = haxe_crypto_Md5.encode(queryId + "/" + haxe_Serializer.run(parameters));
+			var crc1 = haxe.crypto.Md5.encode(queryId + "/" + haxe.Serializer.run(parameters));
 			if(this.namedQueryCache.exists(crc1)) {
 				callBack(this.namedQueryCache.get(crc1).queryResults,null);
 				return;
@@ -5516,7 +5458,7 @@ saturn_db_DefaultProvider.prototype = {
 		this._getByIdStartsWith(id,field,clazz,limit,function(toBind,exception) {
 			if(toBind == null) callBack(toBind,exception); else _g.initialiseObjects([],toBind,[],exception,function(objs,err) {
 				if(_g.useCache) {
-					var namedQuery = new saturn_db_NamedQueryCache();
+					var namedQuery = new saturn.db.NamedQueryCache();
 					namedQuery.queryName = queryId;
 					namedQuery.queryParams = parameters;
 					namedQuery.queryResults = objs;
@@ -5596,7 +5538,7 @@ saturn_db_DefaultProvider.prototype = {
 		}
 	}
 	,evictNamedQuery: function(queryId,parameters) {
-		var crc = haxe_crypto_Md5.encode(queryId + "/" + haxe_Serializer.run(parameters));
+		var crc = haxe.crypto.Md5.encode(queryId + "/" + haxe.Serializer.run(parameters));
 		if(this.namedQueryCache.exists(crc)) this.namedQueryCache.remove(crc);
 	}
 	,updateObjects: function(objs,callBack) {
@@ -5662,7 +5604,7 @@ saturn_db_DefaultProvider.prototype = {
 				var key = _g1[_g];
 				++_g;
 				var val = Reflect.field(attributeMap,key);
-				if(saturn_db_DefaultProvider.r_date.match(val)) Reflect.setField(attributeMap,key,new Date(Date.parse(val)));
+				if(saturn.db.DefaultProvider.r_date.match(val)) Reflect.setField(attributeMap,key,new Date(Date.parse(val)));
 			}
 			return attributeMap;
 		}
@@ -5710,14 +5652,14 @@ saturn_db_DefaultProvider.prototype = {
 						return $r;
 					}(this))) {
 						var this4 = this.objectCache.get(className);
-						var value = new haxe_ds_StringMap();
+						var value = new haxe.ds.StringMap();
 						this4.set(key2,value);
 					}
 					var atKey;
 					atKey = __map_reserved[key2] != null?map.getReserved(key2):map.h[key2];
 					var val1 = null;
 					if(Reflect.hasField(attributeMap,atKey)) val1 = Reflect.field(attributeMap,atKey); else if(Reflect.hasField(attributeMap,atKey.toLowerCase())) val1 = Reflect.field(attributeMap,atKey.toLowerCase());
-					if(saturn_db_DefaultProvider.r_date.match(val1)) Reflect.setField(obj,key2,new Date(Date.parse(val))); else obj[key2] = val1;
+					if(saturn.db.DefaultProvider.r_date.match(val1)) Reflect.setField(obj,key2,new Date(Date.parse(val))); else obj[key2] = val1;
 					if(cache && indexes != null && ((__map_reserved[key2] != null?indexes.existsReserved(key2):indexes.h.hasOwnProperty(key2)) || key2 == indexField) && this.useCache) {
 						if(priKeyValue != null) {
 							if((function($this) {
@@ -5781,7 +5723,7 @@ saturn_db_DefaultProvider.prototype = {
 	,unbindObject: function(object) {
 		if(this.enableBinding) {
 			var className = Type.getClassName(Type.getClass(object));
-			var attributeMap = new haxe_ds_StringMap();
+			var attributeMap = new haxe.ds.StringMap();
 			if(this.theBindingMap.exists(className)) {
 				var map;
 				var this1 = this.theBindingMap.get(className);
@@ -5808,15 +5750,15 @@ saturn_db_DefaultProvider.prototype = {
 	,_activate: function(objects,depth,depthLimit,callBack) {
 		var _g1 = this;
 		var objectsToFetch = 0;
-		var batchQuery = new saturn_db_BatchFetch(function(obj,err) {
+		var batchQuery = new saturn.db.BatchFetch(function(obj,err) {
 		});
 		batchQuery.setProvider(this);
-		var classToFetch = new haxe_ds_StringMap();
+		var classToFetch = new haxe.ds.StringMap();
 		var _g = 0;
 		while(_g < objects.length) {
 			var object = objects[_g];
 			++_g;
-			if(object == null || js_Boot.__instanceof(object,ArrayBuffer) || js_Boot.__instanceof(object,haxe_ds_StringMap)) continue;
+			if(object == null || js.Boot.__instanceof(object,ArrayBuffer) || js.Boot.__instanceof(object,haxe.ds.StringMap)) continue;
 			var clazz = Type.getClass(object);
 			if(clazz == null) continue;
 			var clazzName = Type.getClassName(clazz);
@@ -5858,7 +5800,7 @@ saturn_db_DefaultProvider.prototype = {
 							if(cacheObj == null) {
 								objectsToFetch++;
 								if(!(__map_reserved[synthClass] != null?classToFetch.existsReserved(synthClass):classToFetch.h.hasOwnProperty(synthClass))) {
-									var value = new haxe_ds_StringMap();
+									var value = new haxe.ds.StringMap();
 									if(__map_reserved[synthClass] != null) classToFetch.setReserved(synthClass,value); else classToFetch.h[synthClass] = value;
 								}
 								if(!(function($this) {
@@ -5870,7 +5812,7 @@ saturn_db_DefaultProvider.prototype = {
 								}(this))) {
 									var this4;
 									this4 = __map_reserved[synthClass] != null?classToFetch.getReserved(synthClass):classToFetch.h[synthClass];
-									var value1 = new haxe_ds_StringMap();
+									var value1 = new haxe.ds.StringMap();
 									this4.set(fkField,value1);
 								}
 								var this5;
@@ -5921,7 +5863,7 @@ saturn_db_DefaultProvider.prototype = {
 				var object1 = objects[_g2];
 				++_g2;
 				var clazz1 = Type.getClass(object1);
-				if(object1 == null || js_Boot.__instanceof(object1,ArrayBuffer) || clazz1 == null) continue;
+				if(object1 == null || js.Boot.__instanceof(object1,ArrayBuffer) || clazz1 == null) continue;
 				var clazzName1 = Type.getClassName(clazz1);
 				if(_g1.theBindingMap.exists(clazzName1)) {
 					if((function($this) {
@@ -5967,7 +5909,7 @@ saturn_db_DefaultProvider.prototype = {
 				var object2 = objects[_g3];
 				++_g3;
 				var clazz2 = Type.getClass(object2);
-				if(object2 == null || js_Boot.__instanceof(object2,ArrayBuffer) || clazz2 == null) continue;
+				if(object2 == null || js.Boot.__instanceof(object2,ArrayBuffer) || clazz2 == null) continue;
 				var model = _g1.getModel(clazz2);
 				if(model != null) {
 					var _g21 = 0;
@@ -6065,7 +6007,7 @@ saturn_db_DefaultProvider.prototype = {
 		var $it0 = this.theBindingMap.keys();
 		while( $it0.hasNext() ) {
 			var classStr = $it0.next();
-			saturn_core_Util.debug(classStr);
+			saturn.core.Util.debug(classStr);
 			var clazz = Type.resolveClass(classStr);
 			if(clazz != null) this.modelClasses.push(this.getModel(clazz));
 		}
@@ -6080,7 +6022,7 @@ saturn_db_DefaultProvider.prototype = {
 				var this1 = $this.theBindingMap.get(className);
 				$r = this1.exists("model");
 				return $r;
-			}(this))) return new saturn_db_Model(this.theBindingMap.get(className),className); else return new saturn_db_Model(this.theBindingMap.get(className),className);
+			}(this))) return new saturn.db.Model(this.theBindingMap.get(className),className); else return new saturn.db.Model(this.theBindingMap.get(className),className);
 		} else return null;
 	}
 	,isModel: function(clazz) {
@@ -6105,7 +6047,7 @@ saturn_db_DefaultProvider.prototype = {
 		var syntheticInstanceAttributes = modelDef.getSynthenticFields();
 		var syntheticSet = null;
 		if(syntheticInstanceAttributes != null) {
-			syntheticSet = new haxe_ds_StringMap();
+			syntheticSet = new haxe.ds.StringMap();
 			var $it0 = syntheticInstanceAttributes.keys();
 			while( $it0.hasNext() ) {
 				var instanceName = $it0.next();
@@ -6114,7 +6056,7 @@ saturn_db_DefaultProvider.prototype = {
 				var parentIdColumn = fkRel.get("fk_field");
 				var childIdColumn = fkRel.get("field");
 				var value;
-				var _g = new haxe_ds_StringMap();
+				var _g = new haxe.ds.StringMap();
 				if(__map_reserved.childIdColumn != null) _g.setReserved("childIdColumn",childIdColumn); else _g.h["childIdColumn"] = childIdColumn;
 				var value1 = fkRel.get("fk_field");
 				_g.set("parentIdColumn",value1);
@@ -6124,7 +6066,7 @@ saturn_db_DefaultProvider.prototype = {
 				if(__map_reserved[instanceName] != null) syntheticSet.setReserved(instanceName,value); else syntheticSet.h[instanceName] = value;
 			}
 		}
-		var clazzToFieldToIds = new haxe_ds_StringMap();
+		var clazzToFieldToIds = new haxe.ds.StringMap();
 		var _g1 = 0;
 		while(_g1 < models.length) {
 			var model = models[_g1];
@@ -6155,7 +6097,7 @@ saturn_db_DefaultProvider.prototype = {
 								return $r;
 							}(this))) {
 								var key1 = lookupClazz;
-								var value3 = new haxe_ds_StringMap();
+								var value3 = new haxe.ds.StringMap();
 								if(__map_reserved[key1] != null) clazzToFieldToIds.setReserved(key1,value3); else clazzToFieldToIds.h[key1] = value3;
 							}
 							if(!(function($this) {
@@ -6171,7 +6113,7 @@ saturn_db_DefaultProvider.prototype = {
 								var this3;
 								var key3 = lookupClazz;
 								this3 = __map_reserved[key3] != null?clazzToFieldToIds.getReserved(key3):clazzToFieldToIds.h[key3];
-								var value4 = new haxe_ds_StringMap();
+								var value4 = new haxe.ds.StringMap();
 								this3.set(lookupField,value4);
 							}
 							var this4;
@@ -6185,7 +6127,7 @@ saturn_db_DefaultProvider.prototype = {
 				}
 			}
 		}
-		var batchFetch = new saturn_db_BatchFetch(function(obj,err) {
+		var batchFetch = new saturn.db.BatchFetch(function(obj,err) {
 			cb(err,obj);
 		});
 		var $it1 = clazzToFieldToIds.keys();
@@ -6316,7 +6258,7 @@ saturn_db_DefaultProvider.prototype = {
 	}
 	,attach: function(objs,refreshFields,cb) {
 		var _g = this;
-		var bf = new saturn_db_BatchFetch(function(obj,err) {
+		var bf = new saturn.db.BatchFetch(function(obj,err) {
 			cb(err);
 		});
 		bf.setProvider(this);
@@ -6394,7 +6336,7 @@ saturn_db_DefaultProvider.prototype = {
 		}
 	}
 	,getQuery: function() {
-		var query = new saturn_db_query_$lang_Query(this);
+		var query = new saturn.db.query_lang.Query(this);
 		return query;
 	}
 	,getProviderType: function() {
@@ -6427,13 +6369,13 @@ saturn_db_DefaultProvider.prototype = {
 		}); else run();
 	}
 	,uploadFile: function(contents,file_identifier,cb) {
-		if(file_identifier == null) bindings_NodeTemp.open("upload_file",function(err,info) {
+		if(file_identifier == null) bindings.NodeTemp.open("upload_file",function(err,info) {
 			if(err != null) cb(err,null); else {
 				var buffer = new Buffer(contents,"base64");
-				js_Node.require("fs").writeFile(info.path,buffer,function(err1) {
+				js.Node.require("fs").writeFile(info.path,buffer,function(err1) {
 					if(err1 != null) cb(err1,null); else {
-						var client = saturn_app_SaturnServer.getDefaultServer().getRedisClient();
-						var uuid = js_Node.require("node-uuid");
+						var client = saturn.app.SaturnServer.getDefaultServer().getRedisClient();
+						var uuid = js.Node.require("node-uuid");
 						var upload_key = "file_upload:" + uuid.v4();
 						client.set(upload_key,info.path);
 						cb(null,upload_key);
@@ -6441,11 +6383,11 @@ saturn_db_DefaultProvider.prototype = {
 				});
 			}
 		}); else {
-			var client1 = saturn_app_SaturnServer.getDefaultServer().getRedisClient();
+			var client1 = saturn.app.SaturnServer.getDefaultServer().getRedisClient();
 			client1.get(file_identifier,function(err2,filePath) {
 				if(err2 != null) cb(err2,null); else {
 					var decodedContents = new Buffer(contents,"base64");
-					js_Node.require("fs").appendFile(filePath,decodedContents,function(err3) {
+					js.Node.require("fs").appendFile(filePath,decodedContents,function(err3) {
 						cb(err3,file_identifier);
 					});
 				}
@@ -6453,25 +6395,24 @@ saturn_db_DefaultProvider.prototype = {
 		}
 		return null;
 	}
-	,__class__: saturn_db_DefaultProvider
+	,__class__: saturn.db.DefaultProvider
 };
-var saturn_db_NamedQueryCache = function() {
+saturn.db.NamedQueryCache = $hxClasses["saturn.db.NamedQueryCache"] = function() {
 };
-$hxClasses["saturn.db.NamedQueryCache"] = saturn_db_NamedQueryCache;
-saturn_db_NamedQueryCache.__name__ = ["saturn","db","NamedQueryCache"];
-saturn_db_NamedQueryCache.prototype = {
+saturn.db.NamedQueryCache.__name__ = ["saturn","db","NamedQueryCache"];
+saturn.db.NamedQueryCache.prototype = {
 	queryName: null
 	,queryParamSerial: null
 	,queryParams: null
 	,queryResults: null
-	,__class__: saturn_db_NamedQueryCache
+	,__class__: saturn.db.NamedQueryCache
 };
-var saturn_db_Model = function(model,name) {
+saturn.db.Model = $hxClasses["saturn.db.Model"] = function(model,name) {
 	this.customSearchFunctionPath = null;
 	this.theModel = model;
 	this.theName = name;
 	this.alias = "";
-	this.actionMap = new haxe_ds_StringMap();
+	this.actionMap = new haxe.ds.StringMap();
 	if(this.theModel.exists("indexes")) {
 		var i = 0;
 		var $it0 = (function($this) {
@@ -6494,7 +6435,7 @@ var saturn_db_Model = function(model,name) {
 	}
 	if(this.theModel.exists("provider_name")) {
 		var name1;
-		name1 = js_Boot.__cast(this.theModel.get("provider_name") , String);
+		name1 = js.Boot.__cast(this.theModel.get("provider_name") , String);
 		this.setProviderName(name1);
 	}
 	if(this.theModel.exists("programs")) {
@@ -6530,7 +6471,7 @@ var saturn_db_Model = function(model,name) {
 		}
 		if(__map_reserved.strip_id_prefix != null?options.existsReserved("strip_id_prefix"):options.h.hasOwnProperty("strip_id_prefix")) this.stripIdPrefix = __map_reserved.strip_id_prefix != null?options.getReserved("strip_id_prefix"):options.h["strip_id_prefix"];
 		if(__map_reserved.alias != null?options.existsReserved("alias"):options.h.hasOwnProperty("alias")) this.alias = __map_reserved.alias != null?options.getReserved("alias"):options.h["alias"];
-		if(__map_reserved.flags != null?options.existsReserved("flags"):options.h.hasOwnProperty("flags")) this.flags = __map_reserved.flags != null?options.getReserved("flags"):options.h["flags"]; else this.flags = new haxe_ds_StringMap();
+		if(__map_reserved.flags != null?options.existsReserved("flags"):options.h.hasOwnProperty("flags")) this.flags = __map_reserved.flags != null?options.getReserved("flags"):options.h["flags"]; else this.flags = new haxe.ds.StringMap();
 		if(__map_reserved["file.new.label"] != null?options.existsReserved("file.new.label"):options.h.hasOwnProperty("file.new.label")) this.file_new_label = __map_reserved["file.new.label"] != null?options.getReserved("file.new.label"):options.h["file.new.label"];
 		if(__map_reserved.auto_activate != null?options.existsReserved("auto_activate"):options.h.hasOwnProperty("auto_activate")) this.autoActivate = Std.parseInt(__map_reserved.auto_activate != null?options.getReserved("auto_activate"):options.h["auto_activate"]);
 		if(__map_reserved.actions != null?options.existsReserved("actions"):options.h.hasOwnProperty("actions")) {
@@ -6541,19 +6482,19 @@ var saturn_db_Model = function(model,name) {
 				var actionType = $it2.next();
 				var actions;
 				actions = __map_reserved[actionType] != null?actionTypeMap.getReserved(actionType):actionTypeMap.h[actionType];
-				var value2 = new haxe_ds_StringMap();
+				var value2 = new haxe.ds.StringMap();
 				this.actionMap.set(actionType,value2);
 				var $it3 = actions.keys();
 				while( $it3.hasNext() ) {
 					var actionName = $it3.next();
 					var actionDef;
 					actionDef = __map_reserved[actionName] != null?actions.getReserved(actionName):actions.h[actionName];
-					if(!(__map_reserved.user_suffix != null?actionDef.existsReserved("user_suffix"):actionDef.h.hasOwnProperty("user_suffix"))) throw new js__$Boot_HaxeError(new saturn_util_HaxeException(actionName + " action definition for " + this.getName() + " is missing user_suffix option"));
-					if(!(__map_reserved["function"] != null?actionDef.existsReserved("function"):actionDef.h.hasOwnProperty("function"))) throw new js__$Boot_HaxeError(new saturn_util_HaxeException(actionName + " action definition for " + this.getName() + " is missing function option"));
-					var action = new saturn_db_ModelAction(actionName,__map_reserved.user_suffix != null?actionDef.getReserved("user_suffix"):actionDef.h["user_suffix"],__map_reserved["function"] != null?actionDef.getReserved("function"):actionDef.h["function"],__map_reserved.icon != null?actionDef.getReserved("icon"):actionDef.h["icon"]);
+					if(!(__map_reserved.user_suffix != null?actionDef.existsReserved("user_suffix"):actionDef.h.hasOwnProperty("user_suffix"))) throw new js._Boot.HaxeError(new saturn.util.HaxeException(actionName + " action definition for " + this.getName() + " is missing user_suffix option"));
+					if(!(__map_reserved["function"] != null?actionDef.existsReserved("function"):actionDef.h.hasOwnProperty("function"))) throw new js._Boot.HaxeError(new saturn.util.HaxeException(actionName + " action definition for " + this.getName() + " is missing function option"));
+					var action = new saturn.db.ModelAction(actionName,__map_reserved.user_suffix != null?actionDef.getReserved("user_suffix"):actionDef.h["user_suffix"],__map_reserved["function"] != null?actionDef.getReserved("function"):actionDef.h["function"],__map_reserved.icon != null?actionDef.getReserved("icon"):actionDef.h["icon"]);
 					if(actionType == "search_bar") {
 						var clazz = Type.resolveClass(action.className);
-						if(clazz == null) throw new js__$Boot_HaxeError(new saturn_util_HaxeException(action.className + " does not exist for action " + actionName));
+						if(clazz == null) throw new js._Boot.HaxeError(new saturn.util.HaxeException(action.className + " does not exist for action " + actionName));
 						var instanceFields = Type.getInstanceFields(clazz);
 						var match = false;
 						var _g = 0;
@@ -6565,7 +6506,7 @@ var saturn_db_Model = function(model,name) {
 								break;
 							}
 						}
-						if(!match) throw new js__$Boot_HaxeError(new saturn_util_HaxeException(action.className + " does not have function " + action.functionName + " for action " + actionName));
+						if(!match) throw new js._Boot.HaxeError(new saturn.util.HaxeException(action.className + " does not have function " + action.functionName + " for action " + actionName));
 					}
 					var this4 = this.actionMap.get(actionType);
 					this4.set(actionName,action);
@@ -6573,19 +6514,19 @@ var saturn_db_Model = function(model,name) {
 			}
 		}
 	} else {
-		this.flags = new haxe_ds_StringMap();
-		var value3 = new haxe_ds_StringMap();
+		this.flags = new haxe.ds.StringMap();
+		var value3 = new haxe.ds.StringMap();
 		this.actionMap.set("searchBar",value3);
 	}
 	if(this.theModel.exists("search")) {
 		var fts = this.theModel.get("search");
-		this.ftsColumns = new haxe_ds_StringMap();
+		this.ftsColumns = new haxe.ds.StringMap();
 		var $it4 = fts.keys();
 		while( $it4.hasNext() ) {
 			var key = $it4.next();
 			var searchDef;
 			searchDef = __map_reserved[key] != null?fts.getReserved(key):fts.h[key];
-			var searchObj = new saturn_db_SearchDef();
+			var searchObj = new saturn.db.SearchDef();
 			if(searchDef != null) {
 				if(typeof(searchDef) == "boolean" && searchDef) this.ftsColumns.set(key,searchObj); else if(typeof(searchDef) == "string") searchObj.regex = new EReg(searchDef,""); else {
 					if(searchDef.exists("search_when")) {
@@ -6600,12 +6541,11 @@ var saturn_db_Model = function(model,name) {
 	}
 	if(this.alias == null || this.alias == "") this.alias = this.theName;
 };
-$hxClasses["saturn.db.Model"] = saturn_db_Model;
-saturn_db_Model.__name__ = ["saturn","db","Model"];
-saturn_db_Model.generateIDMap = function(objs) {
+saturn.db.Model.__name__ = ["saturn","db","Model"];
+saturn.db.Model.generateIDMap = function(objs) {
 	if(objs == null || objs.length == 0) return null; else {
-		var map = new haxe_ds_StringMap();
-		var model = saturn_core_Util.getProvider().getModel(Type.getClass(objs[0]));
+		var map = new haxe.ds.StringMap();
+		var model = saturn.core.Util.getProvider().getModel(Type.getClass(objs[0]));
 		var firstKey = model.getFirstKey();
 		var priKey = model.getPrimaryKey();
 		var _g = 0;
@@ -6619,20 +6559,20 @@ saturn_db_Model.generateIDMap = function(objs) {
 		return map;
 	}
 };
-saturn_db_Model.generateUniqueList = function(objs) {
+saturn.db.Model.generateUniqueList = function(objs) {
 	if(objs == null || objs.length == 0) return null; else {
-		var model = saturn_core_Util.getProvider().getModel(Type.getClass(objs[0]));
+		var model = saturn.core.Util.getProvider().getModel(Type.getClass(objs[0]));
 		var firstKey = model.getFirstKey();
-		return saturn_db_Model.generateUniqueListWithField(objs,firstKey);
+		return saturn.db.Model.generateUniqueListWithField(objs,firstKey);
 	}
 };
-saturn_db_Model.generateUniqueListWithField = function(objs,field) {
-	var set = new haxe_ds_StringMap();
+saturn.db.Model.generateUniqueListWithField = function(objs,field) {
+	var set = new haxe.ds.StringMap();
 	var _g = 0;
 	while(_g < objs.length) {
 		var obj = objs[_g];
 		++_g;
-		var key = saturn_db_Model.extractField(obj,field);
+		var key = saturn.db.Model.extractField(obj,field);
 		if(__map_reserved[key] != null) set.setReserved(key,null); else set.h[key] = null;
 	}
 	var ids = [];
@@ -6643,16 +6583,16 @@ saturn_db_Model.generateUniqueListWithField = function(objs,field) {
 	}
 	return ids;
 };
-saturn_db_Model.extractField = function(obj,field) {
+saturn.db.Model.extractField = function(obj,field) {
 	if(field.indexOf(".") < 0) return Reflect.field(obj,field); else {
 		var a = field.indexOf(".") - 1;
 		var nextField = field.substring(0,a + 1);
 		var nextObj = Reflect.field(obj,nextField);
 		var remaining = field.substring(a + 2,field.length);
-		return saturn_db_Model.extractField(nextObj,remaining);
+		return saturn.db.Model.extractField(nextObj,remaining);
 	}
 };
-saturn_db_Model.setField = function(obj,field,value,newTerminal) {
+saturn.db.Model.setField = function(obj,field,value,newTerminal) {
 	if(newTerminal == null) newTerminal = false;
 	if(field.indexOf(".") < 0) obj[field] = value; else {
 		var a = field.indexOf(".") - 1;
@@ -6662,7 +6602,7 @@ saturn_db_Model.setField = function(obj,field,value,newTerminal) {
 		if(nextObj == null || newTerminal && remaining.indexOf(".") < 0) {
 			var clazz = Type.getClass(obj);
 			if(clazz != null) {
-				var model = saturn_core_Util.getProvider().getModel(clazz);
+				var model = saturn.core.Util.getProvider().getModel(clazz);
 				var synthDef;
 				var this1 = model.getSynthenticFields();
 				synthDef = this1.get(nextField);
@@ -6674,30 +6614,30 @@ saturn_db_Model.setField = function(obj,field,value,newTerminal) {
 				}
 			}
 		}
-		saturn_db_Model.setField(nextObj,remaining,value);
+		saturn.db.Model.setField(nextObj,remaining,value);
 	}
 };
-saturn_db_Model.getModel = function(obj) {
-	return saturn_core_Util.getProvider().getModel(Type.getClass(obj));
+saturn.db.Model.getModel = function(obj) {
+	return saturn.core.Util.getProvider().getModel(Type.getClass(obj));
 };
-saturn_db_Model.generateMap = function(objs) {
-	var model = saturn_db_Model.getModel(objs[0]);
+saturn.db.Model.generateMap = function(objs) {
+	var model = saturn.db.Model.getModel(objs[0]);
 	var firstKey = model.getFirstKey();
-	return saturn_db_Model.generateMapWithField(objs,firstKey);
+	return saturn.db.Model.generateMapWithField(objs,firstKey);
 };
-saturn_db_Model.generateMapWithField = function(objs,field) {
-	var map = new haxe_ds_StringMap();
+saturn.db.Model.generateMapWithField = function(objs,field) {
+	var map = new haxe.ds.StringMap();
 	var _g = 0;
 	while(_g < objs.length) {
 		var obj = objs[_g];
 		++_g;
-		var key = saturn_db_Model.extractField(obj,field);
+		var key = saturn.db.Model.extractField(obj,field);
 		var value = obj;
 		map.set(key,value);
 	}
 	return map;
 };
-saturn_db_Model.prototype = {
+saturn.db.Model.prototype = {
 	theModel: null
 	,theName: null
 	,busSingleColKey: null
@@ -6744,7 +6684,7 @@ saturn_db_Model.prototype = {
 		this.providerName = name;
 	}
 	,getActions: function(actionType) {
-		if(this.actionMap.exists(actionType)) return this.actionMap.get(actionType); else return new haxe_ds_StringMap();
+		if(this.actionMap.exists(actionType)) return this.actionMap.get(actionType); else return new haxe.ds.StringMap();
 	}
 	,getAutoActivateLevel: function() {
 		return this.autoActivate;
@@ -6771,7 +6711,7 @@ saturn_db_Model.prototype = {
 		return this.theModel.get("options");
 	}
 	,compileRegEx: function(regexs) {
-		var cregexs = new haxe_ds_StringMap();
+		var cregexs = new haxe.ds.StringMap();
 		var $it0 = regexs.keys();
 		while( $it0.hasNext() ) {
 			var key = $it0.next();
@@ -6923,7 +6863,7 @@ saturn_db_Model.prototype = {
 	,getUserFieldDefinitions: function() {
 		var fields = [];
 		var defaults = null;
-		if(this.theModel.exists("defaults")) defaults = this.theModel.get("defaults"); else defaults = new haxe_ds_StringMap();
+		if(this.theModel.exists("defaults")) defaults = this.theModel.get("defaults"); else defaults = new haxe.ds.StringMap();
 		var model = this.theModel.get("model");
 		if(model == null) return null;
 		var $it0 = model.keys();
@@ -7162,7 +7102,7 @@ saturn_db_Model.prototype = {
 	,setColumns: function(columns) {
 		var this1 = this.theModel.get("statements");
 		this1.set("COLUMNS",columns);
-		var colSet = new haxe_ds_StringMap();
+		var colSet = new haxe.ds.StringMap();
 		var _g = 0;
 		while(_g < columns.length) {
 			var column = columns[_g];
@@ -7199,28 +7139,26 @@ saturn_db_Model.prototype = {
 	,getPublicConstraintField: function() {
 		return this.publicConstraintField;
 	}
-	,__class__: saturn_db_Model
+	,__class__: saturn.db.Model
 };
-var saturn_db_SearchDef = function() {
+saturn.db.SearchDef = $hxClasses["saturn.db.SearchDef"] = function() {
 	this.replaceWith = null;
 	this.regex = null;
 };
-$hxClasses["saturn.db.SearchDef"] = saturn_db_SearchDef;
-saturn_db_SearchDef.__name__ = ["saturn","db","SearchDef"];
-saturn_db_SearchDef.prototype = {
+saturn.db.SearchDef.__name__ = ["saturn","db","SearchDef"];
+saturn.db.SearchDef.prototype = {
 	regex: null
 	,replaceWith: null
-	,__class__: saturn_db_SearchDef
+	,__class__: saturn.db.SearchDef
 };
-var saturn_db_ModelAction = function(name,userSuffix,qName,icon) {
+saturn.db.ModelAction = $hxClasses["saturn.db.ModelAction"] = function(name,userSuffix,qName,icon) {
 	this.name = name;
 	this.userSuffix = userSuffix;
 	this.setQualifiedName(qName);
 	this.icon = icon;
 };
-$hxClasses["saturn.db.ModelAction"] = saturn_db_ModelAction;
-saturn_db_ModelAction.__name__ = ["saturn","db","ModelAction"];
-saturn_db_ModelAction.prototype = {
+saturn.db.ModelAction.__name__ = ["saturn","db","ModelAction"];
+saturn.db.ModelAction.prototype = {
 	name: null
 	,userSuffix: null
 	,functionName: null
@@ -7234,46 +7172,46 @@ saturn_db_ModelAction.prototype = {
 	,run: function(obj,cb) {
 		Reflect.callMethod(obj,Reflect.field(obj,this.functionName),[cb]);
 	}
-	,__class__: saturn_db_ModelAction
+	,__class__: saturn.db.ModelAction
 };
-var saturn_db_NodePool = function() { };
-$hxClasses["saturn.db.NodePool"] = saturn_db_NodePool;
-saturn_db_NodePool.__name__ = ["saturn","db","NodePool"];
-saturn_db_NodePool.generatePool = function(name,max,min,idleTimeout,log,createCb,destroyCb) {
-	var genericPool = js_Node.require("generic-pool");
+saturn.db.NodePool = $hxClasses["saturn.db.NodePool"] = function() { };
+saturn.db.NodePool.__name__ = ["saturn","db","NodePool"];
+saturn.db.NodePool.generatePool = function(name,max,min,idleTimeout,log,createCb,destroyCb) {
+	var genericPool = js.Node.require("generic-pool");
 	var d = { 'name' : name, 'create' : createCb, 'destroy' : destroyCb, 'max' : max, 'min' : min, 'idleTimeoutMillis' : idleTimeout, 'log' : log};
 	var pool = genericPool.Pool(d);
 	return pool;
 };
-var saturn_db_Pool = function() { };
-$hxClasses["saturn.db.Pool"] = saturn_db_Pool;
-saturn_db_Pool.__name__ = ["saturn","db","Pool"];
-saturn_db_Pool.prototype = {
+saturn.db.Pool = $hxClasses["saturn.db.Pool"] = function() { };
+saturn.db.Pool.__name__ = ["saturn","db","Pool"];
+saturn.db.Pool.prototype = {
 	acquire: null
 	,release: null
 	,drain: null
 	,destroyAllNow: null
-	,__class__: saturn_db_Pool
+	,__class__: saturn.db.Pool
 };
-var saturn_db_mapping_templates_DefaultMapping = function() {
+if(!saturn.db.mapping) saturn.db.mapping = {};
+if(!saturn.db.mapping.templates) saturn.db.mapping.templates = {};
+saturn.db.mapping.templates.DefaultMapping = $hxClasses["saturn.db.mapping.templates.DefaultMapping"] = function() {
 	this.buildModels();
 };
-$hxClasses["saturn.db.mapping.templates.DefaultMapping"] = saturn_db_mapping_templates_DefaultMapping;
-saturn_db_mapping_templates_DefaultMapping.__name__ = ["saturn","db","mapping","templates","DefaultMapping"];
-saturn_db_mapping_templates_DefaultMapping.prototype = {
+saturn.db.mapping.templates.DefaultMapping.__name__ = ["saturn","db","mapping","templates","DefaultMapping"];
+saturn.db.mapping.templates.DefaultMapping.prototype = {
 	models: null
 	,buildModels: function() {
-		this.models = new haxe_ds_StringMap();
+		this.models = new haxe.ds.StringMap();
 	}
-	,__class__: saturn_db_mapping_templates_DefaultMapping
+	,__class__: saturn.db.mapping.templates.DefaultMapping
 };
-var saturn_db_provider_GenericRDBMSProvider = function(models,config,autoClose) {
+if(!saturn.db.provider) saturn.db.provider = {};
+saturn.db.provider.GenericRDBMSProvider = $hxClasses["saturn.db.provider.GenericRDBMSProvider"] = function(models,config,autoClose) {
 	this.modelsToProcess = 0;
 	this.theConnection = null;
-	this.debug = (js_Node.require("debug"))("saturn:sql");
-	saturn_db_DefaultProvider.call(this,models,config,autoClose);
+	this.debug = (js.Node.require("debug"))("saturn:sql");
+	saturn.db.DefaultProvider.call(this,models,config,autoClose);
 	this.config = config;
-	this.user = new saturn_core_User();
+	this.user = new saturn.core.User();
 	this.user.username = config.username;
 	this.user.password = config.password;
 	var $it0 = this.namedQueryHooks.keys();
@@ -7281,25 +7219,24 @@ var saturn_db_provider_GenericRDBMSProvider = function(models,config,autoClose) 
 		var hook = $it0.next();
 		this.debug("Installed hook: " + hook + "/" + Std.string(this.namedQueryHooks.get(hook)));
 	}
-	this.debug("Platform: " + js_Node.process.platform);
+	this.debug("Platform: " + js.Node.process.platform);
 	this.debug("Platform key: " + this.platform);
 };
-$hxClasses["saturn.db.provider.GenericRDBMSProvider"] = saturn_db_provider_GenericRDBMSProvider;
-saturn_db_provider_GenericRDBMSProvider.__name__ = ["saturn","db","provider","GenericRDBMSProvider"];
-saturn_db_provider_GenericRDBMSProvider.__super__ = saturn_db_DefaultProvider;
-saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultProvider.prototype,{
+saturn.db.provider.GenericRDBMSProvider.__name__ = ["saturn","db","provider","GenericRDBMSProvider"];
+saturn.db.provider.GenericRDBMSProvider.__super__ = saturn.db.DefaultProvider;
+saturn.db.provider.GenericRDBMSProvider.prototype = $extend(saturn.db.DefaultProvider.prototype,{
 	debug: null
 	,theConnection: null
 	,modelsToProcess: null
 	,setPlatform: function() {
-		if(js_Node.process.platform == "win32") this.platform = "windows"; else this.platform = js_Node.process.platform;
+		if(js.Node.process.platform == "win32") this.platform = "windows"; else this.platform = js.Node.process.platform;
 	}
 	,setUser: function(user) {
 		this.debug("User called");
-		saturn_db_DefaultProvider.prototype.setUser.call(this,user);
+		saturn.db.DefaultProvider.prototype.setUser.call(this,user);
 	}
 	,generatedLinkedClone: function() {
-		var provider = saturn_db_DefaultProvider.prototype.generatedLinkedClone.call(this);
+		var provider = saturn.db.DefaultProvider.prototype.generatedLinkedClone.call(this);
 		provider.config = this.config;
 		provider.debug = this.debug;
 		provider.modelsToProcess = this.modelsToProcess;
@@ -7413,7 +7350,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 	}
 	,_getByIds: function(ids,clazz,callBack) {
 		var _g = this;
-		if(clazz == saturn_core_domain_FileProxy) {
+		if(clazz == saturn.core.domain.FileProxy) {
 			this.handleFileRequests(ids,clazz,callBack);
 			return;
 		}
@@ -7444,9 +7381,9 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						_g.closeConnection(connection);
 					});
 				} catch( e ) {
-					if (e instanceof js__$Boot_HaxeError) e = e.val;
+					if (e instanceof js._Boot.HaxeError) e = e.val;
 					_g.closeConnection(connection);
-					saturn_core_Util.debug(e);
+					saturn.core.Util.debug(e);
 					callBack(null,e);
 				}
 			}
@@ -7471,9 +7408,9 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						_g.closeConnection(connection);
 					});
 				} catch( e ) {
-					if (e instanceof js__$Boot_HaxeError) e = e.val;
+					if (e instanceof js._Boot.HaxeError) e = e.val;
 					_g.closeConnection(connection);
-					saturn_core_Util.debug(e);
+					saturn.core.Util.debug(e);
 					callBack(null,e);
 				}
 			}
@@ -7481,7 +7418,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 	}
 	,_getByValues: function(values,clazz,field,callBack) {
 		var _g = this;
-		if(clazz == saturn_core_domain_FileProxy) {
+		if(clazz == saturn.core.domain.FileProxy) {
 			this.handleFileRequests(values,clazz,callBack);
 			return;
 		}
@@ -7507,9 +7444,9 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						_g.closeConnection(connection);
 					});
 				} catch( e ) {
-					if (e instanceof js__$Boot_HaxeError) e = e.val;
+					if (e instanceof js._Boot.HaxeError) e = e.val;
 					_g.closeConnection(connection);
-					saturn_core_Util.debug(e);
+					saturn.core.Util.debug(e);
 					callBack(null,e);
 				}
 			}
@@ -7540,7 +7477,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 	}
 	,_getByPkeys: function(ids,clazz,callBack) {
 		var _g = this;
-		if(clazz == saturn_core_domain_FileProxy) {
+		if(clazz == saturn.core.domain.FileProxy) {
 			this.handleFileRequests(ids,clazz,callBack);
 			return;
 		}
@@ -7562,7 +7499,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						_g.closeConnection(connection);
 					});
 				} catch( e ) {
-					if (e instanceof js__$Boot_HaxeError) e = e.val;
+					if (e instanceof js._Boot.HaxeError) e = e.val;
 					_g.closeConnection(connection);
 					callBack(null,e);
 				}
@@ -7573,7 +7510,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 		var _g = this;
 		this.getConnection(this.config,function(err,connection) {
 			if(err != null) cb(null,err); else try {
-				var visitor = new saturn_db_query_$lang_SQLVisitor(_g);
+				var visitor = new saturn.db.query_lang.SQLVisitor(_g);
 				var sql = visitor.translate(query);
 				_g.debug(sql);
 				_g.debug(visitor.getValues());
@@ -7585,7 +7522,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 					_g.closeConnection(connection);
 				});
 			} catch( e ) {
-				if (e instanceof js__$Boot_HaxeError) e = e.val;
+				if (e instanceof js._Boot.HaxeError) e = e.val;
 				_g.closeConnection(connection);
 				_g.debug("Error !!!!!!!!!!!!!" + Std.string(e.stack));
 				cb(null,e);
@@ -7595,7 +7532,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 	,_getByIdStartsWith: function(id,field,clazz,limit,callBack) {
 		var _g = this;
 		var model = this.getModel(clazz);
-		this.debug("Provider class" + Type.getClassName(js_Boot.getClass(this)));
+		this.debug("Provider class" + Type.getClassName(js.Boot.getClass(this)));
 		this.debug("Provider: " + model.getProviderName());
 		var keyCol = null;
 		if(field == null) keyCol = model.getFirstKey_rdbms(); else if(model.isRDBMSField(field)) keyCol = field;
@@ -7630,8 +7567,8 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						_g.closeConnection(connection);
 					});
 				} catch( e ) {
-					if (e instanceof js__$Boot_HaxeError) e = e.val;
-					saturn_core_Util.debug(e);
+					if (e instanceof js._Boot.HaxeError) e = e.val;
+					saturn.core.Util.debug(e);
 					_g.closeConnection(connection);
 					callBack(null,e);
 				}
@@ -7738,7 +7675,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 							_g.closeConnection(connection);
 						});
 					} catch( e ) {
-						if (e instanceof js__$Boot_HaxeError) e = e.val;
+						if (e instanceof js._Boot.HaxeError) e = e.val;
 						_g.closeConnection(connection);
 						cb(null,e);
 					}
@@ -7769,8 +7706,8 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 		});
 	}
 	,cloneConfig: function() {
-		var cloneData = haxe_Serializer.run(this.config);
-		var unserObj = haxe_Unserializer.run(cloneData);
+		var cloneData = haxe.Serializer.run(this.config);
+		var unserObj = haxe.Unserializer.run(cloneData);
 		return unserObj;
 	}
 	,_insertRecursive: function(attributeMaps,model,cb,connection) {
@@ -7833,7 +7770,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 				} else _g._insertRecursive(attributeMaps,model,cb,connection);
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
+			if (e instanceof js._Boot.HaxeError) e = e.val;
 			this.closeConnection(connection);
 			var error1 = { message : StringTools.replace(Std.string(e),"\n",""), source : keyVal};
 			cb(error1);
@@ -7872,7 +7809,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 		try {
 			connection.execute(sql,valList,function(err,results) {
 				if(err != null) {
-					saturn_core_Util.debug("Error: " + err);
+					saturn.core.Util.debug("Error: " + err);
 					cb(err);
 					_g.closeConnection(connection);
 				} else if(attributeMaps.length == 0) {
@@ -7881,7 +7818,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 				} else _g._updateRecursive(attributeMaps,model,cb,connection);
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
+			if (e instanceof js._Boot.HaxeError) e = e.val;
 			this.closeConnection(connection);
 			cb(e);
 		}
@@ -7906,20 +7843,20 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 			if(err != null) cb(err); else try {
 				connection.execute(sql,pkeys,function(err1,results) {
 					if(err1 != null) {
-						saturn_core_Util.debug("Error: " + err1);
+						saturn.core.Util.debug("Error: " + err1);
 						cb(err1);
 						_g.closeConnection(connection);
 					} else cb(null);
 				});
 			} catch( e ) {
-				if (e instanceof js__$Boot_HaxeError) e = e.val;
+				if (e instanceof js._Boot.HaxeError) e = e.val;
 				_g.closeConnection(connection);
 				cb(e);
 			}
 		});
 	}
 	,postConfigureModels: function() {
-		saturn_db_DefaultProvider.prototype.postConfigureModels.call(this);
+		saturn.db.DefaultProvider.prototype.postConfigureModels.call(this);
 	}
 	,parseObjectList: function(data) {
 		return null;
@@ -7977,10 +7914,10 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 				}
 				if(_g.platform == "windows") value = StringTools.replace(value,"/","\\");
 				_g.debug("Unlinking path " + value);
-				js_Node.require("fs").realpath(value,function(err,abspath) {
+				js.Node.require("fs").realpath(value,function(err,abspath) {
 					if(err != null) {
 						_g.debug("File realpath error: " + err);
-						callBack(null,saturn_app_SaturnServer.getStandardUserInputError());
+						callBack(null,saturn.app.SaturnServer.getStandardUserInputError());
 					} else {
 						var match = false;
 						var $it1 = _g.regexs.keys();
@@ -7993,10 +7930,10 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 						}
 						if(match) {
 							_g.debug("Reading path: " + abspath);
-							js_Node.require("fs").readFile(abspath,null,function(err1,content) {
+							js.Node.require("fs").readFile(abspath,null,function(err1,content) {
 								if(err1 != null) {
 									_g.debug("File read error: " + err1 + "/" + abspath);
-									callBack(null,saturn_app_SaturnServer.getStandardUserInputError());
+									callBack(null,saturn.app.SaturnServer.getStandardUserInputError());
 								} else {
 									var match1 = false;
 									var $it2 = _g.regexs.keys();
@@ -8014,7 +7951,7 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 							});
 						} else {
 							_g.debug("File read error: " + err);
-							callBack(null,saturn_app_SaturnServer.getStandardUserInputError());
+							callBack(null,saturn.app.SaturnServer.getStandardUserInputError());
 						}
 					}
 				});
@@ -8059,15 +7996,14 @@ saturn_db_provider_GenericRDBMSProvider.prototype = $extend(saturn_db_DefaultPro
 		}
 		return sql;
 	}
-	,__class__: saturn_db_provider_GenericRDBMSProvider
+	,__class__: saturn.db.provider.GenericRDBMSProvider
 });
-var saturn_db_provider_MySQLProvider = function(models,config,autoClose) {
-	saturn_db_provider_GenericRDBMSProvider.call(this,models,config,autoClose);
+saturn.db.provider.MySQLProvider = $hxClasses["saturn.db.provider.MySQLProvider"] = function(models,config,autoClose) {
+	saturn.db.provider.GenericRDBMSProvider.call(this,models,config,autoClose);
 };
-$hxClasses["saturn.db.provider.MySQLProvider"] = saturn_db_provider_MySQLProvider;
-saturn_db_provider_MySQLProvider.__name__ = ["saturn","db","provider","MySQLProvider"];
-saturn_db_provider_MySQLProvider.__super__ = saturn_db_provider_GenericRDBMSProvider;
-saturn_db_provider_MySQLProvider.prototype = $extend(saturn_db_provider_GenericRDBMSProvider.prototype,{
+saturn.db.provider.MySQLProvider.__name__ = ["saturn","db","provider","MySQLProvider"];
+saturn.db.provider.MySQLProvider.__super__ = saturn.db.provider.GenericRDBMSProvider;
+saturn.db.provider.MySQLProvider.prototype = $extend(saturn.db.provider.GenericRDBMSProvider.prototype,{
 	getColumns: function(connection,schemaName,tableName,cb) {
 		var _g = this;
 		connection.query("DESCRIBE " + schemaName + "." + tableName,[],function(err,rows) {
@@ -8111,7 +8047,7 @@ saturn_db_provider_MySQLProvider.prototype = $extend(saturn_db_provider_GenericR
 		var _g = this;
 		this.debug("Obtaining MySQL theDB");
 		try {
-			var mysql = js_Node.require("mysql2");
+			var mysql = js.Node.require("mysql2");
 			var connection = mysql.createConnection({ host : this.config.host, user : this.user.username, password : this.user.password, database : this.config.database});
 			this.debug("Connecting to " + Std.string(this.config.database) + " as " + this.user.username + " with password " + this.user.password + " on host " + Std.string(this.config.host));
 			connection.on("connect",function(connect) {
@@ -8127,15 +8063,15 @@ saturn_db_provider_MySQLProvider.prototype = $extend(saturn_db_provider_GenericR
 			connection.on("error",function(err) {
 				_g.debug("Error connecting " + Std.string(err));
 				_g.debug("Waiting to attempt reconnect");
-				if(_g.config.auto_reconnect) haxe_Timer.delay(function() {
+				if(_g.config.auto_reconnect) haxe.Timer.delay(function() {
 					_g.debug("Reconnecting");
 					_g._getConnection(function(err1,conn) {
-						if(err1 != null) throw new js__$Boot_HaxeError("Unable to reconnect MySQL session"); else _g.theConnection = conn;
+						if(err1 != null) throw new js._Boot.HaxeError("Unable to reconnect MySQL session"); else _g.theConnection = conn;
 					});
 				},500);
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
+			if (e instanceof js._Boot.HaxeError) e = e.val;
 			this.debug("Error" + Std.string(e));
 			cb(e,null);
 			return;
@@ -8144,26 +8080,24 @@ saturn_db_provider_MySQLProvider.prototype = $extend(saturn_db_provider_GenericR
 	,dbSpecificParamPlaceholder: function(i) {
 		return "?";
 	}
-	,__class__: saturn_db_provider_MySQLProvider
+	,__class__: saturn.db.provider.MySQLProvider
 });
-var saturn_db_provider_OracleProvider = function(models,config,autoClose) {
-	saturn_db_provider_GenericRDBMSProvider.call(this,models,config,autoClose);
+saturn.db.provider.OracleProvider = $hxClasses["saturn.db.provider.OracleProvider"] = function(models,config,autoClose) {
+	saturn.db.provider.GenericRDBMSProvider.call(this,models,config,autoClose);
 };
-$hxClasses["saturn.db.provider.OracleProvider"] = saturn_db_provider_OracleProvider;
-saturn_db_provider_OracleProvider.__name__ = ["saturn","db","provider","OracleProvider"];
-saturn_db_provider_OracleProvider.__super__ = saturn_db_provider_GenericRDBMSProvider;
-saturn_db_provider_OracleProvider.prototype = $extend(saturn_db_provider_GenericRDBMSProvider.prototype,{
+saturn.db.provider.OracleProvider.__name__ = ["saturn","db","provider","OracleProvider"];
+saturn.db.provider.OracleProvider.__super__ = saturn.db.provider.GenericRDBMSProvider;
+saturn.db.provider.OracleProvider.prototype = $extend(saturn.db.provider.GenericRDBMSProvider.prototype,{
 	_getConnection: function(cb) {
 	}
-	,__class__: saturn_db_provider_OracleProvider
+	,__class__: saturn.db.provider.OracleProvider
 });
-var saturn_db_provider_PostgreSQLProvider = function(models,config,autoClose) {
-	saturn_db_provider_GenericRDBMSProvider.call(this,models,config,autoClose);
+saturn.db.provider.PostgreSQLProvider = $hxClasses["saturn.db.provider.PostgreSQLProvider"] = function(models,config,autoClose) {
+	saturn.db.provider.GenericRDBMSProvider.call(this,models,config,autoClose);
 };
-$hxClasses["saturn.db.provider.PostgreSQLProvider"] = saturn_db_provider_PostgreSQLProvider;
-saturn_db_provider_PostgreSQLProvider.__name__ = ["saturn","db","provider","PostgreSQLProvider"];
-saturn_db_provider_PostgreSQLProvider.__super__ = saturn_db_provider_GenericRDBMSProvider;
-saturn_db_provider_PostgreSQLProvider.prototype = $extend(saturn_db_provider_GenericRDBMSProvider.prototype,{
+saturn.db.provider.PostgreSQLProvider.__name__ = ["saturn","db","provider","PostgreSQLProvider"];
+saturn.db.provider.PostgreSQLProvider.__super__ = saturn.db.provider.GenericRDBMSProvider;
+saturn.db.provider.PostgreSQLProvider.prototype = $extend(saturn.db.provider.GenericRDBMSProvider.prototype,{
 	getProviderType: function() {
 		return "PGSQL";
 	}
@@ -8194,7 +8128,7 @@ saturn_db_provider_PostgreSQLProvider.prototype = $extend(saturn_db_provider_Gen
 	,_getConnection: function(cb) {
 		var _g = this;
 		var conString = "postgres://" + this.user.username + ":" + this.user.password + "@" + Std.string(this.config.host) + "/" + Std.string(this.config.database);
-		var pg = js_Node.require("pg");
+		var pg = js.Node.require("pg");
 		pg.connect(conString,function(err,client) {
 			if(err != null) {
 				_g.debug("Error connecting to PostgreSQL");
@@ -8209,15 +8143,14 @@ saturn_db_provider_PostgreSQLProvider.prototype = $extend(saturn_db_provider_Gen
 			}
 		});
 	}
-	,__class__: saturn_db_provider_PostgreSQLProvider
+	,__class__: saturn.db.provider.PostgreSQLProvider
 });
-var saturn_db_provider_SQLiteProvider = function(models,config,autoClose) {
-	saturn_db_provider_GenericRDBMSProvider.call(this,models,config,autoClose);
+saturn.db.provider.SQLiteProvider = $hxClasses["saturn.db.provider.SQLiteProvider"] = function(models,config,autoClose) {
+	saturn.db.provider.GenericRDBMSProvider.call(this,models,config,autoClose);
 };
-$hxClasses["saturn.db.provider.SQLiteProvider"] = saturn_db_provider_SQLiteProvider;
-saturn_db_provider_SQLiteProvider.__name__ = ["saturn","db","provider","SQLiteProvider"];
-saturn_db_provider_SQLiteProvider.__super__ = saturn_db_provider_GenericRDBMSProvider;
-saturn_db_provider_SQLiteProvider.prototype = $extend(saturn_db_provider_GenericRDBMSProvider.prototype,{
+saturn.db.provider.SQLiteProvider.__name__ = ["saturn","db","provider","SQLiteProvider"];
+saturn.db.provider.SQLiteProvider.__super__ = saturn.db.provider.GenericRDBMSProvider;
+saturn.db.provider.SQLiteProvider.prototype = $extend(saturn.db.provider.GenericRDBMSProvider.prototype,{
 	getProviderType: function() {
 		return "SQLITE";
 	}
@@ -8252,7 +8185,7 @@ saturn_db_provider_SQLiteProvider.prototype = $extend(saturn_db_provider_Generic
 			conn.execute = conn.all;
 			cb(null,conn);
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
+			if (e instanceof js._Boot.HaxeError) e = e.val;
 			this.debug("Error" + Std.string(e));
 			cb(e,null);
 		}
@@ -8263,13 +8196,13 @@ saturn_db_provider_SQLiteProvider.prototype = $extend(saturn_db_provider_Generic
 	,generateLimitClause: function(limit) {
 		return " limit " + (limit | 0);
 	}
-	,__class__: saturn_db_provider_SQLiteProvider
+	,__class__: saturn.db.provider.SQLiteProvider
 });
-var saturn_db_provider_hooks_ExternalJsonHook = function() { };
-$hxClasses["saturn.db.provider.hooks.ExternalJsonHook"] = saturn_db_provider_hooks_ExternalJsonHook;
-saturn_db_provider_hooks_ExternalJsonHook.__name__ = ["saturn","db","provider","hooks","ExternalJsonHook"];
-saturn_db_provider_hooks_ExternalJsonHook.run = function(query,params,clazz,cb,hookConfig) {
-	saturn_core_Util.debug("Running external command");
+if(!saturn.db.provider.hooks) saturn.db.provider.hooks = {};
+saturn.db.provider.hooks.ExternalJsonHook = $hxClasses["saturn.db.provider.hooks.ExternalJsonHook"] = function() { };
+saturn.db.provider.hooks.ExternalJsonHook.__name__ = ["saturn","db","provider","hooks","ExternalJsonHook"];
+saturn.db.provider.hooks.ExternalJsonHook.run = function(query,params,clazz,cb,hookConfig) {
+	saturn.core.Util.debug("Running external command");
 	if(hookConfig == null) {
 		cb(null,"Hook configuration is missing");
 		return;
@@ -8290,42 +8223,42 @@ saturn_db_provider_hooks_ExternalJsonHook.run = function(query,params,clazz,cb,h
 		}
 	}
 	var config = params[0];
-	bindings_NodeTemp.open("input_json",function(err,fh_input) {
+	bindings.NodeTemp.open("input_json",function(err,fh_input) {
 		if(err != null) {
-			saturn_core_Util.debug("Error generating temporary input file name");
+			saturn.core.Util.debug("Error generating temporary input file name");
 			cb(null,err);
 		} else {
 			var run = function() {
 				var inputJsonStr = JSON.stringify(config);
-				saturn_core_Util.debug(inputJsonStr);
-				js_Node.require("fs").writeFileSync(fh_input.path,inputJsonStr);
-				bindings_NodeTemp.open("output_json",function(err1,fh_output) {
+				saturn.core.Util.debug(inputJsonStr);
+				js.Node.require("fs").writeFileSync(fh_input.path,inputJsonStr);
+				bindings.NodeTemp.open("output_json",function(err1,fh_output) {
 					if(err1 != null) {
-						saturn_core_Util.debug("Error generating temporary output file name");
+						saturn.core.Util.debug("Error generating temporary output file name");
 						cb(null,err1);
 					} else {
 						progArguments.push(fh_input.path);
 						progArguments.push(fh_output.path);
-						saturn_core_Util.inspect(progArguments);
-						saturn_core_Util.print(program);
-						var p = js_Node.require("child_process").spawn(program,progArguments);
+						saturn.core.Util.inspect(progArguments);
+						saturn.core.Util.print(program);
+						var p = js.Node.require("child_process").spawn(program,progArguments);
 						p.stderr.on("data",function(data) {
-							saturn_core_Util.debug(data.toString());
+							saturn.core.Util.debug(data.toString());
 						});
 						p.stdout.on("data",function(data1) {
-							saturn_core_Util.debug(data1.toString());
+							saturn.core.Util.debug(data1.toString());
 						});
 						p.on("close",function(retVal) {
 							if(retVal == "0") {
-								var jsonStr = js_Node.require("fs").readFileSync(fh_output.path,{ encoding : "utf8"});
-								js_Node.require("fs").unlinkSync(fh_output.path);
-								js_Node.require("fs").unlinkSync(fh_input.path);
+								var jsonStr = js.Node.require("fs").readFileSync(fh_output.path,{ encoding : "utf8"});
+								js.Node.require("fs").unlinkSync(fh_output.path);
+								js.Node.require("fs").unlinkSync(fh_input.path);
 								var jsonObj = JSON.parse(jsonStr);
 								var error = null;
 								if(Object.prototype.hasOwnProperty.call(jsonObj,"error")) error = Reflect.field(jsonObj,"error");
 								cb([jsonObj],error);
 							} else {
-								saturn_core_Util.debug("External process has failed");
+								saturn.core.Util.debug("External process has failed");
 								cb(null,"External process returned a non-zero exit status");
 							}
 						});
@@ -8338,8 +8271,8 @@ saturn_db_provider_hooks_ExternalJsonHook.run = function(query,params,clazz,cb,h
 				if(fields.length == 0) run(); else {
 					var field = fields.pop();
 					if(field.indexOf("upload_key") == 0) {
-						saturn_core_Util.debug("Found upload key");
-						var saturn1 = saturn_app_SaturnServer.getDefaultServer();
+						saturn.core.Util.debug("Found upload key");
+						var saturn1 = saturn.app.SaturnServer.getDefaultServer();
 						var redis = saturn1.getRedisClient();
 						var upload_key = Reflect.field(config,field);
 						var path1 = redis.get(upload_key,function(err2,path) {
@@ -8352,7 +8285,7 @@ saturn_db_provider_hooks_ExternalJsonHook.run = function(query,params,clazz,cb,h
 							}
 						});
 					} else if(field.indexOf("out_file") == 0) {
-						var saturn2 = saturn_app_SaturnServer.getDefaultServer();
+						var saturn2 = saturn.app.SaturnServer.getDefaultServer();
 						var baseFolder = saturn2.getRelativePublicOuputFolder();
 						config[field] = baseFolder;
 						next();
@@ -8363,19 +8296,19 @@ saturn_db_provider_hooks_ExternalJsonHook.run = function(query,params,clazz,cb,h
 		}
 	});
 };
-var saturn_db_provider_hooks_RawSQLHook = function() { };
-$hxClasses["saturn.db.provider.hooks.RawSQLHook"] = saturn_db_provider_hooks_RawSQLHook;
-saturn_db_provider_hooks_RawSQLHook.__name__ = ["saturn","db","provider","hooks","RawSQLHook"];
-saturn_db_provider_hooks_RawSQLHook.run = function(query,params,clazz,cb,hookConfig) {
+saturn.db.provider.hooks.RawSQLHook = $hxClasses["saturn.db.provider.hooks.RawSQLHook"] = function() { };
+saturn.db.provider.hooks.RawSQLHook.__name__ = ["saturn","db","provider","hooks","RawSQLHook"];
+saturn.db.provider.hooks.RawSQLHook.run = function(query,params,clazz,cb,hookConfig) {
 	var sql = params[0];
 	var args = params[1];
-	saturn_core_Util.getProvider().getConnection(null,function(err,conn) {
+	saturn.core.Util.getProvider().getConnection(null,function(err,conn) {
 		conn.execute(sql,args,function(err1,results) {
 			cb(results,err1);
 		});
 	});
 };
-var saturn_db_query_$lang_Token = function(tokens) {
+if(!saturn.db.query_lang) saturn.db.query_lang = {};
+saturn.db.query_lang.Token = $hxClasses["saturn.db.query_lang.Token"] = function(tokens) {
 	this.tokens = tokens;
 	if(this.tokens != null) {
 		var _g1 = 0;
@@ -8384,14 +8317,13 @@ var saturn_db_query_$lang_Token = function(tokens) {
 			var i = _g1++;
 			var value = this.tokens[i];
 			if(value != null) {
-				if(!js_Boot.__instanceof(value,saturn_db_query_$lang_Token)) this.tokens[i] = new saturn_db_query_$lang_Value(value);
+				if(!js.Boot.__instanceof(value,saturn.db.query_lang.Token)) this.tokens[i] = new saturn.db.query_lang.Value(value);
 			}
 		}
 	}
 };
-$hxClasses["saturn.db.query_lang.Token"] = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Token.__name__ = ["saturn","db","query_lang","Token"];
-saturn_db_query_$lang_Token.prototype = {
+saturn.db.query_lang.Token.__name__ = ["saturn","db","query_lang","Token"];
+saturn.db.query_lang.Token.prototype = {
 	tokens: null
 	,name: null
 	,'as': function(name) {
@@ -8405,19 +8337,19 @@ saturn_db_query_$lang_Token.prototype = {
 		this.tokens = tokens;
 	}
 	,addToken: function(token) {
-		if(!js_Boot.__instanceof(token,saturn_db_query_$lang_Token)) token = new saturn_db_query_$lang_Value(saturn_db_query_$lang_Token);
+		if(!js.Boot.__instanceof(token,saturn.db.query_lang.Token)) token = new saturn.db.query_lang.Value(saturn.db.query_lang.Token);
 		if(this.tokens == null) this.tokens = [];
 		this.tokens.push(token);
 		return this;
 	}
 	,field: function(clazz,attributeName,clazzAlias) {
-		var f = new saturn_db_query_$lang_Field(clazz,attributeName,clazzAlias);
+		var f = new saturn.db.query_lang.Field(clazz,attributeName,clazzAlias);
 		this.add(f);
 		return f;
 	}
 	,add: function(token) {
-		if(js_Boot.__instanceof(token,saturn_db_query_$lang_Operator)) {
-			var n = new saturn_db_query_$lang_Token();
+		if(js.Boot.__instanceof(token,saturn.db.query_lang.Operator)) {
+			var n = new saturn.db.query_lang.Token();
 			n.add(this);
 			n.addToken(token);
 			return n;
@@ -8427,32 +8359,32 @@ saturn_db_query_$lang_Token.prototype = {
 		HxOverrides.remove(this.tokens,token);
 	}
 	,like: function(token) {
-		var l = new saturn_db_query_$lang_Like();
+		var l = new saturn.db.query_lang.Like();
 		if(token != null) l.add(token);
 		return this.add(l);
 	}
 	,concat: function(token) {
-		var c = new saturn_db_query_$lang_Concat([this,token]);
+		var c = new saturn.db.query_lang.Concat([this,token]);
 		return c;
 	}
 	,substr: function(position,length) {
-		return new saturn_db_query_$lang_Substr(this,position,length);
+		return new saturn.db.query_lang.Substr(this,position,length);
 	}
 	,instr: function(substring,position,occurrence) {
-		return new saturn_db_query_$lang_Instr(this,substring,position,occurrence);
+		return new saturn.db.query_lang.Instr(this,substring,position,occurrence);
 	}
 	,max: function() {
-		return new saturn_db_query_$lang_Max(this);
+		return new saturn.db.query_lang.Max(this);
 	}
 	,length: function() {
-		return new saturn_db_query_$lang_Length(this);
+		return new saturn.db.query_lang.Length(this);
 	}
 	,plus: function(token) {
-		var c = new saturn_db_query_$lang_Plus(token);
+		var c = new saturn.db.query_lang.Plus(token);
 		return this.add(c);
 	}
 	,minus: function(token) {
-		var c = new saturn_db_query_$lang_Minus(token);
+		var c = new saturn.db.query_lang.Minus(token);
 		return this.add(c);
 	}
 	,getClassList: function() {
@@ -8463,9 +8395,9 @@ saturn_db_query_$lang_Token.prototype = {
 			while(_g < tokens.length) {
 				var token = tokens[_g];
 				++_g;
-				if(js_Boot.__instanceof(token,saturn_db_query_$lang_ClassToken)) {
+				if(js.Boot.__instanceof(token,saturn.db.query_lang.ClassToken)) {
 					var cToken;
-					cToken = js_Boot.__cast(token , saturn_db_query_$lang_ClassToken);
+					cToken = js.Boot.__cast(token , saturn.db.query_lang.ClassToken);
 					if(cToken.getClass() != null) list.push(cToken.getClass());
 				} else {
 					var list2 = token.getClassList();
@@ -8480,120 +8412,109 @@ saturn_db_query_$lang_Token.prototype = {
 		}
 		return list;
 	}
-	,__class__: saturn_db_query_$lang_Token
+	,__class__: saturn.db.query_lang.Token
 };
-var saturn_db_query_$lang_Operator = function(token) {
-	if(token != null) saturn_db_query_$lang_Token.call(this,[token]); else saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Operator = $hxClasses["saturn.db.query_lang.Operator"] = function(token) {
+	if(token != null) saturn.db.query_lang.Token.call(this,[token]); else saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Operator"] = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Operator.__name__ = ["saturn","db","query_lang","Operator"];
-saturn_db_query_$lang_Operator.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Operator.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Operator
+saturn.db.query_lang.Operator.__name__ = ["saturn","db","query_lang","Operator"];
+saturn.db.query_lang.Operator.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Operator.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Operator
 });
-var saturn_db_query_$lang_And = function() {
-	saturn_db_query_$lang_Operator.call(this,null);
+saturn.db.query_lang.And = $hxClasses["saturn.db.query_lang.And"] = function() {
+	saturn.db.query_lang.Operator.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.And"] = saturn_db_query_$lang_And;
-saturn_db_query_$lang_And.__name__ = ["saturn","db","query_lang","And"];
-saturn_db_query_$lang_And.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_And.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_And
+saturn.db.query_lang.And.__name__ = ["saturn","db","query_lang","And"];
+saturn.db.query_lang.And.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.And.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.And
 });
-var saturn_db_query_$lang_Function = function(tokens) {
-	saturn_db_query_$lang_Token.call(this,tokens);
+saturn.db.query_lang.Function = $hxClasses["saturn.db.query_lang.Function"] = function(tokens) {
+	saturn.db.query_lang.Token.call(this,tokens);
 };
-$hxClasses["saturn.db.query_lang.Function"] = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Function.__name__ = ["saturn","db","query_lang","Function"];
-saturn_db_query_$lang_Function.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Function.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Function
+saturn.db.query_lang.Function.__name__ = ["saturn","db","query_lang","Function"];
+saturn.db.query_lang.Function.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Function.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Function
 });
-var saturn_db_query_$lang_Cast = function(expression,type) {
-	saturn_db_query_$lang_Function.call(this,[expression,type]);
+saturn.db.query_lang.Cast = $hxClasses["saturn.db.query_lang.Cast"] = function(expression,type) {
+	saturn.db.query_lang.Function.call(this,[expression,type]);
 };
-$hxClasses["saturn.db.query_lang.Cast"] = saturn_db_query_$lang_Cast;
-saturn_db_query_$lang_Cast.__name__ = ["saturn","db","query_lang","Cast"];
-saturn_db_query_$lang_Cast.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Cast.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Cast
+saturn.db.query_lang.Cast.__name__ = ["saturn","db","query_lang","Cast"];
+saturn.db.query_lang.Cast.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Cast.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Cast
 });
-var saturn_db_query_$lang_ClassToken = function(clazz) {
+saturn.db.query_lang.ClassToken = $hxClasses["saturn.db.query_lang.ClassToken"] = function(clazz) {
 	this.setClass(clazz);
-	saturn_db_query_$lang_Token.call(this,null);
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.ClassToken"] = saturn_db_query_$lang_ClassToken;
-saturn_db_query_$lang_ClassToken.__name__ = ["saturn","db","query_lang","ClassToken"];
-saturn_db_query_$lang_ClassToken.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_ClassToken.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.ClassToken.__name__ = ["saturn","db","query_lang","ClassToken"];
+saturn.db.query_lang.ClassToken.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.ClassToken.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	clazz: null
 	,getClass: function() {
 		return this.clazz;
 	}
 	,setClass: function(clazz) {
-		if(js_Boot.__instanceof(clazz,Class)) {
+		if(js.Boot.__instanceof(clazz,Class)) {
 			var c;
-			c = js_Boot.__cast(clazz , Class);
+			c = js.Boot.__cast(clazz , Class);
 			this.clazz = Type.getClassName(c);
 		} else this.clazz = clazz;
 	}
-	,__class__: saturn_db_query_$lang_ClassToken
+	,__class__: saturn.db.query_lang.ClassToken
 });
-var saturn_db_query_$lang_Concat = function(tokens) {
-	saturn_db_query_$lang_Function.call(this,tokens);
+saturn.db.query_lang.Concat = $hxClasses["saturn.db.query_lang.Concat"] = function(tokens) {
+	saturn.db.query_lang.Function.call(this,tokens);
 };
-$hxClasses["saturn.db.query_lang.Concat"] = saturn_db_query_$lang_Concat;
-saturn_db_query_$lang_Concat.__name__ = ["saturn","db","query_lang","Concat"];
-saturn_db_query_$lang_Concat.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Concat.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Concat
+saturn.db.query_lang.Concat.__name__ = ["saturn","db","query_lang","Concat"];
+saturn.db.query_lang.Concat.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Concat.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Concat
 });
-var saturn_db_query_$lang_ConcatOperator = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.ConcatOperator = $hxClasses["saturn.db.query_lang.ConcatOperator"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.ConcatOperator"] = saturn_db_query_$lang_ConcatOperator;
-saturn_db_query_$lang_ConcatOperator.__name__ = ["saturn","db","query_lang","ConcatOperator"];
-saturn_db_query_$lang_ConcatOperator.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_ConcatOperator.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_ConcatOperator
+saturn.db.query_lang.ConcatOperator.__name__ = ["saturn","db","query_lang","ConcatOperator"];
+saturn.db.query_lang.ConcatOperator.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.ConcatOperator.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.ConcatOperator
 });
-var saturn_db_query_$lang_Count = function(token) {
-	saturn_db_query_$lang_Function.call(this,[token]);
+saturn.db.query_lang.Count = $hxClasses["saturn.db.query_lang.Count"] = function(token) {
+	saturn.db.query_lang.Function.call(this,[token]);
 };
-$hxClasses["saturn.db.query_lang.Count"] = saturn_db_query_$lang_Count;
-saturn_db_query_$lang_Count.__name__ = ["saturn","db","query_lang","Count"];
-saturn_db_query_$lang_Count.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Count.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Count
+saturn.db.query_lang.Count.__name__ = ["saturn","db","query_lang","Count"];
+saturn.db.query_lang.Count.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Count.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Count
 });
-var saturn_db_query_$lang_EndBlock = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.EndBlock = $hxClasses["saturn.db.query_lang.EndBlock"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.EndBlock"] = saturn_db_query_$lang_EndBlock;
-saturn_db_query_$lang_EndBlock.__name__ = ["saturn","db","query_lang","EndBlock"];
-saturn_db_query_$lang_EndBlock.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_EndBlock.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_EndBlock
+saturn.db.query_lang.EndBlock.__name__ = ["saturn","db","query_lang","EndBlock"];
+saturn.db.query_lang.EndBlock.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.EndBlock.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.EndBlock
 });
-var saturn_db_query_$lang_Equals = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.Equals = $hxClasses["saturn.db.query_lang.Equals"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.Equals"] = saturn_db_query_$lang_Equals;
-saturn_db_query_$lang_Equals.__name__ = ["saturn","db","query_lang","Equals"];
-saturn_db_query_$lang_Equals.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Equals.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_Equals
+saturn.db.query_lang.Equals.__name__ = ["saturn","db","query_lang","Equals"];
+saturn.db.query_lang.Equals.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.Equals.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.Equals
 });
-var saturn_db_query_$lang_Field = function(clazz,attributeName,clazzAlias) {
+saturn.db.query_lang.Field = $hxClasses["saturn.db.query_lang.Field"] = function(clazz,attributeName,clazzAlias) {
 	this.setClass(clazz);
 	this.attributeName = attributeName;
 	this.clazzAlias = clazzAlias;
-	saturn_db_query_$lang_Token.call(this,null);
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Field"] = saturn_db_query_$lang_Field;
-saturn_db_query_$lang_Field.__name__ = ["saturn","db","query_lang","Field"];
-saturn_db_query_$lang_Field.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Field.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.Field.__name__ = ["saturn","db","query_lang","Field"];
+saturn.db.query_lang.Field.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Field.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	clazz: null
 	,clazzAlias: null
 	,attributeName: null
@@ -8601,9 +8522,9 @@ saturn_db_query_$lang_Field.prototype = $extend(saturn_db_query_$lang_Token.prot
 		return this.clazz;
 	}
 	,setClass: function(clazz) {
-		if(js_Boot.__instanceof(clazz,Class)) {
+		if(js.Boot.__instanceof(clazz,Class)) {
 			var c;
-			c = js_Boot.__cast(clazz , Class);
+			c = js.Boot.__cast(clazz , Class);
 			this.clazz = Type.getClassName(c);
 		} else this.clazz = clazz;
 	}
@@ -8613,213 +8534,192 @@ saturn_db_query_$lang_Field.prototype = $extend(saturn_db_query_$lang_Token.prot
 	,setAttributeName: function(name) {
 		this.attributeName = name;
 	}
-	,__class__: saturn_db_query_$lang_Field
+	,__class__: saturn.db.query_lang.Field
 });
-var saturn_db_query_$lang_From = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.From = $hxClasses["saturn.db.query_lang.From"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.From"] = saturn_db_query_$lang_From;
-saturn_db_query_$lang_From.__name__ = ["saturn","db","query_lang","From"];
-saturn_db_query_$lang_From.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_From.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_From
+saturn.db.query_lang.From.__name__ = ["saturn","db","query_lang","From"];
+saturn.db.query_lang.From.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.From.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.From
 });
-var saturn_db_query_$lang_GreaterThan = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.GreaterThan = $hxClasses["saturn.db.query_lang.GreaterThan"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.GreaterThan"] = saturn_db_query_$lang_GreaterThan;
-saturn_db_query_$lang_GreaterThan.__name__ = ["saturn","db","query_lang","GreaterThan"];
-saturn_db_query_$lang_GreaterThan.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_GreaterThan.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_GreaterThan
+saturn.db.query_lang.GreaterThan.__name__ = ["saturn","db","query_lang","GreaterThan"];
+saturn.db.query_lang.GreaterThan.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.GreaterThan.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.GreaterThan
 });
-var saturn_db_query_$lang_GreaterThanOrEqualTo = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.GreaterThanOrEqualTo = $hxClasses["saturn.db.query_lang.GreaterThanOrEqualTo"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.GreaterThanOrEqualTo"] = saturn_db_query_$lang_GreaterThanOrEqualTo;
-saturn_db_query_$lang_GreaterThanOrEqualTo.__name__ = ["saturn","db","query_lang","GreaterThanOrEqualTo"];
-saturn_db_query_$lang_GreaterThanOrEqualTo.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_GreaterThanOrEqualTo.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_GreaterThanOrEqualTo
+saturn.db.query_lang.GreaterThanOrEqualTo.__name__ = ["saturn","db","query_lang","GreaterThanOrEqualTo"];
+saturn.db.query_lang.GreaterThanOrEqualTo.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.GreaterThanOrEqualTo.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.GreaterThanOrEqualTo
 });
-var saturn_db_query_$lang_Group = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Group = $hxClasses["saturn.db.query_lang.Group"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Group"] = saturn_db_query_$lang_Group;
-saturn_db_query_$lang_Group.__name__ = ["saturn","db","query_lang","Group"];
-saturn_db_query_$lang_Group.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Group.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Group
+saturn.db.query_lang.Group.__name__ = ["saturn","db","query_lang","Group"];
+saturn.db.query_lang.Group.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Group.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Group
 });
-var saturn_db_query_$lang_In = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.In = $hxClasses["saturn.db.query_lang.In"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.In"] = saturn_db_query_$lang_In;
-saturn_db_query_$lang_In.__name__ = ["saturn","db","query_lang","In"];
-saturn_db_query_$lang_In.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_In.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_In
+saturn.db.query_lang.In.__name__ = ["saturn","db","query_lang","In"];
+saturn.db.query_lang.In.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.In.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.In
 });
-var saturn_db_query_$lang_Instr = function(value,substring,position,occurrence) {
-	if(position == null) position = new saturn_db_query_$lang_Value(1);
-	if(occurrence == null) occurrence = new saturn_db_query_$lang_Value(1);
-	saturn_db_query_$lang_Function.call(this,[value,substring,position,occurrence]);
+saturn.db.query_lang.Instr = $hxClasses["saturn.db.query_lang.Instr"] = function(value,substring,position,occurrence) {
+	if(position == null) position = new saturn.db.query_lang.Value(1);
+	if(occurrence == null) occurrence = new saturn.db.query_lang.Value(1);
+	saturn.db.query_lang.Function.call(this,[value,substring,position,occurrence]);
 };
-$hxClasses["saturn.db.query_lang.Instr"] = saturn_db_query_$lang_Instr;
-saturn_db_query_$lang_Instr.__name__ = ["saturn","db","query_lang","Instr"];
-saturn_db_query_$lang_Instr.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Instr.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Instr
+saturn.db.query_lang.Instr.__name__ = ["saturn","db","query_lang","Instr"];
+saturn.db.query_lang.Instr.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Instr.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Instr
 });
-var saturn_db_query_$lang_IsNotNull = function() {
-	saturn_db_query_$lang_Operator.call(this,null);
+saturn.db.query_lang.IsNotNull = $hxClasses["saturn.db.query_lang.IsNotNull"] = function() {
+	saturn.db.query_lang.Operator.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.IsNotNull"] = saturn_db_query_$lang_IsNotNull;
-saturn_db_query_$lang_IsNotNull.__name__ = ["saturn","db","query_lang","IsNotNull"];
-saturn_db_query_$lang_IsNotNull.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_IsNotNull.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_IsNotNull
+saturn.db.query_lang.IsNotNull.__name__ = ["saturn","db","query_lang","IsNotNull"];
+saturn.db.query_lang.IsNotNull.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.IsNotNull.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.IsNotNull
 });
-var saturn_db_query_$lang_IsNull = function() {
+saturn.db.query_lang.IsNull = $hxClasses["saturn.db.query_lang.IsNull"] = function() {
 	this.empty = "NULL";
-	saturn_db_query_$lang_Operator.call(this,null);
+	saturn.db.query_lang.Operator.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.IsNull"] = saturn_db_query_$lang_IsNull;
-saturn_db_query_$lang_IsNull.__name__ = ["saturn","db","query_lang","IsNull"];
-saturn_db_query_$lang_IsNull.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_IsNull.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
+saturn.db.query_lang.IsNull.__name__ = ["saturn","db","query_lang","IsNull"];
+saturn.db.query_lang.IsNull.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.IsNull.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
 	empty: null
-	,__class__: saturn_db_query_$lang_IsNull
+	,__class__: saturn.db.query_lang.IsNull
 });
-var saturn_db_query_$lang_Length = function(value) {
-	saturn_db_query_$lang_Function.call(this,[value]);
+saturn.db.query_lang.Length = $hxClasses["saturn.db.query_lang.Length"] = function(value) {
+	saturn.db.query_lang.Function.call(this,[value]);
 };
-$hxClasses["saturn.db.query_lang.Length"] = saturn_db_query_$lang_Length;
-saturn_db_query_$lang_Length.__name__ = ["saturn","db","query_lang","Length"];
-saturn_db_query_$lang_Length.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Length.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Length
+saturn.db.query_lang.Length.__name__ = ["saturn","db","query_lang","Length"];
+saturn.db.query_lang.Length.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Length.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Length
 });
-var saturn_db_query_$lang_LessThan = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.LessThan = $hxClasses["saturn.db.query_lang.LessThan"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.LessThan"] = saturn_db_query_$lang_LessThan;
-saturn_db_query_$lang_LessThan.__name__ = ["saturn","db","query_lang","LessThan"];
-saturn_db_query_$lang_LessThan.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_LessThan.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_LessThan
+saturn.db.query_lang.LessThan.__name__ = ["saturn","db","query_lang","LessThan"];
+saturn.db.query_lang.LessThan.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.LessThan.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.LessThan
 });
-var saturn_db_query_$lang_LessThanOrEqualTo = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.LessThanOrEqualTo = $hxClasses["saturn.db.query_lang.LessThanOrEqualTo"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.LessThanOrEqualTo"] = saturn_db_query_$lang_LessThanOrEqualTo;
-saturn_db_query_$lang_LessThanOrEqualTo.__name__ = ["saturn","db","query_lang","LessThanOrEqualTo"];
-saturn_db_query_$lang_LessThanOrEqualTo.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_LessThanOrEqualTo.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_LessThanOrEqualTo
+saturn.db.query_lang.LessThanOrEqualTo.__name__ = ["saturn","db","query_lang","LessThanOrEqualTo"];
+saturn.db.query_lang.LessThanOrEqualTo.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.LessThanOrEqualTo.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.LessThanOrEqualTo
 });
-var saturn_db_query_$lang_Like = function() {
-	saturn_db_query_$lang_Operator.call(this,null);
+saturn.db.query_lang.Like = $hxClasses["saturn.db.query_lang.Like"] = function() {
+	saturn.db.query_lang.Operator.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Like"] = saturn_db_query_$lang_Like;
-saturn_db_query_$lang_Like.__name__ = ["saturn","db","query_lang","Like"];
-saturn_db_query_$lang_Like.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Like.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_Like
+saturn.db.query_lang.Like.__name__ = ["saturn","db","query_lang","Like"];
+saturn.db.query_lang.Like.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.Like.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.Like
 });
-var saturn_db_query_$lang_Limit = function(limit) {
-	saturn_db_query_$lang_Token.call(this,[limit]);
+saturn.db.query_lang.Limit = $hxClasses["saturn.db.query_lang.Limit"] = function(limit) {
+	saturn.db.query_lang.Token.call(this,[limit]);
 };
-$hxClasses["saturn.db.query_lang.Limit"] = saturn_db_query_$lang_Limit;
-saturn_db_query_$lang_Limit.__name__ = ["saturn","db","query_lang","Limit"];
-saturn_db_query_$lang_Limit.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Limit.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Limit
+saturn.db.query_lang.Limit.__name__ = ["saturn","db","query_lang","Limit"];
+saturn.db.query_lang.Limit.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Limit.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Limit
 });
-var saturn_db_query_$lang_Max = function(value) {
-	saturn_db_query_$lang_Function.call(this,[value]);
+saturn.db.query_lang.Max = $hxClasses["saturn.db.query_lang.Max"] = function(value) {
+	saturn.db.query_lang.Function.call(this,[value]);
 };
-$hxClasses["saturn.db.query_lang.Max"] = saturn_db_query_$lang_Max;
-saturn_db_query_$lang_Max.__name__ = ["saturn","db","query_lang","Max"];
-saturn_db_query_$lang_Max.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Max.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Max
+saturn.db.query_lang.Max.__name__ = ["saturn","db","query_lang","Max"];
+saturn.db.query_lang.Max.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Max.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Max
 });
-var saturn_db_query_$lang_Minus = function(value) {
-	if(value == null) saturn_db_query_$lang_Operator.call(this,null); else saturn_db_query_$lang_Operator.call(this,value);
+saturn.db.query_lang.Minus = $hxClasses["saturn.db.query_lang.Minus"] = function(value) {
+	if(value == null) saturn.db.query_lang.Operator.call(this,null); else saturn.db.query_lang.Operator.call(this,value);
 };
-$hxClasses["saturn.db.query_lang.Minus"] = saturn_db_query_$lang_Minus;
-saturn_db_query_$lang_Minus.__name__ = ["saturn","db","query_lang","Minus"];
-saturn_db_query_$lang_Minus.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Minus.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_Minus
+saturn.db.query_lang.Minus.__name__ = ["saturn","db","query_lang","Minus"];
+saturn.db.query_lang.Minus.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.Minus.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.Minus
 });
-var saturn_db_query_$lang_NotEquals = function(token) {
-	saturn_db_query_$lang_Operator.call(this,token);
+saturn.db.query_lang.NotEquals = $hxClasses["saturn.db.query_lang.NotEquals"] = function(token) {
+	saturn.db.query_lang.Operator.call(this,token);
 };
-$hxClasses["saturn.db.query_lang.NotEquals"] = saturn_db_query_$lang_NotEquals;
-saturn_db_query_$lang_NotEquals.__name__ = ["saturn","db","query_lang","NotEquals"];
-saturn_db_query_$lang_NotEquals.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_NotEquals.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_NotEquals
+saturn.db.query_lang.NotEquals.__name__ = ["saturn","db","query_lang","NotEquals"];
+saturn.db.query_lang.NotEquals.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.NotEquals.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.NotEquals
 });
-var saturn_db_query_$lang_Or = function() {
-	saturn_db_query_$lang_Operator.call(this,null);
+saturn.db.query_lang.Or = $hxClasses["saturn.db.query_lang.Or"] = function() {
+	saturn.db.query_lang.Operator.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Or"] = saturn_db_query_$lang_Or;
-saturn_db_query_$lang_Or.__name__ = ["saturn","db","query_lang","Or"];
-saturn_db_query_$lang_Or.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Or.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_Or
+saturn.db.query_lang.Or.__name__ = ["saturn","db","query_lang","Or"];
+saturn.db.query_lang.Or.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.Or.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.Or
 });
-var saturn_db_query_$lang_OrderBy = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.OrderBy = $hxClasses["saturn.db.query_lang.OrderBy"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.OrderBy"] = saturn_db_query_$lang_OrderBy;
-saturn_db_query_$lang_OrderBy.__name__ = ["saturn","db","query_lang","OrderBy"];
-saturn_db_query_$lang_OrderBy.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_OrderBy.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_OrderBy
+saturn.db.query_lang.OrderBy.__name__ = ["saturn","db","query_lang","OrderBy"];
+saturn.db.query_lang.OrderBy.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.OrderBy.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.OrderBy
 });
-var saturn_db_query_$lang_OrderByItem = function(token,descending) {
+saturn.db.query_lang.OrderByItem = $hxClasses["saturn.db.query_lang.OrderByItem"] = function(token,descending) {
 	if(descending == null) descending = false;
 	this.descending = false;
 	this.descending = descending;
-	saturn_db_query_$lang_Token.call(this,[token]);
+	saturn.db.query_lang.Token.call(this,[token]);
 };
-$hxClasses["saturn.db.query_lang.OrderByItem"] = saturn_db_query_$lang_OrderByItem;
-saturn_db_query_$lang_OrderByItem.__name__ = ["saturn","db","query_lang","OrderByItem"];
-saturn_db_query_$lang_OrderByItem.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_OrderByItem.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.OrderByItem.__name__ = ["saturn","db","query_lang","OrderByItem"];
+saturn.db.query_lang.OrderByItem.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.OrderByItem.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	descending: null
-	,__class__: saturn_db_query_$lang_OrderByItem
+	,__class__: saturn.db.query_lang.OrderByItem
 });
-var saturn_db_query_$lang_Plus = function(value) {
-	if(value == null) saturn_db_query_$lang_Operator.call(this,null); else saturn_db_query_$lang_Operator.call(this,value);
+saturn.db.query_lang.Plus = $hxClasses["saturn.db.query_lang.Plus"] = function(value) {
+	if(value == null) saturn.db.query_lang.Operator.call(this,null); else saturn.db.query_lang.Operator.call(this,value);
 };
-$hxClasses["saturn.db.query_lang.Plus"] = saturn_db_query_$lang_Plus;
-saturn_db_query_$lang_Plus.__name__ = ["saturn","db","query_lang","Plus"];
-saturn_db_query_$lang_Plus.__super__ = saturn_db_query_$lang_Operator;
-saturn_db_query_$lang_Plus.prototype = $extend(saturn_db_query_$lang_Operator.prototype,{
-	__class__: saturn_db_query_$lang_Plus
+saturn.db.query_lang.Plus.__name__ = ["saturn","db","query_lang","Plus"];
+saturn.db.query_lang.Plus.__super__ = saturn.db.query_lang.Operator;
+saturn.db.query_lang.Plus.prototype = $extend(saturn.db.query_lang.Operator.prototype,{
+	__class__: saturn.db.query_lang.Plus
 });
-var saturn_db_query_$lang_Query = function(provider) {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Query = $hxClasses["saturn.db.query_lang.Query"] = function(provider) {
+	saturn.db.query_lang.Token.call(this,null);
 	this.provider = provider;
-	this.selectToken = new saturn_db_query_$lang_Select();
-	this.whereToken = new saturn_db_query_$lang_Where();
-	this.fromToken = new saturn_db_query_$lang_From();
-	this.groupToken = new saturn_db_query_$lang_Group();
-	this.orderToken = new saturn_db_query_$lang_OrderBy();
+	this.selectToken = new saturn.db.query_lang.Select();
+	this.whereToken = new saturn.db.query_lang.Where();
+	this.fromToken = new saturn.db.query_lang.From();
+	this.groupToken = new saturn.db.query_lang.Group();
+	this.orderToken = new saturn.db.query_lang.OrderBy();
 };
-$hxClasses["saturn.db.query_lang.Query"] = saturn_db_query_$lang_Query;
-saturn_db_query_$lang_Query.__name__ = ["saturn","db","query_lang","Query"];
-saturn_db_query_$lang_Query.deserialise = function(querySer) {
-	var clone = haxe_Unserializer.run(querySer);
-	saturn_db_query_$lang_Query.deserialiseToken(clone);
+saturn.db.query_lang.Query.__name__ = ["saturn","db","query_lang","Query"];
+saturn.db.query_lang.Query.deserialise = function(querySer) {
+	var clone = haxe.Unserializer.run(querySer);
+	saturn.db.query_lang.Query.deserialiseToken(clone);
 	return clone;
 };
-saturn_db_query_$lang_Query.deserialiseToken = function(token) {
+saturn.db.query_lang.Query.deserialiseToken = function(token) {
 	if(token == null) return;
 	if(token.getTokens() != null) {
 		var _g = 0;
@@ -8827,17 +8727,17 @@ saturn_db_query_$lang_Query.deserialiseToken = function(token) {
 		while(_g < _g1.length) {
 			var token1 = _g1[_g];
 			++_g;
-			saturn_db_query_$lang_Query.deserialiseToken(token1);
+			saturn.db.query_lang.Query.deserialiseToken(token1);
 		}
 	}
-	if(js_Boot.__instanceof(token,saturn_db_query_$lang_Query)) {
+	if(js.Boot.__instanceof(token,saturn.db.query_lang.Query)) {
 		var qToken;
-		qToken = js_Boot.__cast(token , saturn_db_query_$lang_Query);
+		qToken = js.Boot.__cast(token , saturn.db.query_lang.Query);
 		qToken.provider = null;
 	}
 };
-saturn_db_query_$lang_Query.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.Query.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	selectToken: null
 	,fromToken: null
 	,whereToken: null
@@ -8889,16 +8789,16 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 			this.addClassToken(token);
 		}
 		if(this.fromToken.getTokens() != null) {
-			var seen = new haxe_ds_StringMap();
+			var seen = new haxe.ds.StringMap();
 			var tokens1 = [];
 			var _g1 = 0;
 			var _g11 = this.fromToken.getTokens();
 			while(_g1 < _g11.length) {
 				var token1 = _g11[_g1];
 				++_g1;
-				if(js_Boot.__instanceof(token1,saturn_db_query_$lang_ClassToken)) {
+				if(js.Boot.__instanceof(token1,saturn.db.query_lang.ClassToken)) {
 					var cToken;
-					cToken = js_Boot.__cast(token1 , saturn_db_query_$lang_ClassToken);
+					cToken = js.Boot.__cast(token1 , saturn.db.query_lang.ClassToken);
 					if(cToken.getClass() != null) {
 						var clazzName = cToken.getClass();
 						if(!(__map_reserved[clazzName] != null?seen.existsReserved(clazzName):seen.h.hasOwnProperty(clazzName))) {
@@ -8909,25 +8809,25 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 				} else tokens1.push(token1);
 			}
 			this.fromToken.setTokens(tokens1);
-			saturn_core_Util.print("Num targets" + this.fromToken.getTokens().length);
+			saturn.core.Util.print("Num targets" + this.fromToken.getTokens().length);
 		}
 		tokens.push(this.selectToken);
 		tokens.push(this.fromToken);
 		if(this.whereToken.getTokens() != null && this.whereToken.getTokens().length > 0) {
 			tokens.push(this.whereToken);
 			if(this.isPaging() && this.lastPagedRowValue != null) {
-				tokens.push(new saturn_db_query_$lang_And());
+				tokens.push(new saturn.db.query_lang.And());
 				tokens.push(this.pageOn);
-				tokens.push(new saturn_db_query_$lang_GreaterThan());
+				tokens.push(new saturn.db.query_lang.GreaterThan());
 				tokens.push(this.lastPagedRowValue);
 			}
 		}
 		if(this.groupToken.getTokens() != null && this.groupToken.getTokens().length > 0) tokens.push(this.groupToken);
 		if(this.orderToken.getTokens() != null && this.orderToken.getTokens().length > 0) tokens.push(this.orderToken);
 		if(this.isPaging()) {
-			tokens.push(new saturn_db_query_$lang_OrderBy());
-			tokens.push(new saturn_db_query_$lang_OrderByItem(this.pageOn));
-			tokens.push(new saturn_db_query_$lang_Limit(this.pageSize));
+			tokens.push(new saturn.db.query_lang.OrderBy());
+			tokens.push(new saturn.db.query_lang.OrderByItem(this.pageOn));
+			tokens.push(new saturn.db.query_lang.Limit(this.pageSize));
 		}
 		if(this.tokens != null && this.tokens.length > 0) {
 			var _g2 = 0;
@@ -8941,18 +8841,18 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 		return tokens;
 	}
 	,or: function() {
-		this.getWhere().addToken(new saturn_db_query_$lang_Or());
+		this.getWhere().addToken(new saturn.db.query_lang.Or());
 	}
 	,and: function() {
-		this.getWhere().addToken(new saturn_db_query_$lang_And());
+		this.getWhere().addToken(new saturn.db.query_lang.And());
 	}
 	,equals: function(clazz,field,value) {
-		this.getWhere().addToken(new saturn_db_query_$lang_Field(clazz,field));
-		this.getWhere().addToken(new saturn_db_query_$lang_Equals());
-		this.getWhere().addToken(new saturn_db_query_$lang_Value(value));
+		this.getWhere().addToken(new saturn.db.query_lang.Field(clazz,field));
+		this.getWhere().addToken(new saturn.db.query_lang.Equals());
+		this.getWhere().addToken(new saturn.db.query_lang.Value(value));
 	}
 	,select: function(clazz,field) {
-		this.getSelect().addToken(new saturn_db_query_$lang_Field(clazz,field));
+		this.getSelect().addToken(new saturn.db.query_lang.Field(clazz,field));
 	}
 	,getSelect: function() {
 		return this.selectToken;
@@ -8968,12 +8868,12 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 	}
 	,clone: function() {
 		var str = this.serialise();
-		return saturn_db_query_$lang_Query.deserialise(str);
+		return saturn.db.query_lang.Query.deserialise(str);
 	}
 	,serialise: function() {
 		var keepMe = this.provider;
 		this.provider = null;
-		var newMe = haxe_Serializer.run(this);
+		var newMe = haxe.Serializer.run(this);
 		this.provider = keepMe;
 		return newMe;
 	}
@@ -8990,26 +8890,26 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 		this.provider.query(clone,function(objs,err) {
 			if(err == null && objs.length > 0 && _g.isPaging()) {
 				var fieldName = null;
-				if(_g.pageOn.name != null) fieldName = _g.pageOn.name; else if(js_Boot.__instanceof(_g.pageOn,saturn_db_query_$lang_Field)) {
+				if(_g.pageOn.name != null) fieldName = _g.pageOn.name; else if(js.Boot.__instanceof(_g.pageOn,saturn.db.query_lang.Field)) {
 					var fToken;
-					fToken = js_Boot.__cast(_g.pageOn , saturn_db_query_$lang_Field);
+					fToken = js.Boot.__cast(_g.pageOn , saturn.db.query_lang.Field);
 					fieldName = fToken.getAttributeName();
 				}
-				if(fieldName == null) err = "Unable to determine value of last paged row"; else _g.setLastPagedRowValue(new saturn_db_query_$lang_Value(Reflect.field(objs[objs.length - 1],fieldName)));
+				if(fieldName == null) err = "Unable to determine value of last paged row"; else _g.setLastPagedRowValue(new saturn.db.query_lang.Value(Reflect.field(objs[objs.length - 1],fieldName)));
 			}
 			cb(objs,err);
 		});
 	}
 	,getSelectClassList: function() {
-		var set = new haxe_ds_StringMap();
+		var set = new haxe.ds.StringMap();
 		var _g = 0;
 		var _g1 = this.selectToken.getTokens();
 		while(_g < _g1.length) {
 			var token = _g1[_g];
 			++_g;
-			if(js_Boot.__instanceof(token,saturn_db_query_$lang_Field)) {
+			if(js.Boot.__instanceof(token,saturn.db.query_lang.Field)) {
 				var cToken;
-				cToken = js_Boot.__cast(token , saturn_db_query_$lang_Field);
+				cToken = js.Boot.__cast(token , saturn.db.query_lang.Field);
 				var clazz = cToken.getClass();
 				if(clazz != null) {
 					if(__map_reserved[clazz] != null) set.setReserved(clazz,clazz); else set.h[clazz] = clazz;
@@ -9026,9 +8926,9 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 	}
 	,unbindFields: function(token) {
 		if(token == null) return;
-		if(js_Boot.__instanceof(token,saturn_db_query_$lang_Field)) {
+		if(js.Boot.__instanceof(token,saturn.db.query_lang.Field)) {
 			var cToken;
-			cToken = js_Boot.__cast(token , saturn_db_query_$lang_Field);
+			cToken = js.Boot.__cast(token , saturn.db.query_lang.Field);
 			var clazz = cToken.getClass();
 			var field = cToken.getAttributeName();
 			var model = this.provider.getModelByStringName(clazz);
@@ -9050,12 +8950,12 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 		}
 	}
 	,addClassToken: function(token) {
-		if(js_Boot.__instanceof(token,saturn_db_query_$lang_Query) || token == null) return;
-		if(js_Boot.__instanceof(token,saturn_db_query_$lang_Field)) {
+		if(js.Boot.__instanceof(token,saturn.db.query_lang.Query) || token == null) return;
+		if(js.Boot.__instanceof(token,saturn.db.query_lang.Field)) {
 			var fToken;
-			fToken = js_Boot.__cast(token , saturn_db_query_$lang_Field);
+			fToken = js.Boot.__cast(token , saturn.db.query_lang.Field);
 			if(fToken.getClass() != null) {
-				var cToken = new saturn_db_query_$lang_ClassToken(fToken.getClass());
+				var cToken = new saturn.db.query_lang.ClassToken(fToken.getClass());
 				if(fToken.clazzAlias != null) cToken.name = fToken.clazzAlias;
 				this.fromToken.addToken(cToken);
 			}
@@ -9079,13 +8979,13 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 				while(_g < fieldList.length) {
 					var field = fieldList[_g];
 					++_g;
-					this.getSelect().addToken(new saturn_db_query_$lang_Field(clazz,field));
+					this.getSelect().addToken(new saturn.db.query_lang.Field(clazz,field));
 				}
 			}
-		} else this.getSelect().addToken(new saturn_db_query_$lang_Field(clazz,"*"));
+		} else this.getSelect().addToken(new saturn.db.query_lang.Field(clazz,"*"));
 		var fields = model.getFields();
 		var hasPrevious = false;
-		this.getWhere().addToken(new saturn_db_query_$lang_StartBlock());
+		this.getWhere().addToken(new saturn.db.query_lang.StartBlock());
 		var _g1 = 0;
 		var _g2 = fields.length;
 		while(_g1 < _g2) {
@@ -9093,64 +8993,60 @@ saturn_db_query_$lang_Query.prototype = $extend(saturn_db_query_$lang_Token.prot
 			var field1 = fields[i];
 			var value = Reflect.field(obj,field1);
 			if(value != null) {
-				if(hasPrevious) this.getWhere().addToken(new saturn_db_query_$lang_And());
-				this.getWhere().addToken(new saturn_db_query_$lang_Field(clazz,field1));
-				this.getWhere().addToken(new saturn_db_query_$lang_Equals());
-				if(js_Boot.__instanceof(value,saturn_db_query_$lang_IsNull)) {
-					saturn_core_Util.print("Found NULL");
-					this.getWhere().addToken(new saturn_db_query_$lang_IsNull());
-				} else if(js_Boot.__instanceof(value,saturn_db_query_$lang_IsNotNull)) this.getWhere().addToken(new saturn_db_query_$lang_IsNotNull()); else {
-					saturn_core_Util.print("Found value" + Type.getClassName(value == null?null:js_Boot.getClass(value)));
-					this.getWhere().addToken(new saturn_db_query_$lang_Value(value));
+				if(hasPrevious) this.getWhere().addToken(new saturn.db.query_lang.And());
+				this.getWhere().addToken(new saturn.db.query_lang.Field(clazz,field1));
+				this.getWhere().addToken(new saturn.db.query_lang.Equals());
+				if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNull)) {
+					saturn.core.Util.print("Found NULL");
+					this.getWhere().addToken(new saturn.db.query_lang.IsNull());
+				} else if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNotNull)) this.getWhere().addToken(new saturn.db.query_lang.IsNotNull()); else {
+					saturn.core.Util.print("Found value" + Type.getClassName(value == null?null:js.Boot.getClass(value)));
+					this.getWhere().addToken(new saturn.db.query_lang.Value(value));
 				}
 				hasPrevious = true;
 			}
 		}
-		this.getWhere().addToken(new saturn_db_query_$lang_EndBlock());
+		this.getWhere().addToken(new saturn.db.query_lang.EndBlock());
 	}
-	,__class__: saturn_db_query_$lang_Query
+	,__class__: saturn.db.query_lang.Query
 });
-var saturn_db_query_$lang_QueryTests = function() {
+saturn.db.query_lang.QueryTests = $hxClasses["saturn.db.query_lang.QueryTests"] = function() {
 };
-$hxClasses["saturn.db.query_lang.QueryTests"] = saturn_db_query_$lang_QueryTests;
-saturn_db_query_$lang_QueryTests.__name__ = ["saturn","db","query_lang","QueryTests"];
-saturn_db_query_$lang_QueryTests.prototype = {
+saturn.db.query_lang.QueryTests.__name__ = ["saturn","db","query_lang","QueryTests"];
+saturn.db.query_lang.QueryTests.prototype = {
 	test1: function() {
-		var query = new saturn_db_query_$lang_Query(saturn_core_Util.getProvider());
-		query.getSelect().addToken(new saturn_db_query_$lang_Field(saturn_core_domain_SgcAllele,"alleleId",null));
-		var visitor = new saturn_db_query_$lang_SQLVisitor(saturn_core_Util.getProvider());
+		var query = new saturn.db.query_lang.Query(saturn.core.Util.getProvider());
+		query.getSelect().addToken(new saturn.db.query_lang.Field(saturn.core.domain.SgcAllele,"alleleId",null));
+		var visitor = new saturn.db.query_lang.SQLVisitor(saturn.core.Util.getProvider());
 		visitor.translate(query);
 	}
-	,__class__: saturn_db_query_$lang_QueryTests
+	,__class__: saturn.db.query_lang.QueryTests
 };
-var saturn_db_query_$lang_QueryVisitor = function() { };
-$hxClasses["saturn.db.query_lang.QueryVisitor"] = saturn_db_query_$lang_QueryVisitor;
-saturn_db_query_$lang_QueryVisitor.__name__ = ["saturn","db","query_lang","QueryVisitor"];
-saturn_db_query_$lang_QueryVisitor.prototype = {
+saturn.db.query_lang.QueryVisitor = $hxClasses["saturn.db.query_lang.QueryVisitor"] = function() { };
+saturn.db.query_lang.QueryVisitor.__name__ = ["saturn","db","query_lang","QueryVisitor"];
+saturn.db.query_lang.QueryVisitor.prototype = {
 	translateQuery: null
-	,__class__: saturn_db_query_$lang_QueryVisitor
+	,__class__: saturn.db.query_lang.QueryVisitor
 };
-var saturn_db_query_$lang_RegexpLike = function(field,expression) {
-	saturn_db_query_$lang_Function.call(this,[field,expression]);
+saturn.db.query_lang.RegexpLike = $hxClasses["saturn.db.query_lang.RegexpLike"] = function(field,expression) {
+	saturn.db.query_lang.Function.call(this,[field,expression]);
 };
-$hxClasses["saturn.db.query_lang.RegexpLike"] = saturn_db_query_$lang_RegexpLike;
-saturn_db_query_$lang_RegexpLike.__name__ = ["saturn","db","query_lang","RegexpLike"];
-saturn_db_query_$lang_RegexpLike.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_RegexpLike.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_RegexpLike
+saturn.db.query_lang.RegexpLike.__name__ = ["saturn","db","query_lang","RegexpLike"];
+saturn.db.query_lang.RegexpLike.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.RegexpLike.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.RegexpLike
 });
-var saturn_db_query_$lang_SQLVisitor = function(provider,valPos,aliasToGenerated,nextAliasId) {
+saturn.db.query_lang.SQLVisitor = $hxClasses["saturn.db.query_lang.SQLVisitor"] = function(provider,valPos,aliasToGenerated,nextAliasId) {
 	if(nextAliasId == null) nextAliasId = 0;
 	if(valPos == null) valPos = 1;
 	this.provider = provider;
 	this.values = [];
 	this.valPos = valPos;
-	if(aliasToGenerated == null) this.aliasToGenerated = new haxe_ds_StringMap(); else this.aliasToGenerated = aliasToGenerated;
+	if(aliasToGenerated == null) this.aliasToGenerated = new haxe.ds.StringMap(); else this.aliasToGenerated = aliasToGenerated;
 	this.nextAliasId = nextAliasId;
 };
-$hxClasses["saturn.db.query_lang.SQLVisitor"] = saturn_db_query_$lang_SQLVisitor;
-saturn_db_query_$lang_SQLVisitor.__name__ = ["saturn","db","query_lang","SQLVisitor"];
-saturn_db_query_$lang_SQLVisitor.prototype = {
+saturn.db.query_lang.SQLVisitor.__name__ = ["saturn","db","query_lang","SQLVisitor"];
+saturn.db.query_lang.SQLVisitor.prototype = {
 	provider: null
 	,values: null
 	,valPos: null
@@ -9163,7 +9059,7 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 		this.nextAliasId++;
 		var id = baseValue + this.nextAliasId;
 		this.aliasToGenerated.set(alias,id);
-		saturn_core_Util.debug("Mapping" + alias + " to  " + id);
+		saturn.core.Util.debug("Mapping" + alias + " to  " + id);
 		return id;
 	}
 	,getNextValuePosition: function() {
@@ -9178,9 +9074,9 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 	,translate: function(token) {
 		var sqlTranslation = "";
 		if(token == null) {
-		} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Query)) {
+		} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Query)) {
 			var query;
-			query = js_Boot.__cast(token , saturn_db_query_$lang_Query);
+			query = js.Boot.__cast(token , saturn.db.query_lang.Query);
 			this.postProcess(query);
 			var sqlQuery = "";
 			var tokens = query.getTokens();
@@ -9194,7 +9090,7 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 			var nestedTranslation = "";
 			if(token.getTokens() != null) {
 				var tokenTranslations = [];
-				if(js_Boot.__instanceof(token,saturn_db_query_$lang_Instr)) {
+				if(js.Boot.__instanceof(token,saturn.db.query_lang.Instr)) {
 					if(this.provider.getProviderType() == "SQLITE" || this.provider.getProviderType() == "MYSQL") {
 						token.tokens.pop();
 						token.tokens.pop();
@@ -9205,8 +9101,8 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 				while(_g1 < _g11.length) {
 					var token2 = _g11[_g1];
 					++_g1;
-					if(js_Boot.__instanceof(token2,saturn_db_query_$lang_Query)) {
-						var subVisitor = new saturn_db_query_$lang_SQLVisitor(this.provider,this.valPos,this.aliasToGenerated,this.nextAliasId);
+					if(js.Boot.__instanceof(token2,saturn.db.query_lang.Query)) {
+						var subVisitor = new saturn.db.query_lang.SQLVisitor(this.provider,this.valPos,this.aliasToGenerated,this.nextAliasId);
 						this.valPos = subVisitor.getNextValuePosition();
 						this.nextAliasId = subVisitor.getNextAliasId();
 						var generatedAlias = "";
@@ -9222,25 +9118,25 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 					} else tokenTranslations.push(this.translate(token2));
 				}
 				var joinSep = " ";
-				if(js_Boot.__instanceof(token,saturn_db_query_$lang_Select) || js_Boot.__instanceof(token,saturn_db_query_$lang_From) || js_Boot.__instanceof(token,saturn_db_query_$lang_Function) || js_Boot.__instanceof(token,saturn_db_query_$lang_Group) || js_Boot.__instanceof(token,saturn_db_query_$lang_OrderBy)) joinSep = ",";
+				if(js.Boot.__instanceof(token,saturn.db.query_lang.Select) || js.Boot.__instanceof(token,saturn.db.query_lang.From) || js.Boot.__instanceof(token,saturn.db.query_lang.Function) || js.Boot.__instanceof(token,saturn.db.query_lang.Group) || js.Boot.__instanceof(token,saturn.db.query_lang.OrderBy)) joinSep = ",";
 				nestedTranslation = tokenTranslations.join(joinSep);
 			}
-			if(js_Boot.__instanceof(token,saturn_db_query_$lang_Value)) {
+			if(js.Boot.__instanceof(token,saturn.db.query_lang.Value)) {
 				var cToken;
-				cToken = js_Boot.__cast(token , saturn_db_query_$lang_Value);
+				cToken = js.Boot.__cast(token , saturn.db.query_lang.Value);
 				this.values.push(cToken.getValue());
 				sqlTranslation += " " + this.getParameterNotation(this.valPos++) + " " + nestedTranslation + " ";
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Function)) {
-				if(js_Boot.__instanceof(token,saturn_db_query_$lang_Trim)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Function)) {
+				if(js.Boot.__instanceof(token,saturn.db.query_lang.Trim)) {
 					if(this.provider.getProviderType() == "SQLITE") sqlTranslation += "ltrim(" + nestedTranslation + ",'0'" + ")"; else sqlTranslation += "Trim( leading '0' from " + nestedTranslation + ")";
 				} else {
 					var funcName = "";
-					if(js_Boot.__instanceof(token,saturn_db_query_$lang_Max)) funcName = "MAX"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Count)) funcName = "COUNT"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Instr)) funcName = "INSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Substr)) funcName = "SUBSTR"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Length)) funcName = "LENGTH"; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Concat)) funcName = "CONCAT";
+					if(js.Boot.__instanceof(token,saturn.db.query_lang.Max)) funcName = "MAX"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Count)) funcName = "COUNT"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Instr)) funcName = "INSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Substr)) funcName = "SUBSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Length)) funcName = "LENGTH"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Concat)) funcName = "CONCAT";
 					sqlTranslation += funcName + "( " + nestedTranslation + " )";
 				}
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Select)) sqlTranslation += " SELECT " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Field)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Select)) sqlTranslation += " SELECT " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Field)) {
 				var cToken1;
-				cToken1 = js_Boot.__cast(token , saturn_db_query_$lang_Field);
+				cToken1 = js.Boot.__cast(token , saturn.db.query_lang.Field);
 				var clazzName = cToken1.getClass();
 				var fieldPrefix = null;
 				var fieldName = null;
@@ -9256,25 +9152,25 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 				} else fieldName = this.generateId(cToken1.attributeName);
 				if(cToken1.getAttributeName() == "*") sqlTranslation += fieldPrefix + ".*"; else sqlTranslation += fieldPrefix + "." + fieldName;
 				sqlTranslation += " " + nestedTranslation + " ";
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Where)) sqlTranslation += " WHERE " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Group)) sqlTranslation += " GROUP BY " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_From)) sqlTranslation += " FROM " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_OrderBy)) sqlTranslation += " ORDER BY " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_OrderByItem)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Where)) sqlTranslation += " WHERE " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Group)) sqlTranslation += " GROUP BY " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.From)) sqlTranslation += " FROM " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.OrderBy)) sqlTranslation += " ORDER BY " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.OrderByItem)) {
 				var oToken;
-				oToken = js_Boot.__cast(token , saturn_db_query_$lang_OrderByItem);
+				oToken = js.Boot.__cast(token , saturn.db.query_lang.OrderByItem);
 				var direction = "ASC";
 				if(oToken.descending) direction = "DESC";
 				sqlTranslation += nestedTranslation + " " + direction;
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_ClassToken)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.ClassToken)) {
 				var cToken2;
-				cToken2 = js_Boot.__cast(token , saturn_db_query_$lang_ClassToken);
+				cToken2 = js.Boot.__cast(token , saturn.db.query_lang.ClassToken);
 				var model1 = this.provider.getModelByStringName(cToken2.getClass());
 				var tableName1 = model1.getTableName();
 				var schemaName1 = model1.getSchemaName();
 				var name = this.provider.generateQualifiedName(schemaName1,tableName1);
 				sqlTranslation += " " + name + " ";
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Operator)) {
-				if(js_Boot.__instanceof(token,saturn_db_query_$lang_And)) sqlTranslation += " AND " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Plus)) sqlTranslation += " + " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Minus)) sqlTranslation += " - " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Or)) sqlTranslation += " OR " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Equals)) sqlTranslation += " = " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_IsNull)) sqlTranslation += " IS NULL " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_IsNotNull)) sqlTranslation += " IS NOT NULL " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_GreaterThan)) sqlTranslation += " > " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_GreaterThanOrEqualTo)) sqlTranslation += " >= " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_LessThan)) sqlTranslation += " < " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_LessThanOrEqualTo)) sqlTranslation += " <= " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_In)) sqlTranslation += " IN " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Concat)) sqlTranslation += " || " + nestedTranslation; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Like)) sqlTranslation += " LIKE " + nestedTranslation;
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_ValueList)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Operator)) {
+				if(js.Boot.__instanceof(token,saturn.db.query_lang.And)) sqlTranslation += " AND " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Plus)) sqlTranslation += " + " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Minus)) sqlTranslation += " - " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Or)) sqlTranslation += " OR " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Equals)) sqlTranslation += " = " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.IsNull)) sqlTranslation += " IS NULL " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.IsNotNull)) sqlTranslation += " IS NOT NULL " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.GreaterThan)) sqlTranslation += " > " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.GreaterThanOrEqualTo)) sqlTranslation += " >= " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.LessThan)) sqlTranslation += " < " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.LessThanOrEqualTo)) sqlTranslation += " <= " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.In)) sqlTranslation += " IN " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Concat)) sqlTranslation += " || " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Like)) sqlTranslation += " LIKE " + nestedTranslation;
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.ValueList)) {
 				var cToken3;
-				cToken3 = js_Boot.__cast(token , saturn_db_query_$lang_ValueList);
+				cToken3 = js.Boot.__cast(token , saturn.db.query_lang.ValueList);
 				var values = cToken3.getValues();
 				var itemStrings = [];
 				var _g12 = 0;
@@ -9285,13 +9181,13 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 					values.push(values[i]);
 				}
 				sqlTranslation += " ( " + itemStrings.join(",") + " ) ";
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_Limit)) {
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Limit)) {
 				var cToken4;
-				cToken4 = js_Boot.__cast(token , saturn_db_query_$lang_Limit);
+				cToken4 = js.Boot.__cast(token , saturn.db.query_lang.Limit);
 				sqlTranslation += this.getLimitClause(nestedTranslation);
-			} else if(js_Boot.__instanceof(token,saturn_db_query_$lang_StartBlock)) sqlTranslation += " ( "; else if(js_Boot.__instanceof(token,saturn_db_query_$lang_EndBlock)) sqlTranslation += " ) "; else sqlTranslation += " " + nestedTranslation + " ";
+			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.StartBlock)) sqlTranslation += " ( "; else if(js.Boot.__instanceof(token,saturn.db.query_lang.EndBlock)) sqlTranslation += " ) "; else sqlTranslation += " " + nestedTranslation + " ";
 		}
-		if(token != null && token.name != null && !js_Boot.__instanceof(token,saturn_db_query_$lang_Query)) {
+		if(token != null && token.name != null && !js.Boot.__instanceof(token,saturn.db.query_lang.Query)) {
 			var generatedAlias1 = this.generateId(token.name);
 			sqlTranslation += "  \"" + generatedAlias1 + "\"";
 		}
@@ -9299,7 +9195,7 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 	}
 	,getProcessedResults: function(results) {
 		if(results.length > 0) {
-			this.generatedToAlias = new haxe_ds_StringMap();
+			this.generatedToAlias = new haxe.ds.StringMap();
 			var $it0 = this.aliasToGenerated.keys();
 			while( $it0.hasNext() ) {
 				var generated = $it0.next();
@@ -9343,8 +9239,8 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 				while(_g < _g1.length) {
 					var token = _g1[_g];
 					++_g;
-					if(js_Boot.__instanceof(token,saturn_db_query_$lang_Limit)) {
-						if(query.whereToken == null) query.whereToken = new saturn_db_query_$lang_Where();
+					if(js.Boot.__instanceof(token,saturn.db.query_lang.Limit)) {
+						if(query.whereToken == null) query.whereToken = new saturn.db.query_lang.Where();
 						var where = query.getWhere();
 						where.add(token);
 						HxOverrides.remove(query.tokens,token);
@@ -9363,99 +9259,93 @@ saturn_db_query_$lang_SQLVisitor.prototype = {
 		inClause_b += ")";
 		return inClause_b;
 	}
-	,__class__: saturn_db_query_$lang_SQLVisitor
+	,__class__: saturn.db.query_lang.SQLVisitor
 };
-var saturn_db_query_$lang_Select = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Select = $hxClasses["saturn.db.query_lang.Select"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Select"] = saturn_db_query_$lang_Select;
-saturn_db_query_$lang_Select.__name__ = ["saturn","db","query_lang","Select"];
-saturn_db_query_$lang_Select.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Select.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Select
+saturn.db.query_lang.Select.__name__ = ["saturn","db","query_lang","Select"];
+saturn.db.query_lang.Select.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Select.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Select
 });
-var saturn_db_query_$lang_StartBlock = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.StartBlock = $hxClasses["saturn.db.query_lang.StartBlock"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.StartBlock"] = saturn_db_query_$lang_StartBlock;
-saturn_db_query_$lang_StartBlock.__name__ = ["saturn","db","query_lang","StartBlock"];
-saturn_db_query_$lang_StartBlock.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_StartBlock.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_StartBlock
+saturn.db.query_lang.StartBlock.__name__ = ["saturn","db","query_lang","StartBlock"];
+saturn.db.query_lang.StartBlock.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.StartBlock.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.StartBlock
 });
-var saturn_db_query_$lang_Substr = function(value,position,length) {
-	saturn_db_query_$lang_Function.call(this,[value,position,length]);
+saturn.db.query_lang.Substr = $hxClasses["saturn.db.query_lang.Substr"] = function(value,position,length) {
+	saturn.db.query_lang.Function.call(this,[value,position,length]);
 };
-$hxClasses["saturn.db.query_lang.Substr"] = saturn_db_query_$lang_Substr;
-saturn_db_query_$lang_Substr.__name__ = ["saturn","db","query_lang","Substr"];
-saturn_db_query_$lang_Substr.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Substr.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Substr
+saturn.db.query_lang.Substr.__name__ = ["saturn","db","query_lang","Substr"];
+saturn.db.query_lang.Substr.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Substr.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Substr
 });
-var saturn_db_query_$lang_Trim = function(value) {
-	saturn_db_query_$lang_Function.call(this,[value]);
+saturn.db.query_lang.Trim = $hxClasses["saturn.db.query_lang.Trim"] = function(value) {
+	saturn.db.query_lang.Function.call(this,[value]);
 };
-$hxClasses["saturn.db.query_lang.Trim"] = saturn_db_query_$lang_Trim;
-saturn_db_query_$lang_Trim.__name__ = ["saturn","db","query_lang","Trim"];
-saturn_db_query_$lang_Trim.__super__ = saturn_db_query_$lang_Function;
-saturn_db_query_$lang_Trim.prototype = $extend(saturn_db_query_$lang_Function.prototype,{
-	__class__: saturn_db_query_$lang_Trim
+saturn.db.query_lang.Trim.__name__ = ["saturn","db","query_lang","Trim"];
+saturn.db.query_lang.Trim.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.Trim.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.Trim
 });
-var saturn_db_query_$lang_Value = function(value) {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Value = $hxClasses["saturn.db.query_lang.Value"] = function(value) {
+	saturn.db.query_lang.Token.call(this,null);
 	this.value = value;
 };
-$hxClasses["saturn.db.query_lang.Value"] = saturn_db_query_$lang_Value;
-saturn_db_query_$lang_Value.__name__ = ["saturn","db","query_lang","Value"];
-saturn_db_query_$lang_Value.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Value.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.Value.__name__ = ["saturn","db","query_lang","Value"];
+saturn.db.query_lang.Value.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Value.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	value: null
 	,getValue: function() {
 		return this.value;
 	}
-	,__class__: saturn_db_query_$lang_Value
+	,__class__: saturn.db.query_lang.Value
 });
-var saturn_db_query_$lang_ValueList = function(values) {
+saturn.db.query_lang.ValueList = $hxClasses["saturn.db.query_lang.ValueList"] = function(values) {
 	this.values = values;
-	saturn_db_query_$lang_Token.call(this,null);
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.ValueList"] = saturn_db_query_$lang_ValueList;
-saturn_db_query_$lang_ValueList.__name__ = ["saturn","db","query_lang","ValueList"];
-saturn_db_query_$lang_ValueList.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_ValueList.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
+saturn.db.query_lang.ValueList.__name__ = ["saturn","db","query_lang","ValueList"];
+saturn.db.query_lang.ValueList.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.ValueList.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	values: null
 	,getValues: function() {
 		return this.values;
 	}
-	,__class__: saturn_db_query_$lang_ValueList
+	,__class__: saturn.db.query_lang.ValueList
 });
-var saturn_db_query_$lang_Where = function() {
-	saturn_db_query_$lang_Token.call(this,null);
+saturn.db.query_lang.Where = $hxClasses["saturn.db.query_lang.Where"] = function() {
+	saturn.db.query_lang.Token.call(this,null);
 };
-$hxClasses["saturn.db.query_lang.Where"] = saturn_db_query_$lang_Where;
-saturn_db_query_$lang_Where.__name__ = ["saturn","db","query_lang","Where"];
-saturn_db_query_$lang_Where.__super__ = saturn_db_query_$lang_Token;
-saturn_db_query_$lang_Where.prototype = $extend(saturn_db_query_$lang_Token.prototype,{
-	__class__: saturn_db_query_$lang_Where
+saturn.db.query_lang.Where.__name__ = ["saturn","db","query_lang","Where"];
+saturn.db.query_lang.Where.__super__ = saturn.db.query_lang.Token;
+saturn.db.query_lang.Where.prototype = $extend(saturn.db.query_lang.Token.prototype,{
+	__class__: saturn.db.query_lang.Where
 });
-var saturn_server_plugins_core_AuthenticationManager = function() { };
-$hxClasses["saturn.server.plugins.core.AuthenticationManager"] = saturn_server_plugins_core_AuthenticationManager;
-saturn_server_plugins_core_AuthenticationManager.__name__ = ["saturn","server","plugins","core","AuthenticationManager"];
-saturn_server_plugins_core_AuthenticationManager.prototype = {
+if(!saturn.server) saturn.server = {};
+if(!saturn.server.plugins) saturn.server.plugins = {};
+if(!saturn.server.plugins.core) saturn.server.plugins.core = {};
+saturn.server.plugins.core.AuthenticationManager = $hxClasses["saturn.server.plugins.core.AuthenticationManager"] = function() { };
+saturn.server.plugins.core.AuthenticationManager.__name__ = ["saturn","server","plugins","core","AuthenticationManager"];
+saturn.server.plugins.core.AuthenticationManager.prototype = {
 	authenticate: null
-	,__class__: saturn_server_plugins_core_AuthenticationManager
+	,__class__: saturn.server.plugins.core.AuthenticationManager
 };
-var saturn_server_plugins_core_BaseServerPlugin = function(saturn1,config) {
-	this.debug = (js_Node.require("debug"))("saturn:plugin");
+saturn.server.plugins.core.BaseServerPlugin = $hxClasses["saturn.server.plugins.core.BaseServerPlugin"] = function(saturn1,config) {
+	this.debug = (js.Node.require("debug"))("saturn:plugin");
 	this.saturn = saturn1;
 	this.config = config;
 	this.plugins = [];
 	this.processConfig();
 	this.registerPlugins();
 };
-$hxClasses["saturn.server.plugins.core.BaseServerPlugin"] = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_BaseServerPlugin.__name__ = ["saturn","server","plugins","core","BaseServerPlugin"];
-saturn_server_plugins_core_BaseServerPlugin.prototype = {
+saturn.server.plugins.core.BaseServerPlugin.__name__ = ["saturn","server","plugins","core","BaseServerPlugin"];
+saturn.server.plugins.core.BaseServerPlugin.prototype = {
 	saturn: null
 	,config: null
 	,plugins: null
@@ -9463,7 +9353,7 @@ saturn_server_plugins_core_BaseServerPlugin.prototype = {
 	,processConfig: function() {
 	}
 	,registerPlugins: function() {
-		var clazzName = Type.getClassName(js_Boot.getClass(this));
+		var clazzName = Type.getClassName(js.Boot.getClass(this));
 		if(Object.prototype.hasOwnProperty.call(this.config,"plugins")) {
 			var pluginDefs = Reflect.field(this.config,"plugins");
 			var _g = 0;
@@ -9481,24 +9371,23 @@ saturn_server_plugins_core_BaseServerPlugin.prototype = {
 	,getSaturnServer: function() {
 		return this.saturn;
 	}
-	,__class__: saturn_server_plugins_core_BaseServerPlugin
+	,__class__: saturn.server.plugins.core.BaseServerPlugin
 };
-var saturn_server_plugins_core_AuthenticationPlugin = function(server,config) {
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+saturn.server.plugins.core.AuthenticationPlugin = $hxClasses["saturn.server.plugins.core.AuthenticationPlugin"] = function(server,config) {
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.configureAuthenticationManager();
 	this.installAuth();
 	if(config.password_in_token) this.debug("Warning passwords will be stored in JSON web tokens using AES encryption.  " + "To disable set password_in_token to false in your confirguation file");
 };
-$hxClasses["saturn.server.plugins.core.AuthenticationPlugin"] = saturn_server_plugins_core_AuthenticationPlugin;
-saturn_server_plugins_core_AuthenticationPlugin.__name__ = ["saturn","server","plugins","core","AuthenticationPlugin"];
-saturn_server_plugins_core_AuthenticationPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.core.AuthenticationPlugin.__name__ = ["saturn","server","plugins","core","AuthenticationPlugin"];
+saturn.server.plugins.core.AuthenticationPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.core.AuthenticationPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	authManager: null
 	,installAuth: function() {
 		var _g = this;
-		var jwt = js_Node.require("jsonwebtoken");
-		var uuid = js_Node.require("node-uuid");
-		var crypto = js_Node.require("crypto");
+		var jwt = js.Node.require("jsonwebtoken");
+		var uuid = js.Node.require("node-uuid");
+		var crypto = js.Node.require("crypto");
 		this.saturn.getServer().post("/login",function(req,res,next) {
 			var username = req.params.username;
 			var password = req.params.password;
@@ -9524,7 +9413,7 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 				next();
 			},req.connection.remoteAddress);
 		});
-		var socketioJwt = js_Node.require("socketio-jwt");
+		var socketioJwt = js.Node.require("socketio-jwt");
 		this.saturn.getServerSocket().on("connection",socketioJwt.authorize({ required : false, secret : this.config.jwt_secret, timeout : 15000, additional_auth : $bind(this,this.additionalAuth)})).on("authenticated",function(socket) {
 			socket.on("logout",function(data) {
 				_g.saturn.getSocketUser(socket,function(authUser) {
@@ -9542,7 +9431,7 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 		var clazzStr = this.config.authentication_manager.clazz;
 		var clazz = Type.resolveClass(clazzStr);
 		this.authManager = Type.createInstance(clazz,[this.config.authentication_manager,this]);
-		if(!js_Boot.__instanceof(this.authManager,saturn_server_plugins_core_AuthenticationManager)) throw new js__$Boot_HaxeError("Unable to setup authentication manager\n" + clazzStr + " should implement " + Std.string(saturn_server_plugins_core_AuthenticationManager));
+		if(!js.Boot.__instanceof(this.authManager,saturn.server.plugins.core.AuthenticationManager)) throw new js._Boot.HaxeError("Unable to setup authentication manager\n" + clazzStr + " should implement " + Std.string(saturn.server.plugins.core.AuthenticationManager));
 	}
 	,additionalAuth: function(user,onSuccess,onFailure) {
 		var db = this.saturn.getRedisClient();
@@ -9551,13 +9440,13 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 		});
 	}
 	,decryptUserPassword: function(user,cb) {
-		var crypto = js_Node.require("crypto");
+		var crypto = js.Node.require("crypto");
 		var dBuffer = Buffer;
 		var parts = user.password.split(":");
 		var decipher = crypto.createDecipheriv(this.config.algorithm,new Buffer(this.config.encrypt_password),dBuffer.from(parts[0],"hex"));
 		var dec = decipher.update(parts[1],"hex","utf8");
 		dec += decipher["final"]("utf8");
-		var userClone = new saturn_core_User();
+		var userClone = new saturn.core.User();
 		userClone.firstname = user.firstname;
 		userClone.lastname = user.lastname;
 		userClone.password = dec;
@@ -9572,23 +9461,21 @@ saturn_server_plugins_core_AuthenticationPlugin.prototype = $extend(saturn_serve
 			});
 		}
 	}
-	,__class__: saturn_server_plugins_core_AuthenticationPlugin
+	,__class__: saturn.server.plugins.core.AuthenticationPlugin
 });
-var saturn_server_plugins_core_ConfigurationPlugin = function() { };
-$hxClasses["saturn.server.plugins.core.ConfigurationPlugin"] = saturn_server_plugins_core_ConfigurationPlugin;
-saturn_server_plugins_core_ConfigurationPlugin.__name__ = ["saturn","server","plugins","core","ConfigurationPlugin"];
-saturn_server_plugins_core_ConfigurationPlugin.getConfiguration = function(query,params,clazz,cb,hookConfig) {
-	saturn_core_Util.debug("Returning configuration");
+saturn.server.plugins.core.ConfigurationPlugin = $hxClasses["saturn.server.plugins.core.ConfigurationPlugin"] = function() { };
+saturn.server.plugins.core.ConfigurationPlugin.__name__ = ["saturn","server","plugins","core","ConfigurationPlugin"];
+saturn.server.plugins.core.ConfigurationPlugin.getConfiguration = function(query,params,clazz,cb,hookConfig) {
+	saturn.core.Util.debug("Returning configuration");
 	if(hookConfig == null) cb(null,"Hook configuration is missing"); else if(Object.prototype.hasOwnProperty.call(hookConfig,"config")) cb(Reflect.field(hookConfig,"config"),null); else cb(null,"ConfigurationPlugin configuration block is missing config attribute from JSON");
 };
-var saturn_server_plugins_core_DefaultProviderPlugin = function(server,config) {
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+saturn.server.plugins.core.DefaultProviderPlugin = $hxClasses["saturn.server.plugins.core.DefaultProviderPlugin"] = function(server,config) {
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.configureProviders();
 };
-$hxClasses["saturn.server.plugins.core.DefaultProviderPlugin"] = saturn_server_plugins_core_DefaultProviderPlugin;
-saturn_server_plugins_core_DefaultProviderPlugin.__name__ = ["saturn","server","plugins","core","DefaultProviderPlugin"];
-saturn_server_plugins_core_DefaultProviderPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.core.DefaultProviderPlugin.__name__ = ["saturn","server","plugins","core","DefaultProviderPlugin"];
+saturn.server.plugins.core.DefaultProviderPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.core.DefaultProviderPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	configureProviders: function() {
 		var connections = this.config.connections;
 		var _g = 0;
@@ -9605,21 +9492,21 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 		try {
 			clazz = Type.resolveClass(driver);
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			js_Node.console.log(e);
-			js_Node.process.exit(-1);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			js.Node.console.log(e);
+			js.Node.process.exit(-1);
 		}
 		var models = null;
 		try {
 			models = Type.createInstance(Type.resolveClass(this.config.connection.model_mapping),[]).models;
 			this.debug("Hello World");
 		} catch( e1 ) {
-			if (e1 instanceof js__$Boot_HaxeError) e1 = e1.val;
-			js_Node.console.log(e1);
-			js_Node.process.exit(-1);
+			if (e1 instanceof js._Boot.HaxeError) e1 = e1.val;
+			js.Node.console.log(e1);
+			js.Node.process.exit(-1);
 		}
 		if(this.config.connection.use_pool) {
-			var pool = saturn_db_NodePool.generatePool("main_db",3,3,2000000,true,function(cb) {
+			var pool = saturn.db.NodePool.generatePool("main_db",3,3,2000000,true,function(cb) {
 				_g.debug("Configuring provider");
 				var provider = Type.createInstance(clazz,[models,_g.config.connection,false]);
 				provider.dataBinding(false);
@@ -9630,7 +9517,7 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 				provider.enableCache(_g.config.enable_cache);
 			},function(resource) {
 			});
-			saturn_client_core_CommonCore.setPool(this.config.name,pool,this.config.default_provider);
+			saturn.client.core.CommonCore.setPool(this.config.name,pool,this.config.default_provider);
 		} else {
 			this.debug("Configuring provider");
 			var provider1 = Type.createInstance(clazz,[models,this.config.connection,false]);
@@ -9639,10 +9526,10 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 			provider1.readModels(function(err1) {
 				if(err1 != null) {
 					_g.debug(err1);
-					js_Node.process.exit(-1);
+					js.Node.process.exit(-1);
 				}
 			});
-			saturn_client_core_CommonCore.setDefaultProvider(provider1,this.config.name,this.config.default_provider);
+			saturn.client.core.CommonCore.setDefaultProvider(provider1,this.config.name,this.config.default_provider);
 		}
 	}
 	,_configureProvider: function(config) {
@@ -9652,21 +9539,21 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 		try {
 			clazz = Type.resolveClass(driver);
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			js_Node.console.log(e);
-			js_Node.process.exit(-1);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			js.Node.console.log(e);
+			js.Node.process.exit(-1);
 		}
 		var models = null;
 		try {
 			models = Type.createInstance(Type.resolveClass(config.model_mapping),[]).models;
 			this.debug("Hello World " + config.model_mapping);
 		} catch( e1 ) {
-			if (e1 instanceof js__$Boot_HaxeError) e1 = e1.val;
-			js_Node.console.log(e1);
-			js_Node.process.exit(-1);
+			if (e1 instanceof js._Boot.HaxeError) e1 = e1.val;
+			js.Node.console.log(e1);
+			js.Node.process.exit(-1);
 		}
 		if(config.use_pool) {
-			var pool = saturn_db_NodePool.generatePool("main_db",3,3,2000000,true,function(cb) {
+			var pool = saturn.db.NodePool.generatePool("main_db",3,3,2000000,true,function(cb) {
 				_g.debug("Configuring provider");
 				var provider = Type.createInstance(clazz,[models,config,false]);
 				provider.dataBinding(false);
@@ -9678,7 +9565,7 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 				provider.enableCache(config.enable_cache);
 			},function(resource) {
 			});
-			saturn_client_core_CommonCore.setPool(config.name,pool,config.default_provider);
+			saturn.client.core.CommonCore.setPool(config.name,pool,config.default_provider);
 		} else {
 			this.debug("Configuring provider");
 			var provider1 = Type.createInstance(clazz,[models,config,false]);
@@ -9688,107 +9575,104 @@ saturn_server_plugins_core_DefaultProviderPlugin.prototype = $extend(saturn_serv
 			provider1.readModels(function(err1) {
 				if(err1 != null) {
 					_g.debug(err1);
-					js_Node.process.exit(-1);
+					js.Node.process.exit(-1);
 				}
 			});
-			saturn_client_core_CommonCore.setDefaultProvider(provider1,config.name,config.default_provider);
+			saturn.client.core.CommonCore.setDefaultProvider(provider1,config.name,config.default_provider);
 		}
 	}
-	,__class__: saturn_server_plugins_core_DefaultProviderPlugin
+	,__class__: saturn.server.plugins.core.DefaultProviderPlugin
 });
-var saturn_server_plugins_core_ExternalAuthenticationPlugin = function(config) {
+saturn.server.plugins.core.ExternalAuthenticationPlugin = $hxClasses["saturn.server.plugins.core.ExternalAuthenticationPlugin"] = function(config) {
 	this.config = config;
 };
-$hxClasses["saturn.server.plugins.core.ExternalAuthenticationPlugin"] = saturn_server_plugins_core_ExternalAuthenticationPlugin;
-saturn_server_plugins_core_ExternalAuthenticationPlugin.__name__ = ["saturn","server","plugins","core","ExternalAuthenticationPlugin"];
-saturn_server_plugins_core_ExternalAuthenticationPlugin.__interfaces__ = [saturn_server_plugins_core_AuthenticationManager];
-saturn_server_plugins_core_ExternalAuthenticationPlugin.prototype = {
+saturn.server.plugins.core.ExternalAuthenticationPlugin.__name__ = ["saturn","server","plugins","core","ExternalAuthenticationPlugin"];
+saturn.server.plugins.core.ExternalAuthenticationPlugin.__interfaces__ = [saturn.server.plugins.core.AuthenticationManager];
+saturn.server.plugins.core.ExternalAuthenticationPlugin.prototype = {
 	config: null
 	,authenticate: function(username,password,onSuccess,onFailure,src) {
 		var hookConfig = this.config.external_hook;
 		var authObj = [{ 'username' : username, 'password' : password, 'mode' : "authenticate", 'src' : src}];
-		saturn_db_provider_hooks_ExternalJsonHook.run("Authenticate",authObj,null,function(objs,error) {
+		saturn.db.provider.hooks.ExternalJsonHook.run("Authenticate",authObj,null,function(objs,error) {
 			if(error != null) {
-				saturn_core_Util.debug(error);
+				saturn.core.Util.debug(error);
 				onFailure("Internal server error");
 			} else {
-				saturn_core_Util.debug("Authentication manager returned");
+				saturn.core.Util.debug("Authentication manager returned");
 				var authResponse = objs[0];
 				if(authResponse.outcome == "success") {
-					var user = new saturn_core_User();
+					var user = new saturn.core.User();
 					user.firstname = authResponse.firstName;
 					user.lastname = authResponse.lastName;
 					user.email = authResponse.email;
 					user.projects = authResponse.projects;
-					saturn_core_Util.debug("Returning success");
+					saturn.core.Util.debug("Returning success");
 					onSuccess(user);
 				} else {
-					saturn_core_Util.debug("Returning error");
+					saturn.core.Util.debug("Returning error");
 					onFailure("Unable to authenticate");
 				}
 			}
 		},hookConfig);
 	}
-	,__class__: saturn_server_plugins_core_ExternalAuthenticationPlugin
+	,__class__: saturn.server.plugins.core.ExternalAuthenticationPlugin
 };
-var saturn_server_plugins_core_MySQLAuthPlugin = function(config) {
+saturn.server.plugins.core.MySQLAuthPlugin = $hxClasses["saturn.server.plugins.core.MySQLAuthPlugin"] = function(config) {
 	this.config = config;
 };
-$hxClasses["saturn.server.plugins.core.MySQLAuthPlugin"] = saturn_server_plugins_core_MySQLAuthPlugin;
-saturn_server_plugins_core_MySQLAuthPlugin.__name__ = ["saturn","server","plugins","core","MySQLAuthPlugin"];
-saturn_server_plugins_core_MySQLAuthPlugin.__interfaces__ = [saturn_server_plugins_core_AuthenticationManager];
-saturn_server_plugins_core_MySQLAuthPlugin.prototype = {
+saturn.server.plugins.core.MySQLAuthPlugin.__name__ = ["saturn","server","plugins","core","MySQLAuthPlugin"];
+saturn.server.plugins.core.MySQLAuthPlugin.__interfaces__ = [saturn.server.plugins.core.AuthenticationManager];
+saturn.server.plugins.core.MySQLAuthPlugin.prototype = {
 	config: null
 	,authenticate: function(username,password,onSuccess,onFailure,src) {
-		var mysql = js_Node.require("mysql2");
-		saturn_core_Util.debug("Connecting as " + username + " to " + username + " with password " + password + " on " + Std.string(this.config.hostname));
+		var mysql = js.Node.require("mysql2");
+		saturn.core.Util.debug("Connecting as " + username + " to " + username + " with password " + password + " on " + Std.string(this.config.hostname));
 		var connection = mysql.createConnection({ host : this.config.hostname, user : username, password : password, database : username});
 		connection.on("connect",function(connect) {
 			if(connect) connection.query("\r\n                    SELECT\r\n                     *\r\n                    FROM\r\n                        icmdb_page_secure.V_USERS\r\n                    WHERE\r\n                        Name=?\r\n                ",[username],function(err,res) {
 				if(err) {
-					js_Node.console.log("Error connecting");
+					js.Node.console.log("Error connecting");
 					onFailure("Unable to connect");
 				} else {
-					js_Node.console.log("Success");
+					js.Node.console.log("Success");
 					if(res.length == 0) {
-						js_Node.console.log("Unable to connect");
+						js.Node.console.log("Unable to connect");
 						onFailure("Unable to connect");
 					} else {
 						var userRow = res[0];
-						var user = new saturn_core_User();
+						var user = new saturn.core.User();
 						user.firstname = userRow.First_Name;
 						user.lastname = userRow.Last_Name;
 						user.email = userRow.EMail;
-						js_Node.console.log("Login succeded!");
+						js.Node.console.log("Login succeded!");
 						onSuccess(user);
 					}
 				}
 				connection.end();
 			}); else {
-				js_Node.console.log("Unable to connect");
+				js.Node.console.log("Unable to connect");
 				onFailure("Unable to connect");
 			}
 		});
 		connection.on("error",function(err1) {
-			js_Node.console.log("Error: " + (err1 == null?"null":"" + err1));
+			js.Node.console.log("Error: " + (err1 == null?"null":"" + err1));
 			onFailure("Unable to connect");
 		});
 	}
-	,__class__: saturn_server_plugins_core_MySQLAuthPlugin
+	,__class__: saturn.server.plugins.core.MySQLAuthPlugin
 };
-var saturn_server_plugins_core_ProxyPlugin = function(server,config) {
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+saturn.server.plugins.core.ProxyPlugin = $hxClasses["saturn.server.plugins.core.ProxyPlugin"] = function(server,config) {
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.configure();
 };
-$hxClasses["saturn.server.plugins.core.ProxyPlugin"] = saturn_server_plugins_core_ProxyPlugin;
-saturn_server_plugins_core_ProxyPlugin.__name__ = ["saturn","server","plugins","core","ProxyPlugin"];
-saturn_server_plugins_core_ProxyPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.core.ProxyPlugin.__name__ = ["saturn","server","plugins","core","ProxyPlugin"];
+saturn.server.plugins.core.ProxyPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.core.ProxyPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	proxy: null
 	,configure: function() {
 		var _g2 = this;
-		var httpProxy = js_Node.require("http-proxy");
-		var Agent = js_Node.require("agentkeepalive");
+		var httpProxy = js.Node.require("http-proxy");
+		var Agent = js.Node.require("agentkeepalive");
 		var agent = new Agent({
             maxSockets: 100,
             keepAlive: true,
@@ -9799,7 +9683,7 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
         });
 		this.proxy = httpProxy.createProxyServer({ agent : agent, changeOrigin : true});
 		var server = this.getSaturnServer().getServer();
-		var restify = js_Node.require("restify");
+		var restify = js.Node.require("restify");
 		var _g = 0;
 		var _g1 = Reflect.fields(this.config.routes);
 		while(_g < _g1.length) {
@@ -9808,7 +9692,7 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 			var routeConfig = [Reflect.field(this.config.routes,route)];
 			this.debug("Routing " + route + " to " + routeConfig[0].target);
 			if(routeConfig[0].prestart != null) {
-				var proc = js_Node.require("child_process").spawn(routeConfig[0].prestart,routeConfig[0].args,{ env : js_Node.process.env, cwd : routeConfig[0].cwd});
+				var proc = js.Node.require("child_process").spawn(routeConfig[0].prestart,routeConfig[0].args,{ env : js.Node.process.env, cwd : routeConfig[0].cwd});
 				proc.stderr.on("data",(function() {
 					return function(error) {
 						_g2.debug(error);
@@ -9848,7 +9732,7 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 			_g2.debug("proxy error",error2);
 			if(!res2.headersSent) res2.writeHead(500,{ 'content-type' : "application/json"});
 			json = { error : "proxy_error", reason : error2.message};
-			res2.end(haxe_Json.stringify(json,null,null));
+			res2.end(haxe.Json.stringify(json,null,null));
 		});
 	}
 	,proxyRequest: function(req,res,target) {
@@ -9868,30 +9752,31 @@ saturn_server_plugins_core_ProxyPlugin.prototype = $extend(saturn_server_plugins
 			}
 		};
 	}
-	,__class__: saturn_server_plugins_core_ProxyPlugin
+	,__class__: saturn.server.plugins.core.ProxyPlugin
 });
-var saturn_server_plugins_core_RESTSocketWrapperPlugin = function(server,config) {
-	this.uuidToJobInfo = new haxe_ds_StringMap();
-	this.uuidToResponse = new haxe_ds_StringMap();
-	this.uuidToToken = new haxe_ds_StringMap();
-	this.uuidModule = js_Node.require("node-uuid");
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+saturn.server.plugins.core.RESTSocketWrapperPlugin = $hxClasses["saturn.server.plugins.core.RESTSocketWrapperPlugin"] = function(server,config) {
+	this.uuidToJobInfo = new haxe.ds.StringMap();
+	this.uuidToResponse = new haxe.ds.StringMap();
+	this.uuidToToken = new haxe.ds.StringMap();
+	this.uuidModule = js.Node.require("node-uuid");
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.registerListeners();
 };
-$hxClasses["saturn.server.plugins.core.RESTSocketWrapperPlugin"] = saturn_server_plugins_core_RESTSocketWrapperPlugin;
-saturn_server_plugins_core_RESTSocketWrapperPlugin.__name__ = ["saturn","server","plugins","core","RESTSocketWrapperPlugin"];
-saturn_server_plugins_core_RESTSocketWrapperPlugin.fetch_compound = function(path,req,res,next,handle_function) {
+saturn.server.plugins.core.RESTSocketWrapperPlugin.__name__ = ["saturn","server","plugins","core","RESTSocketWrapperPlugin"];
+saturn.server.plugins.core.RESTSocketWrapperPlugin.fetch_compound = function(path,req,res,next,handle_function) {
 	var command = "_remote_provider_._data_request_objects_namedquery";
 	var d = { };
 	var json = { };
-	json.action = "as_svg";
-	json.ctab_content = req.params.molblock;
+	if(Object.prototype.hasOwnProperty.call(req.params,"format") && req.params.format == "svg") {
+		json.action = "as_svg";
+		json.ctab_content = req.params.molblock;
+	}
 	d.queryId = "saturn.db.provider.hooks.ExternalJsonHook:Fetch";
-	d.parameters = haxe_Serializer.run([json]);
+	d.parameters = haxe.Serializer.run([json]);
 	handle_function(path,req,res,next,command,d);
 };
-saturn_server_plugins_core_RESTSocketWrapperPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.core.RESTSocketWrapperPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	uuidModule: null
 	,uuidToToken: null
 	,uuidToResponse: null
@@ -9945,19 +9830,19 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 			}
 			if(command == null && json == null) {
 				command = req.params.command;
-				json = js_Node.parse(req.params.json);
+				json = js.Node.parse(req.params.json);
 				if(path == "/api/command/") {
 					if(command == "_remote_provider_._data_request_objects_namedquery") {
 						var d = { };
 						d.queryId = json.queryId;
-						d.parameters = haxe_Serializer.run(json.parameters);
+						d.parameters = haxe.Serializer.run(json.parameters);
 						json = d;
 					}
 				} else if(path == "/api/provider/command/") {
 					var d1 = { };
 					d1.queryId = command;
 					command = "_remote_provider_._data_request_objects_namedquery";
-					d1.parameters = haxe_Serializer.run(json.parameters);
+					d1.parameters = haxe.Serializer.run(json.parameters);
 					json = d1;
 				}
 			}
@@ -9980,14 +9865,14 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 				res.send();
 				next();
 			} else next();
-			var io = js_Node.require("socket.io-client");
+			var io = js.Node.require("socket.io-client");
 			var protocol = "ws";
 			if(_g.saturn.isEncrypted()) protocol = "wss";
 			var conStr = protocol + "://" + _g.saturn.getInternalConnectionHostName() + ":" + Std.string(_g.saturn.getServerConfig().port);
 			_g.debug("Connecting to " + conStr);
 			var socket = io.connect(conStr,{ port : 8091});
 			var openTime = new Date().getTime();
-			var status = new haxe_ds_StringMap();
+			var status = new haxe.ds.StringMap();
 			if(__map_reserved.connected != null) status.setReserved("connected",false); else status.h["connected"] = false;
 			if(__map_reserved.disconnected != null) status.setReserved("disconnected",false); else status.h["disconnected"] = false;
 			socket.on("error",function(data) {
@@ -10021,7 +9906,7 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 						res.status(200);
 						res.send("Connection time-out");
 					}
-				} else haxe_Timer.delay(cleanUp,10000);
+				} else haxe.Timer.delay(cleanUp,10000);
 			};
 			cleanUp();
 		};
@@ -10072,42 +9957,42 @@ saturn_server_plugins_core_RESTSocketWrapperPlugin.prototype = $extend(saturn_se
 		this.debug("Sending command " + command);
 		socket.emit(command,json);
 	}
-	,__class__: saturn_server_plugins_core_RESTSocketWrapperPlugin
+	,__class__: saturn.server.plugins.core.RESTSocketWrapperPlugin
 });
-var saturn_server_plugins_core_SocketPlugin = function(server,config) {
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+saturn.server.plugins.core.SocketPlugin = $hxClasses["saturn.server.plugins.core.SocketPlugin"] = function(server,config) {
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.startSocketServer();
 };
-$hxClasses["saturn.server.plugins.core.SocketPlugin"] = saturn_server_plugins_core_SocketPlugin;
-saturn_server_plugins_core_SocketPlugin.__name__ = ["saturn","server","plugins","core","SocketPlugin"];
-saturn_server_plugins_core_SocketPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_core_SocketPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.core.SocketPlugin.__name__ = ["saturn","server","plugins","core","SocketPlugin"];
+saturn.server.plugins.core.SocketPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.core.SocketPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	startSocketServer: function() {
-		var socket = js_Node.require("socket.io").listen(this.saturn.getServer().server,{ log : true});
+		var socket = js.Node.require("socket.io").listen(this.saturn.getServer().server,{ log : true});
 		socket.set("origins",this.saturn.getServerConfig().origins);
 		socket.set("transports",["websocket","polling"]);
 		this.saturn.setServerSocket(socket);
 	}
-	,__class__: saturn_server_plugins_core_SocketPlugin
+	,__class__: saturn.server.plugins.core.SocketPlugin
 });
-var saturn_server_plugins_socket_core_BaseServerSocketPlugin = function(server,config) {
+if(!saturn.server.plugins.socket) saturn.server.plugins.socket = {};
+if(!saturn.server.plugins.socket.core) saturn.server.plugins.socket.core = {};
+saturn.server.plugins.socket.core.BaseServerSocketPlugin = $hxClasses["saturn.server.plugins.socket.core.BaseServerSocketPlugin"] = function(server,config) {
 	this.authenticateAll = false;
-	this.pluginName = Type.getClassName(js_Boot.getClass(this));
-	this.messageToCB = new haxe_ds_StringMap();
-	this.debug = (js_Node.require("debug"))("saturn:socket-plugin");
-	saturn_server_plugins_core_BaseServerPlugin.call(this,server,config);
+	this.pluginName = Type.getClassName(js.Boot.getClass(this));
+	this.messageToCB = new haxe.ds.StringMap();
+	this.debug = (js.Node.require("debug"))("saturn:socket-plugin");
+	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 };
-$hxClasses["saturn.server.plugins.socket.core.BaseServerSocketPlugin"] = saturn_server_plugins_socket_core_BaseServerSocketPlugin;
-saturn_server_plugins_socket_core_BaseServerSocketPlugin.__name__ = ["saturn","server","plugins","socket","core","BaseServerSocketPlugin"];
-saturn_server_plugins_socket_core_BaseServerSocketPlugin.__super__ = saturn_server_plugins_core_BaseServerPlugin;
-saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(saturn_server_plugins_core_BaseServerPlugin.prototype,{
+saturn.server.plugins.socket.core.BaseServerSocketPlugin.__name__ = ["saturn","server","plugins","socket","core","BaseServerSocketPlugin"];
+saturn.server.plugins.socket.core.BaseServerSocketPlugin.__super__ = saturn.server.plugins.core.BaseServerPlugin;
+saturn.server.plugins.socket.core.BaseServerSocketPlugin.prototype = $extend(saturn.server.plugins.core.BaseServerPlugin.prototype,{
 	queueName: null
 	,queue: null
 	,messageToCB: null
 	,pluginName: null
 	,authenticateAll: null
 	,processConfig: function() {
-		saturn_server_plugins_core_BaseServerPlugin.prototype.processConfig.call(this);
+		saturn.server.plugins.core.BaseServerPlugin.prototype.processConfig.call(this);
 		if(Object.prototype.hasOwnProperty.call(this.config,"authentication")) {
 			if(Object.prototype.hasOwnProperty.call(this.config.authentication,"*")) {
 				this.debug("(AUTH_ALL)");
@@ -10135,7 +10020,7 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 				}
 			}
 		}
-		saturn_server_plugins_core_BaseServerPlugin.prototype.registerPlugins.call(this);
+		saturn.server.plugins.core.BaseServerPlugin.prototype.registerPlugins.call(this);
 	}
 	,addListeners: function(socket) {
 		var _g = this;
@@ -10156,7 +10041,7 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 	}
 	,registerListener: function(message,cb) {
 		var _g = this;
-		var paths = [Type.getClassName(js_Boot.getClass(this))];
+		var paths = [Type.getClassName(js.Boot.getClass(this))];
 		if(Object.prototype.hasOwnProperty.call(this.config,"namespaces")) {
 			var namespace_defs = this.config.namespaces;
 			var _g1 = 0;
@@ -10232,8 +10117,8 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 				this.cleanup(job);
 			} else this.debug("Unknown destination for " + jobId);
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			if( js_Boot.__instanceof(e,saturn_server_plugins_socket_core_SocketIOException) ) {
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			if( js.Boot.__instanceof(e,saturn.server.plugins.socket.core.SocketIOException) ) {
 				console.log(e.toString());
 			} else throw(e);
 		}
@@ -10249,8 +10134,8 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 				socket.emit("__response__",{ bioinfJobId : jobId, error : error, msgId : jobId});
 			} else this.debug("Unknown destination for " + jobId);
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			if( js_Boot.__instanceof(e,saturn_server_plugins_socket_core_SocketIOException) ) {
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			if( js.Boot.__instanceof(e,saturn.server.plugins.socket.core.SocketIOException) ) {
 				console.log(e.toString());
 			} else throw(e);
 		}
@@ -10272,11 +10157,11 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 			var jobId = this.getJobId(job);
 			if(socket != null) {
 				var errorObj = error;
-				if(Object.prototype.hasOwnProperty.call(error,"message")) socket.emit("receiveError",{ msgId : jobId, bioinfJobId : jobId, error : error, JOB_DONE : 1}); else socket.emit("receiveError",{ msgId : jobId, bioinfJobId : jobId, error : haxe_Json.stringify(error,null,null), JOB_DONE : 1});
+				if(Object.prototype.hasOwnProperty.call(error,"message")) socket.emit("receiveError",{ msgId : jobId, bioinfJobId : jobId, error : error, JOB_DONE : 1}); else socket.emit("receiveError",{ msgId : jobId, bioinfJobId : jobId, error : haxe.Json.stringify(error,null,null), JOB_DONE : 1});
 			} else this.debug("Unable to identify socket associated with job " + jobId + "\nError: " + Std.string(error));
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			if( js_Boot.__instanceof(e,saturn_server_plugins_socket_core_SocketIOException) ) {
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			if( js.Boot.__instanceof(e,saturn.server.plugins.socket.core.SocketIOException) ) {
 				console.log(e.toString());
 			} else throw(e);
 		}
@@ -10290,16 +10175,16 @@ saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype = $extend(sat
 	}
 	,getSocket: function(data) {
 		if(Object.prototype.hasOwnProperty.call(data,"data")) {
-			if(Object.prototype.hasOwnProperty.call(data.data,"socketId")) return this.saturn.getServerSocket().sockets.connected[data.data.socketId]; else throw new js__$Boot_HaxeError(new saturn_server_plugins_socket_core_SocketIOException("Socket ID field missing from job"));
-		} else if(Object.prototype.hasOwnProperty.call(data,"socketId")) return this.saturn.getServerSocket().sockets.connected[data.socketId]; else throw new js__$Boot_HaxeError(new saturn_server_plugins_socket_core_SocketIOException("Socket ID field missing from job"));
+			if(Object.prototype.hasOwnProperty.call(data.data,"socketId")) return this.saturn.getServerSocket().sockets.connected[data.data.socketId]; else throw new js._Boot.HaxeError(new saturn.server.plugins.socket.core.SocketIOException("Socket ID field missing from job"));
+		} else if(Object.prototype.hasOwnProperty.call(data,"socketId")) return this.saturn.getServerSocket().sockets.connected[data.socketId]; else throw new js._Boot.HaxeError(new saturn.server.plugins.socket.core.SocketIOException("Socket ID field missing from job"));
 	}
 	,getSocketUserNoAuthCheck: function(socket) {
 		return this.saturn.getSocketUserNoAuthCheck(socket);
 	}
-	,__class__: saturn_server_plugins_socket_core_BaseServerSocketPlugin
+	,__class__: saturn.server.plugins.socket.core.BaseServerSocketPlugin
 });
-var saturn_server_plugins_socket_core_RemoteProviderPlugin = function(server,config) {
-	saturn_server_plugins_socket_core_BaseServerSocketPlugin.call(this,server,config);
+saturn.server.plugins.socket.core.RemoteProviderPlugin = $hxClasses["saturn.server.plugins.socket.core.RemoteProviderPlugin"] = function(server,config) {
+	saturn.server.plugins.socket.core.BaseServerSocketPlugin.call(this,server,config);
 	this.registerProviderCommand("_request_models",$bind(this,this.getModels));
 	this.registerProviderCommand("_data_request_objects_idstartswith",$bind(this,this.getByIdStartsWith));
 	this.registerProviderCommand("_data_request_objects_ids",$bind(this,this.getObjectIds));
@@ -10314,35 +10199,34 @@ var saturn_server_plugins_socket_core_RemoteProviderPlugin = function(server,con
 	this.registerProviderCommand("_data_request_query",$bind(this,this.query));
 	this.registerProviderCommand("_data_request_upload_file",$bind(this,this.uploadFile));
 };
-$hxClasses["saturn.server.plugins.socket.core.RemoteProviderPlugin"] = saturn_server_plugins_socket_core_RemoteProviderPlugin;
-saturn_server_plugins_socket_core_RemoteProviderPlugin.__name__ = ["saturn","server","plugins","socket","core","RemoteProviderPlugin"];
-saturn_server_plugins_socket_core_RemoteProviderPlugin.__super__ = saturn_server_plugins_socket_core_BaseServerSocketPlugin;
-saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(saturn_server_plugins_socket_core_BaseServerSocketPlugin.prototype,{
+saturn.server.plugins.socket.core.RemoteProviderPlugin.__name__ = ["saturn","server","plugins","socket","core","RemoteProviderPlugin"];
+saturn.server.plugins.socket.core.RemoteProviderPlugin.__super__ = saturn.server.plugins.socket.core.BaseServerSocketPlugin;
+saturn.server.plugins.socket.core.RemoteProviderPlugin.prototype = $extend(saturn.server.plugins.socket.core.BaseServerSocketPlugin.prototype,{
 	registerProviderCommand: function(command,cb) {
 		var _g = this;
 		this.registerListener(command,function(data,socket) {
 			var user = _g.getSocketUserNoAuthCheck(socket);
-			var providerName = saturn_client_core_CommonCore.getDefaultProviderName();
+			var providerName = saturn.client.core.CommonCore.getDefaultProviderName();
 			if(Object.prototype.hasOwnProperty.call(data,"queryId")) {
 				var namedQuery = Reflect.field(data,"queryId");
 				_g.debug("Looking " + namedQuery);
-				providerName = saturn_client_core_CommonCore.getProviderForNamedQuery(namedQuery);
+				providerName = saturn.client.core.CommonCore.getProviderForNamedQuery(namedQuery);
 				_g.debug("Got for named query: " + providerName);
 			} else if(Object.prototype.hasOwnProperty.call(data,"class_name")) {
 				_g.debug("Looking for provider");
-				providerName = saturn_client_core_CommonCore.getProviderNameForModel(data.class_name);
+				providerName = saturn.client.core.CommonCore.getProviderNameForModel(data.class_name);
 				if(providerName == null) {
 					_g.debug("Error finding provider for " + Std.string(data.class_name));
 					_g.handleError(data,"Unable to find source for entity");
 					return;
 				}
 			} else if(Object.prototype.hasOwnProperty.call(data,"queryStr")) {
-				var query = saturn_db_query_$lang_Query.deserialise(Reflect.field(data,"queryStr"));
+				var query = saturn.db.query_lang.Query.deserialise(Reflect.field(data,"queryStr"));
 				data.queryObj = query;
 				var clazzList = query.getClassList();
 				var clazz_name = clazzList[0];
 				_g.debug(clazz_name);
-				providerName = saturn_client_core_CommonCore.getProviderNameForModel(clazz_name);
+				providerName = saturn.client.core.CommonCore.getProviderNameForModel(clazz_name);
 				_g.debug(providerName);
 				if(providerName == null) {
 					_g.debug("Error finding provider for " + clazz_name);
@@ -10350,7 +10234,7 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 					return;
 				}
 			}
-			saturn_client_core_CommonCore.getDefaultProvider(function(err,provider) {
+			saturn.client.core.CommonCore.getDefaultProvider(function(err,provider) {
 				if(err != null) _g.handleError(data,err); else {
 					var disconnectOnEnd = false;
 					var connectAsUser = "";
@@ -10397,8 +10281,8 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 	}
 	,getModels: function(data,provider,user,cb) {
 		var json = { };
-		var combined_models = saturn_client_core_CommonCore.getCombinedModels();
-		json.models = haxe_Serializer.run(combined_models);
+		var combined_models = saturn.client.core.CommonCore.getCombinedModels();
+		json.models = haxe.Serializer.run(combined_models);
 		this.sendJson(data,json,null);
 		cb();
 	}
@@ -10407,15 +10291,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.getByIdStartsWith(data.id,data.field,Type.resolveClass(data.class_name),data.limit,function(objs,err) {
 				var json = { };
-				var i = saturn_client_core_CommonCore.releaseResource(provider);
+				var i = saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.handleError(data,e);
 			cb();
 		}
@@ -10424,19 +10308,19 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		var _g = this;
 		try {
 			var queryObj = data.queryObj;
-			this.debug(Type.getClassName(queryObj == null?null:js_Boot.getClass(queryObj)));
+			this.debug(Type.getClassName(queryObj == null?null:js.Boot.getClass(queryObj)));
 			provider.query(queryObj,function(objs,err) {
 				var json = { };
-				var i = saturn_client_core_CommonCore.releaseResource(provider);
+				var i = saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
-			saturn_core_Util.debug(e);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
+			saturn.core.Util.debug(e);
 			this.handleError(data,e);
 			cb();
 		}
@@ -10446,15 +10330,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.getByIds(data.ids,Type.resolveClass(data.class_name),function(objs,err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10464,15 +10348,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.getByValues(data.values,Type.resolveClass(data.class_name),data.field,function(objs,err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10482,15 +10366,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.getByPkeys(data.ids,Type.resolveClass(data.class_name),function(objs,err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10500,15 +10384,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.getObjects(Type.resolveClass(data.class_name),function(objs,err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10517,7 +10401,7 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		var _g = this;
 		try {
 			this.debug("Start");
-			var params = haxe_Unserializer.run(data.parameters);
+			var params = haxe.Unserializer.run(data.parameters);
 			this.debug("End");
 			if(data.queryId == "saturn.workflow") params[1].setRemote(true);
 			params = this.autoCompleteFields(params,user);
@@ -10525,15 +10409,15 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 			if(data.class_name != null) clazz = Type.resolveClass(data.class_name);
 			provider.getByNamedQuery(data.queryId,params,clazz,provider.getConfig().enable_cache,function(objs,err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				json.objects = objs;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10551,7 +10435,7 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 					var field = _g2[_g1];
 					++_g1;
 					if(field == "_username") {
-						saturn_core_Util.debug("Setting username to " + user.username);
+						saturn.core.Util.debug("Setting username to " + user.username);
 						paramSet._username = user.username;
 					}
 				}
@@ -10567,13 +10451,13 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 			provider._delete(objs,data.class_name,function(err) {
 				var json = { };
 				json.error = err;
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10583,8 +10467,8 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		var objs = this.convertJsonObjectArray(data.objs);
 		provider._insert(objs,data.class_name,function(err) {
 			var json = { };
-			saturn_client_core_CommonCore.releaseResource(provider);
-			js_Node.console.log("Returning from insert: " + err);
+			saturn.client.core.CommonCore.releaseResource(provider);
+			js.Node.console.log("Returning from insert: " + err);
 			if(err != null) _g.handleError(data,err,null); else _g.sendJson(data,json,null);
 			cb();
 		});
@@ -10595,14 +10479,14 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 			var objs = this.convertJsonObjectArray(data.objs);
 			provider._update(objs,data.class_name,function(err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10612,14 +10496,14 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.commit(function(err) {
 				var json = { };
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
@@ -10631,7 +10515,7 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		while(_g < jsonObjs.length) {
 			var jsonObj = jsonObjs[_g];
 			++_g;
-			var obj = new haxe_ds_StringMap();
+			var obj = new haxe.ds.StringMap();
 			var _g1 = 0;
 			var _g2 = Reflect.fields(jsonObj);
 			while(_g1 < _g2.length) {
@@ -10649,32 +10533,30 @@ saturn_server_plugins_socket_core_RemoteProviderPlugin.prototype = $extend(satur
 		try {
 			provider.uploadFile(data.contents,data.file_identifier,function(err,upload_id) {
 				var json = { 'upload_id' : upload_id};
-				saturn_client_core_CommonCore.releaseResource(provider);
+				saturn.client.core.CommonCore.releaseResource(provider);
 				_g.sendJson(data,json,null);
 				cb();
 			});
 		} catch( e ) {
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			saturn_client_core_CommonCore.releaseResource(provider);
+			if (e instanceof js._Boot.HaxeError) e = e.val;
+			saturn.client.core.CommonCore.releaseResource(provider);
 			this.sendError(data,e,null);
 			cb();
 		}
 	}
-	,__class__: saturn_server_plugins_socket_core_RemoteProviderPlugin
+	,__class__: saturn.server.plugins.socket.core.RemoteProviderPlugin
 });
-var saturn_server_plugins_socket_core_SocketIOException = function(err) {
-	saturn_util_HaxeException.call(this,err);
+saturn.server.plugins.socket.core.SocketIOException = $hxClasses["saturn.server.plugins.socket.core.SocketIOException"] = function(err) {
+	saturn.util.HaxeException.call(this,err);
 };
-$hxClasses["saturn.server.plugins.socket.core.SocketIOException"] = saturn_server_plugins_socket_core_SocketIOException;
-saturn_server_plugins_socket_core_SocketIOException.__name__ = ["saturn","server","plugins","socket","core","SocketIOException"];
-saturn_server_plugins_socket_core_SocketIOException.__super__ = saturn_util_HaxeException;
-saturn_server_plugins_socket_core_SocketIOException.prototype = $extend(saturn_util_HaxeException.prototype,{
-	__class__: saturn_server_plugins_socket_core_SocketIOException
+saturn.server.plugins.socket.core.SocketIOException.__name__ = ["saturn","server","plugins","socket","core","SocketIOException"];
+saturn.server.plugins.socket.core.SocketIOException.__super__ = saturn.util.HaxeException;
+saturn.server.plugins.socket.core.SocketIOException.prototype = $extend(saturn.util.HaxeException.prototype,{
+	__class__: saturn.server.plugins.socket.core.SocketIOException
 });
-var saturn_util_StringUtils = function() { };
-$hxClasses["saturn.util.StringUtils"] = saturn_util_StringUtils;
-saturn_util_StringUtils.__name__ = ["saturn","util","StringUtils"];
-saturn_util_StringUtils.getRepeat = function(txt,count) {
+saturn.util.StringUtils = $hxClasses["saturn.util.StringUtils"] = function() { };
+saturn.util.StringUtils.__name__ = ["saturn","util","StringUtils"];
+saturn.util.StringUtils.getRepeat = function(txt,count) {
 	var stringBuf_b = "";
 	var _g = 0;
 	while(_g < count) {
@@ -10683,21 +10565,21 @@ saturn_util_StringUtils.getRepeat = function(txt,count) {
 	}
 	return stringBuf_b;
 };
-saturn_util_StringUtils.reverse = function(txt) {
+saturn.util.StringUtils.reverse = function(txt) {
 	var cols = txt.split("");
 	cols.reverse();
 	return cols.join("");
 };
-saturn_util_StringUtils.__super__ = StringTools;
-saturn_util_StringUtils.prototype = $extend(StringTools.prototype,{
-	__class__: saturn_util_StringUtils
+saturn.util.StringUtils.__super__ = StringTools;
+saturn.util.StringUtils.prototype = $extend(StringTools.prototype,{
+	__class__: saturn.util.StringUtils
 });
-var saturn_workflow_Object = function() {
+if(!saturn.workflow) saturn.workflow = {};
+saturn.workflow.Object = $hxClasses["saturn.workflow.Object"] = function() {
 	this.remote = false;
 };
-$hxClasses["saturn.workflow.Object"] = saturn_workflow_Object;
-saturn_workflow_Object.__name__ = ["saturn","workflow","Object"];
-saturn_workflow_Object.prototype = {
+saturn.workflow.Object.__name__ = ["saturn","workflow","Object"];
+saturn.workflow.Object.prototype = {
 	error: null
 	,data: null
 	,response: null
@@ -10713,7 +10595,7 @@ saturn_workflow_Object.prototype = {
 		if(data != null && Object.prototype.hasOwnProperty.call(data,param)) return Reflect.field(data,param); else if(Object.prototype.hasOwnProperty.call(this,param)) return Reflect.field(this,param); else return null;
 	}
 	,setError: function(error) {
-		saturn_core_Util.debug(error);
+		saturn.core.Util.debug(error);
 		this.error = error;
 	}
 	,getError: function() {
@@ -10733,7 +10615,7 @@ saturn_workflow_Object.prototype = {
 	}
 	,setup: function(cb) {
 	}
-	,__class__: saturn_workflow_Object
+	,__class__: saturn.workflow.Object
 };
 function $iterator(o) { if( o instanceof Array ) return function() { return HxOverrides.iter(o); }; return typeof(o.iterator) == 'function' ? $bind(o,o.iterator) : o.iterator; }
 var $_, $fid = 0;
@@ -10766,107 +10648,106 @@ if(Array.prototype.map == null) Array.prototype.map = function(f) {
 	}
 	return a;
 };
-bindings_NodeFSExtra.fsExtra = require('fs-extra');
+bindings.NodeFSExtra.fsExtra = require('fs-extra');
 var NodePostgres = require('pg').Client;
-bindings_NodeTemp.temp = require('temp');
+bindings.NodeTemp.temp = require('temp');
 var __map_reserved = {}
-haxe_Serializer.USE_CACHE = false;
-haxe_Serializer.USE_ENUM_INDEX = false;
-haxe_Serializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
-haxe_Unserializer.DEFAULT_RESOLVER = Type;
-haxe_Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
-haxe_ds_ObjectMap.count = 0;
-js_Boot.__toStr = {}.toString;
-js_NodeC.UTF8 = "utf8";
-js_NodeC.ASCII = "ascii";
-js_NodeC.BINARY = "binary";
-js_NodeC.BASE64 = "base64";
-js_NodeC.HEX = "hex";
-js_NodeC.EVENT_EVENTEMITTER_NEWLISTENER = "newListener";
-js_NodeC.EVENT_EVENTEMITTER_ERROR = "error";
-js_NodeC.EVENT_STREAM_DATA = "data";
-js_NodeC.EVENT_STREAM_END = "end";
-js_NodeC.EVENT_STREAM_ERROR = "error";
-js_NodeC.EVENT_STREAM_CLOSE = "close";
-js_NodeC.EVENT_STREAM_DRAIN = "drain";
-js_NodeC.EVENT_STREAM_CONNECT = "connect";
-js_NodeC.EVENT_STREAM_SECURE = "secure";
-js_NodeC.EVENT_STREAM_TIMEOUT = "timeout";
-js_NodeC.EVENT_STREAM_PIPE = "pipe";
-js_NodeC.EVENT_PROCESS_EXIT = "exit";
-js_NodeC.EVENT_PROCESS_UNCAUGHTEXCEPTION = "uncaughtException";
-js_NodeC.EVENT_PROCESS_SIGINT = "SIGINT";
-js_NodeC.EVENT_PROCESS_SIGUSR1 = "SIGUSR1";
-js_NodeC.EVENT_CHILDPROCESS_EXIT = "exit";
-js_NodeC.EVENT_HTTPSERVER_REQUEST = "request";
-js_NodeC.EVENT_HTTPSERVER_CONNECTION = "connection";
-js_NodeC.EVENT_HTTPSERVER_CLOSE = "close";
-js_NodeC.EVENT_HTTPSERVER_UPGRADE = "upgrade";
-js_NodeC.EVENT_HTTPSERVER_CLIENTERROR = "clientError";
-js_NodeC.EVENT_HTTPSERVERREQUEST_DATA = "data";
-js_NodeC.EVENT_HTTPSERVERREQUEST_END = "end";
-js_NodeC.EVENT_CLIENTREQUEST_RESPONSE = "response";
-js_NodeC.EVENT_CLIENTRESPONSE_DATA = "data";
-js_NodeC.EVENT_CLIENTRESPONSE_END = "end";
-js_NodeC.EVENT_NETSERVER_CONNECTION = "connection";
-js_NodeC.EVENT_NETSERVER_CLOSE = "close";
-js_NodeC.FILE_READ = "r";
-js_NodeC.FILE_READ_APPEND = "r+";
-js_NodeC.FILE_WRITE = "w";
-js_NodeC.FILE_WRITE_APPEND = "a+";
-js_NodeC.FILE_READWRITE = "a";
-js_NodeC.FILE_READWRITE_APPEND = "a+";
-js_Node.console = console;
-js_Node.process = process;
-js_Node.require = require;
-js_Node.setTimeout = setTimeout;
-js_Node.clearTimeout = clearTimeout;
-js_Node.setInterval = setInterval;
-js_Node.clearInterval = clearInterval;
-js_Node.setImmediate = (function($this) {
+haxe.Serializer.USE_CACHE = false;
+haxe.Serializer.USE_ENUM_INDEX = false;
+haxe.Serializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+haxe.Unserializer.DEFAULT_RESOLVER = Type;
+haxe.Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+haxe.ds.ObjectMap.count = 0;
+js.Boot.__toStr = {}.toString;
+js.NodeC.UTF8 = "utf8";
+js.NodeC.ASCII = "ascii";
+js.NodeC.BINARY = "binary";
+js.NodeC.BASE64 = "base64";
+js.NodeC.HEX = "hex";
+js.NodeC.EVENT_EVENTEMITTER_NEWLISTENER = "newListener";
+js.NodeC.EVENT_EVENTEMITTER_ERROR = "error";
+js.NodeC.EVENT_STREAM_DATA = "data";
+js.NodeC.EVENT_STREAM_END = "end";
+js.NodeC.EVENT_STREAM_ERROR = "error";
+js.NodeC.EVENT_STREAM_CLOSE = "close";
+js.NodeC.EVENT_STREAM_DRAIN = "drain";
+js.NodeC.EVENT_STREAM_CONNECT = "connect";
+js.NodeC.EVENT_STREAM_SECURE = "secure";
+js.NodeC.EVENT_STREAM_TIMEOUT = "timeout";
+js.NodeC.EVENT_STREAM_PIPE = "pipe";
+js.NodeC.EVENT_PROCESS_EXIT = "exit";
+js.NodeC.EVENT_PROCESS_UNCAUGHTEXCEPTION = "uncaughtException";
+js.NodeC.EVENT_PROCESS_SIGINT = "SIGINT";
+js.NodeC.EVENT_PROCESS_SIGUSR1 = "SIGUSR1";
+js.NodeC.EVENT_CHILDPROCESS_EXIT = "exit";
+js.NodeC.EVENT_HTTPSERVER_REQUEST = "request";
+js.NodeC.EVENT_HTTPSERVER_CONNECTION = "connection";
+js.NodeC.EVENT_HTTPSERVER_CLOSE = "close";
+js.NodeC.EVENT_HTTPSERVER_UPGRADE = "upgrade";
+js.NodeC.EVENT_HTTPSERVER_CLIENTERROR = "clientError";
+js.NodeC.EVENT_HTTPSERVERREQUEST_DATA = "data";
+js.NodeC.EVENT_HTTPSERVERREQUEST_END = "end";
+js.NodeC.EVENT_CLIENTREQUEST_RESPONSE = "response";
+js.NodeC.EVENT_CLIENTRESPONSE_DATA = "data";
+js.NodeC.EVENT_CLIENTRESPONSE_END = "end";
+js.NodeC.EVENT_NETSERVER_CONNECTION = "connection";
+js.NodeC.EVENT_NETSERVER_CLOSE = "close";
+js.NodeC.FILE_READ = "r";
+js.NodeC.FILE_READ_APPEND = "r+";
+js.NodeC.FILE_WRITE = "w";
+js.NodeC.FILE_WRITE_APPEND = "a+";
+js.NodeC.FILE_READWRITE = "a";
+js.NodeC.FILE_READWRITE_APPEND = "a+";
+js.Node.console = console;
+js.Node.process = process;
+js.Node.require = require;
+js.Node.setTimeout = setTimeout;
+js.Node.clearTimeout = clearTimeout;
+js.Node.setInterval = setInterval;
+js.Node.clearInterval = clearInterval;
+js.Node.setImmediate = (function($this) {
 	var $r;
-	var version = HxOverrides.substr(js_Node.process.version,1,null).split(".").map(Std.parseInt);
-	$r = version[0] > 0 || version[1] >= 9?js_Node.isNodeWebkit()?global.setImmediate:setImmediate:null;
+	var version = HxOverrides.substr(js.Node.process.version,1,null).split(".").map(Std.parseInt);
+	$r = version[0] > 0 || version[1] >= 9?js.Node.isNodeWebkit()?global.setImmediate:setImmediate:null;
 	return $r;
 }(this));
-js_Node.clearImmediate = (function($this) {
+js.Node.clearImmediate = (function($this) {
 	var $r;
-	var version = HxOverrides.substr(js_Node.process.version,1,null).split(".").map(Std.parseInt);
-	$r = version[0] > 0 || version[1] >= 9?js_Node.isNodeWebkit()?global.clearImmediate:clearImmediate:null;
+	var version = HxOverrides.substr(js.Node.process.version,1,null).split(".").map(Std.parseInt);
+	$r = version[0] > 0 || version[1] >= 9?js.Node.isNodeWebkit()?global.clearImmediate:clearImmediate:null;
 	return $r;
 }(this));
-js_Node.global = global;
-js_Node.module = js_Node.isNodeWebkit()?global.module:module;
-js_Node.stringify = JSON.stringify;
-js_Node.parse = JSON.parse;
-saturn_app_SaturnServer.DEBUG = (js_Node.require("debug"))("saturn:server");
-saturn_client_core_CommonCore.pools = new haxe_ds_StringMap();
-saturn_client_core_CommonCore.resourceToPool = new haxe_ds_ObjectMap();
-saturn_client_core_CommonCore.providers = new haxe_ds_StringMap();
-saturn_core_molecule_Molecule.newLineReg = new EReg("\n","g");
-saturn_core_molecule_Molecule.carLineReg = new EReg("\r","g");
-saturn_core_molecule_Molecule.whiteSpaceReg = new EReg("\\s","g");
-saturn_core_molecule_Molecule.reg_starReplace = new EReg("\\*","");
-saturn_core_StandardGeneticCode.instance = new saturn_core_StandardGeneticCode();
-saturn_core_StandardGeneticCode.standardTable = saturn_core_StandardGeneticCode.instance.getCodonLookupTable();
-saturn_core_StandardGeneticCode.aaToCodon = saturn_core_StandardGeneticCode.instance.getAAToCodonTable();
-saturn_core_GeneticCodeRegistry.CODE_REGISTRY = new saturn_core_GeneticCodeRegistry();
-saturn_core_Util.fs = js_Node.require("fs");
-saturn_core_Util.temp = js_Node.require("temp");
-saturn_core_Util.split = js_Node.require("split");
-saturn_core_molecule_MoleculeConstants.aMW = 331.2;
-saturn_core_molecule_MoleculeConstants.tMW = 322.2;
-saturn_core_molecule_MoleculeConstants.gMW = 347.2;
-saturn_core_molecule_MoleculeConstants.cMW = 307.2;
-saturn_core_molecule_MoleculeConstants.aChainMW = 313.2;
-saturn_core_molecule_MoleculeConstants.tChainMW = 304.2;
-saturn_core_molecule_MoleculeConstants.gChainMW = 329.2;
-saturn_core_molecule_MoleculeConstants.cChainMW = 289.2;
-saturn_core_molecule_MoleculeConstants.O2H = 18.02;
-saturn_core_molecule_MoleculeConstants.OH = 17.01;
-saturn_core_molecule_MoleculeConstants.PO3 = 78.97;
-saturn_core_molecule_MoleculeSetRegistry.defaultRegistry = new saturn_core_molecule_MoleculeSetRegistry();
-saturn_db_DefaultProvider.r_date = new EReg("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.000Z","");
-saturn_db_query_$lang_SQLVisitor.injection_check = new EReg("^([A-Za-z0-9\\.])+$","");
-saturn_app_SaturnServer.main();
-})(typeof console != "undefined" ? console : {log:function(){}}, typeof window != "undefined" ? window : exports, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
+js.Node.global = global;
+js.Node.module = js.Node.isNodeWebkit()?global.module:module;
+js.Node.stringify = JSON.stringify;
+js.Node.parse = JSON.parse;
+saturn.app.SaturnServer.DEBUG = (js.Node.require("debug"))("saturn:server");
+saturn.client.core.CommonCore.pools = new haxe.ds.StringMap();
+saturn.client.core.CommonCore.resourceToPool = new haxe.ds.ObjectMap();
+saturn.client.core.CommonCore.providers = new haxe.ds.StringMap();
+saturn.core.molecule.Molecule.newLineReg = new EReg("\n","g");
+saturn.core.molecule.Molecule.carLineReg = new EReg("\r","g");
+saturn.core.molecule.Molecule.whiteSpaceReg = new EReg("\\s","g");
+saturn.core.molecule.Molecule.reg_starReplace = new EReg("\\*","");
+saturn.core.StandardGeneticCode.instance = new saturn.core.StandardGeneticCode();
+saturn.core.StandardGeneticCode.standardTable = saturn.core.StandardGeneticCode.instance.getCodonLookupTable();
+saturn.core.StandardGeneticCode.aaToCodon = saturn.core.StandardGeneticCode.instance.getAAToCodonTable();
+saturn.core.GeneticCodeRegistry.CODE_REGISTRY = new saturn.core.GeneticCodeRegistry();
+saturn.core.Util.fs = js.Node.require("fs");
+saturn.core.Util.temp = js.Node.require("temp");
+saturn.core.Util.split = js.Node.require("split");
+saturn.core.molecule.MoleculeConstants.aMW = 331.2;
+saturn.core.molecule.MoleculeConstants.tMW = 322.2;
+saturn.core.molecule.MoleculeConstants.gMW = 347.2;
+saturn.core.molecule.MoleculeConstants.cMW = 307.2;
+saturn.core.molecule.MoleculeConstants.aChainMW = 313.2;
+saturn.core.molecule.MoleculeConstants.tChainMW = 304.2;
+saturn.core.molecule.MoleculeConstants.gChainMW = 329.2;
+saturn.core.molecule.MoleculeConstants.cChainMW = 289.2;
+saturn.core.molecule.MoleculeConstants.O2H = 18.02;
+saturn.core.molecule.MoleculeConstants.OH = 17.01;
+saturn.core.molecule.MoleculeConstants.PO3 = 78.97;
+saturn.core.molecule.MoleculeSetRegistry.defaultRegistry = new saturn.core.molecule.MoleculeSetRegistry();
+saturn.db.DefaultProvider.r_date = new EReg("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.000Z","");
+saturn.db.query_lang.SQLVisitor.injection_check = new EReg("^([A-Za-z0-9\\.])+$","");
+saturn.app.SaturnServer.main();
