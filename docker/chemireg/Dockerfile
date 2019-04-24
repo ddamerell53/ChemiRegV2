@@ -51,6 +51,7 @@ RUN conda install --yes cairo
 RUN pip install zxcvbn-python
 RUN pip install cairosvg
 RUN pip install ijson
+RUN conda install django
 
 USER chemireg
 
