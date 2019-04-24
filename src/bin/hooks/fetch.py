@@ -5,6 +5,7 @@
 # You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
 # MIT 2015 Tencent
+
 import rapidjson
 
 # Core Python
@@ -43,7 +44,23 @@ from rdkit.Chem import AllChem
 
 # ChemiReg - CC0
 from connection_manager import ConnectionManager
-import authenticate 
+import authenticate
+
+from typing import List
+
+# Initialise Django environment
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_orm.chemireg.settings")
+
+django.setup()
+
+from django_orm.chemireg.models import (
+    Entity,
+    CustomForeignKeyField,
+    CustomVarcharField,
+	CustomField
+)
 
 class CompoundFetchManager(object):
 	def __init__(self, conn=None,auth_manager = None,crud_manager=None):
@@ -964,6 +981,7 @@ class CompoundFetchManager(object):
 		
 	def generate_custom_field_selects(self):
 		self.custom_field_cursors = {}
+		self.custom_single_field_cursors = {}
 		
 		field_types = self.auth_manager.get_custom_field_types()
 		for field in field_types:
@@ -980,7 +998,18 @@ class CompoundFetchManager(object):
 					a.entity_id = c.id and
 					c.archived_transaction_id is null
 			''')
-			
+
+			self.custom_single_field_cursors[field_type] = self.conn.cursor()
+			self.custom_single_field_cursors[field_type].execute("prepare select_custom_field_" + field_type + "_single as select custom_field_value as field_name from " + table_name + ''' a,
+					custom_fields b,
+					compounds c
+				where
+					a.custom_field_id = b.id and
+					c.id = $1 and
+					a.entity_id = c.id and
+					b.name = $2
+			''')
+
 	def generate_custom_field_update_selects(self):
 		self.custom_field_update_select_cursors = {'inserts':{}, 'updates':{}, 'archives': {}}
 		
@@ -1737,26 +1766,26 @@ class CompoundFetchManager(object):
 			terms.append({'entity_id': row[0],'custom_field_value': row[1], 'custom_field_name': row[2], 'label': row[3]})
 		return terms
 	
-	def generate_update_instructions(self, username, project_name, transaction_id, out_directory, no_records):		
+	def generate_update_instructions(self, username, project_name, transaction_id, out_directory, no_records, field_constraint):
 		tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.log', dir=out_directory)
 		tmp_file.write('{\n'.encode('utf-8'))
 		
-		self._append_insert_instructions(tmp_file, username, project_name, transaction_id, no_records)
+		self._append_insert_instructions(tmp_file, username, project_name, transaction_id, no_records, field_constraint)
 		
 		tmp_file.write(','.encode('utf-8'))
 		
-		self._append_update_instructions(tmp_file, username, project_name, transaction_id, no_records)
+		self._append_update_instructions(tmp_file, username, project_name, transaction_id, no_records, field_constraint)
 		
 		tmp_file.write(','.encode('utf-8'))
 		
-		self._append_archived_instructions(tmp_file, username, project_name, transaction_id, no_records)
+		self._append_archived_instructions(tmp_file, username, project_name, transaction_id, no_records, field_constraint)
 			
 		tmp_file.write('}\n'.encode('utf-8'))	
 		tmp_file.close()
 		
 		return tmp_file.name
 
-	def _append_insert_instructions(self, tmp_file, username, project_name, transaction_id, no_records):
+	def _append_insert_instructions(self, tmp_file, username, project_name, transaction_id, no_records, field_constraint):
 		tmp_file.write('\t"inserts":[\n'.encode('utf-8'))
 		
 		is_first = True
@@ -1766,11 +1795,17 @@ class CompoundFetchManager(object):
 		i = 0
 		
 		records = 0
+
+		field_constraint_column = None
+		field_constraint_value = None
+
+		if field_constraint is not None:
+			field_constraint_column = field_constraint[0]
+			field_constraint_value = field_constraint[1]
 		
 		self.fetch_new_compounds_cur.execute('execute fetch_new_compounds (%s, %s)', (transaction_id, project_name))
 		for row in self.fetch_new_compounds_cur.fetchall():
-			if not is_first:
-				cache_str += ',\n'
+
 				
 			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
@@ -1784,7 +1819,14 @@ class CompoundFetchManager(object):
 				
 				for cf_row in self.custom_field_update_select_cursors['inserts'][field_type].fetchall():
 					obj[cf_row[0]] = cf_row[1]
-					
+
+			if field_constraint is not None:
+				if field_constraint_column in obj and field_constraint_value != obj[field_constraint_column]:
+					continue
+
+			if not is_first:
+				cache_str += ',\n'
+
 			cache_str += '\t\t' + json.dumps(obj, ensure_ascii = False)
 			
 			i += 1
@@ -1807,7 +1849,7 @@ class CompoundFetchManager(object):
 		tmp_file.write(cache_str.encode('utf-8'))
 		tmp_file.write('\n\t]\n'.encode('utf-8'))
 	
-	def _append_update_instructions(self, tmp_file, username, project_name, transaction_id, no_records):
+	def _append_update_instructions(self, tmp_file, username, project_name, transaction_id, no_records, field_constraint):
 		tmp_file.write('\t"updates":[\n'.encode('utf-8'))
 		
 		is_first = True
@@ -1817,11 +1859,23 @@ class CompoundFetchManager(object):
 		i = 0
 		
 		records = 0
+
+		field_constraint_column = None
+		field_constraint_value = None
+
+		custom_fields = {}
+
+		for project in project_name:
+			custom_fields[project] = self.auth_manager.get_custom_fields(project)
+
+		if field_constraint is not None:
+			field_constraint_column = field_constraint[0]
+			field_constraint_value = field_constraint[1]
+
 		
 		self.fetch_updated_compounds_cur.execute('execute fetch_updated_compounds (%s, %s)', (transaction_id, project_name))
 		for row in self.fetch_updated_compounds_cur.fetchall():
-			if not is_first:
-				cache_str += ',\n'
+
 				
 			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}
 			
@@ -1835,6 +1889,22 @@ class CompoundFetchManager(object):
 				
 				for cf_row in self.custom_field_update_select_cursors['updates'][field_type].fetchall():
 					obj[cf_row[0]] = cf_row[1]
+
+			if field_constraint is not None:
+				field_constraint_type = custom_fields[obj['project']][field_constraint_column]['type_name']
+
+				self.custom_single_field_cursors[field_constraint_type].execute("execute select_custom_field_" + field_constraint_type + "_single(%s,%s)",(obj['id'], field_constraint_column))
+
+				row = self.custom_single_field_cursors[field_constraint_type].fetchone()
+
+				if row is not None:
+					obj_constraint_field_value = row[0]
+
+					if field_constraint_value != obj_constraint_field_value:
+						continue
+
+			if not is_first:
+				cache_str += ',\n'
 				
 			cache_str += '\t\t' + json.dumps(obj, ensure_ascii = False)
 			
@@ -1857,7 +1927,7 @@ class CompoundFetchManager(object):
 		tmp_file.write(cache_str.encode('utf-8'))
 		tmp_file.write('\n\t]\n'.encode('utf-8'))
 		
-	def _append_archived_instructions(self, tmp_file, username, project_name, transaction_id, no_records):
+	def _append_archived_instructions(self, tmp_file, username, project_name, transaction_id, no_records, field_constraint):
 		tmp_file.write('\t"archived":[\n'.encode('utf-8'))
 		
 		is_first = True
@@ -1867,11 +1937,22 @@ class CompoundFetchManager(object):
 		i = 0
 		
 		records = 0
+
+		field_constraint_column = None
+		field_constraint_value = None
+
+		custom_fields = {}
+
+		for project in project_name:
+			custom_fields[project] = self.auth_manager.get_custom_fields(project)
+
+		if field_constraint is not None:
+			field_constraint_column = field_constraint[0]
+			field_constraint_value = field_constraint[1]
 		
 		self.fetch_new_compounds_cur.execute('execute fetch_archived_compounds (%s, %s)', (transaction_id, project_name))
 		for row in self.fetch_new_compounds_cur.fetchall():
-			if not is_first:
-				cache_str += ',\n'
+
 				
 			obj = {'id': row[2], 'compound_id': row[0], 'username': row[1], 'date_record_created': row[3], 'transaction_id': row[5], 'project': row[6]}	
 			
@@ -1885,6 +1966,22 @@ class CompoundFetchManager(object):
 				
 				for cf_row in self.custom_field_update_select_cursors['archives'][field_type].fetchall():
 					obj[cf_row[0]] = cf_row[1]
+
+			if field_constraint is not None:
+				field_constraint_type = custom_fields[obj['project']][field_constraint_column]['type_name']
+
+				self.custom_single_field_cursors[field_constraint_type].execute("execute select_custom_field_" + field_constraint_type + "_single(%s,%s)",(obj['id'], field_constraint_column))
+
+				row = self.custom_single_field_cursors[field_constraint_type].fetchone()
+
+				if row is not None:
+					obj_constraint_field_value = row[0]
+
+					if field_constraint_value != obj_constraint_field_value:
+						continue
+
+			if not is_first:
+				cache_str += ',\n'
 				
 			cache_str += '\t\t' + json.dumps(obj, ensure_ascii = False)
 			
@@ -1938,7 +2035,7 @@ class CompoundFetchManager(object):
 				'classification':{'map_column': None, 'default_value': None}
 			})
 			
-			self.conn.commit()
+			crud_manager.commit()
 			
 	def configure_for_user(self, user, project):
 		if type(project) is list:
@@ -1971,6 +2068,45 @@ class CompoundFetchManager(object):
 		self.conn.commit()
 
 		return error_uuid
+
+	def fetch_by_field(self, project_name: str, field_name: str, field_value: str) -> List[Entity] :
+		"""
+		Returns entities based on custom field value
+
+		:param project_name: Entity project name
+		:param field_name: Field to filter by
+		:param field_value: Value to filter field on
+		:return List[Entity]: List of entities with matching custom field value
+		"""
+
+		# Retrieve the custom field definition so we can identify the correct class
+		# TODO: Investigate if the Django ORM supports discrimintor fields so we don't have to statically lookup the type to infer class
+		query_set = CustomField.objects.filter(project__project_name=project_name, name=field_name)
+
+		custom_field_def: CustomField = query_set.first()
+
+		if custom_field_def:
+			custom_field_type: str = custom_field_def.type.name
+
+			entities: List[Entity] = []
+
+			if custom_field_type == 'varchar':
+				# Identify matching entities
+				query_set = CustomVarcharField.objects.filter(custom_field__id=custom_field_def.id, custom_field_value=field_value)
+
+				# Build up list of entities from custom field instances
+				for item in query_set:
+					entities.append(item.entity)
+
+				return entities
+		else:
+			raise CustomFieldMissingError('Field ' + field_name + ' not found for project ' + project_name)
+
+class CustomFieldMissingError(Exception):
+	pass
+
+
+
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
@@ -2137,7 +2273,12 @@ if __name__ == '__main__':
 							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
 					elif input_json['action'] == 'update_instructions':
 						if input_json['task'] == 'generate_update_instruction_file':
-							log_file  = manager.generate_update_instructions(input_json['_username'], input_json['project'], input_json['since_transaction_id'],input_json['out_file'], input_json['no_records'])
+							field_constraint = None
+
+							if 'field_constraint' in input_json:
+								field_constraint = input_json['field_constraint']
+
+							log_file  = manager.generate_update_instructions(input_json['_username'], input_json['project'], input_json['since_transaction_id'],input_json['out_file'], input_json['no_records'],field_constraint)
 							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(log_file)
 					elif input_json['action'] == 'convert_smiles_to_ctab':
 						output_json['ctab_content'] = manager.convert_smiles_to_ctab(input_json['smiles'])
