@@ -53,19 +53,21 @@ create table users (
     account_type varchar(200) default 'internal',
     reset_password_token varchar(200),
     reset_token_timestamp timestamp,
-    archive_date timestamp
+    archive_date timestamp,
+    site varchar(200)
 );
 
 -- alter table users add archive_date timestamp;
 
-insert into users (first_name, last_name, email, username, password_hash)
+insert into users (first_name, last_name, email, username, password_hash, site)
 
 values(
     'Administrator',
     'Administrator',
     'email@email.com',
     'administrator',
-    '$pbkdf2-sha256$29000$vPe.19obQwhBaA0BgNDamw$8FLG.7VTaObPM158JQ6inygMkXANY6OK83IQRBmt8DI'
+    '$pbkdf2-sha256$29000$vPe.19obQwhBaA0BgNDamw$8FLG.7VTaObPM158JQ6inygMkXANY6OK83IQRBmt8DI',
+    'administrator'
 );
 
 alter table users add constraint users_idx UNIQUE (username);
@@ -112,6 +114,13 @@ values(
     false,
     false,
     true
+),
+(
+    'Sites',
+    'Site',
+    false,
+    false,
+    false
 );
 
 alter table projects add constraint project_idx UNIQUE (project_name);
@@ -150,6 +159,12 @@ values(
 ),
 (
     (select id from projects where project_name = 'Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    true,
+    true
+),
+(
+    (select id from projects where project_name = 'Sites'),
     (select id from users where username = 'administrator'),
     true,
     true
@@ -400,7 +415,8 @@ insert into custom_fields(
     visible,
     human_name,
     calculated,
-    searchable
+    searchable,
+    project_foreign_key_id
 )
 values
 (
@@ -412,7 +428,8 @@ values
     true,
     'Password',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -423,7 +440,8 @@ values
     true,
     'First Name',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -434,7 +452,8 @@ values
     true,
     'Last Name',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -445,7 +464,8 @@ values
     true,
     'Email',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -456,7 +476,8 @@ values
     true,
     'Password Hash',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -467,7 +488,8 @@ values
     true,
     'Account Type',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -478,7 +500,8 @@ values
     true,
     'Password reset token',
     false,
-    true
+    true,
+    null
 ),
 (
     (select id from projects where project_name='Users'),
@@ -489,7 +512,20 @@ values
     true,
     'Enable',
     false,
-    true
+    true,
+    null
+),
+(
+    (select id from projects where project_name='Users'),
+    'user_to_site',
+    (select id from custom_field_types where name='foreign_key'),
+    true,
+    false,
+    true,
+    'Site',
+    false,
+    true,
+    (select id from projects where project_name='Sites')
 );
 
 -- Insert user to project
