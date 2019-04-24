@@ -44,3 +44,23 @@ class ChemiRegConfig(object):
     @staticmethod
     def get_email_password():
         return None
+
+    @staticmethod
+    def raise_scarab_config_exception():
+        raise Exception('Set the Scarab username in chemiregconfig.py')
+
+    @staticmethod
+    def is_scarab_enabled():
+        return False
+
+    @staticmethod
+    def get_scarab_hostname():
+        ChemiRegConfig.raise_scarab_config_exception()
+
+    @staticmethod
+    def get_scarab_username():
+        ChemiRegConfig.raise_scarab_config_exception()
+
+    @staticmethod
+    def get_scarab_password():
+        ChemiRegConfig.raise_scarab_config_exception()
