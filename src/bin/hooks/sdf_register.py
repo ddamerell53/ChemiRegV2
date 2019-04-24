@@ -40,6 +40,15 @@ import authenticate
 from fetch import CompoundFetchManager
 from connection_manager import ConnectionManager
 
+from typing import List
+
+from django_orm.chemireg.models import (
+    Entity,
+    CustomForeignKeyField,
+    CustomVarcharField,
+	CustomField
+)
+
 class CompoundManager(object):
 	def __init__(self, conn=None, auth_manager = None):
 		if auth_manager is None:
@@ -67,7 +76,7 @@ class CompoundManager(object):
 			self.fetch_manager = CompoundFetchManager(self.conn, auth_manager, self)
 			self.auth_manager = self.fetch_manager.auth_manager
 		else:
-			self.fetch_manager = auth_manager.fetch_manager	
+			self.fetch_manager : CompoundFetchManager = auth_manager.fetch_manager
 		
 			self.auth_manager = auth_manager
 		
@@ -298,6 +307,7 @@ class CompoundManager(object):
 	def build_custom_field_statements(self):	
 		self.custom_field_cursors = {}
 		self.custom_field_batch_cursors = {}
+		self.custom_field_batch_standard_cursors = {}
 		
 		field_types = self.auth_manager.get_custom_field_types()
 		for field in field_types:
@@ -334,20 +344,46 @@ class CompoundManager(object):
 							projects_2.project_name = $3 and
 							projects.id_group_name = projects_2.id_group_name
 				''')
+
+				self.custom_field_batch_standard_cursors[field_type] = self.conn.cursor()
+
+				self.custom_field_batch_standard_cursors[field_type].execute('''
+									prepare custom_field_batch_standard_''' + field_type + '''
+									as
+										select
+											max(compounds.compound_id)
+										from
+											compounds,
+											''' + table_name + ''',
+											projects,
+											projects projects_2
+										where
+											left(''' + table_name + '''.custom_field_value,length(''' + table_name + '''.custom_field_value)) = $1 and
+											''' + table_name + '''.entity_id = compounds.id and
+											''' + table_name + '''.custom_field_id = $2 and
+											''' + table_name + '''.archived_transaction_id is null and
+											compounds.archived_transaction_id is null and
+											compounds.project_id = projects.id and
+											projects_2.project_name = $3 and
+											projects.id_group_name = projects_2.id_group_name
+								''')
 		
 	def save_changes(self, username, changes, new_project_name, default_mapping = None):
 		updated_rows = {}
-		
+
 		new_project_def = self.auth_manager.get_project_configuration(new_project_name)
+
+		if new_project_def is None:
+			return
+
 		new_project_fields_by_type = self.auth_manager.get_custom_fields_by_type(new_project_name)
 		new_project_fields = self.auth_manager.get_custom_fields(new_project_name)
 		new_project_id = self.auth_manager.get_project_id(new_project_name)
 		user = self.auth_manager.get_user(username, None)
 		user_id = user['user_id']
-		
+
 		for entity_pkey in changes:
 			if int(entity_pkey) < 0:
-				
 				if not self.auth_manager.has_project(username, new_project_name):
 					raise authenticate.UnauthorisedException('User not authorised for project')
 				else:
@@ -358,27 +394,27 @@ class CompoundManager(object):
 							mol = Chem.MolFromSmiles(changes[entity_pkey]['smiles'])
 						else:
 							mol = Chem.MolFromSmiles('')
-	
+
 						for field in changes[entity_pkey].keys():
-							
+
 							if changes[entity_pkey][field] != None and field in new_project_fields and new_project_fields[field]['type_name'] == 'foreign_key':
 								mol.SetProp(field, str(changes[entity_pkey][field]));
 							else:
 								mol.SetProp(field, str(changes[entity_pkey][field]));
-								
+
 						if default_mapping is None:
 							default_mapping = {
 								'batchable':{'map_column': None, 'default_value': None},
 								'compound_id':{'map_column': None, 'default_value': None},
 								'classification':{'map_column': None, 'default_value': None}
 							}
-								
-						ids = self.register_from_ctab(None, username, 
+
+						ids = self.register_from_ctab(None, username,
 								default_mapping
 							, new_project_name, None, [mol])['ids']
-						
+
 						updated_rows[entity_pkey] = self.fetch_manager.get_entity_by_id(ids[0], False)
-						
+
 						continue
 					else:
 						changes[entity_pkey]['user_id'] = user_id
@@ -388,6 +424,9 @@ class CompoundManager(object):
 						changes[entity_pkey]['upload_id'] = str(uuid.uuid4())
 
 						if new_project_name == 'Users' and not 'bypass' in changes[entity_pkey]:
+							if changes[entity_pkey]['account_type'] == 'scarab':
+								changes[entity_pkey]['password'] = '<HIDDEN>'
+
 							self._create_user(changes, entity_pkey)
 
 							changes[entity_pkey]['password'] = '<HIDDEN>'
@@ -395,28 +434,62 @@ class CompoundManager(object):
 						if new_project_name == 'User to Project' and not 'bypass' in changes[entity_pkey]:
 							self._create_user_to_project(changes, entity_pkey)
 
-						if new_project_name.endswith('/Custom Fields'):
+						if new_project_name.endswith('/Custom Fields') and not 'bypass' in changes[entity_pkey]:
 							self._create_custom_field(changes, entity_pkey,new_project_name)
-						
-						self.insert_entity(changes[entity_pkey], new_project_name, new_project_fields_by_type)
-						
+
+						self.insert_entity(changes[entity_pkey], new_project_name, new_project_fields_by_type, user)
+
+						if new_project_name == 'Users' and not 'bypass' in changes[entity_pkey] and changes[entity_pkey]['account_type'] == 'scarab':
+							user_user = changes[entity_pkey]['compound_id']
+
+							changes = {
+								'-1': {'compound_id': 'Hide_Salt_Suffixes_SGC', 'project': 'SGC', 'option': 'Yes'},
+								'-2': {'compound_id': 'Hide_Salt_Suffixes_SGC - Oxford', 'project': 'SGC - Oxford',
+									   'option': 'Yes'}
+							}
+
+							self.save_changes('administrator', changes, user_user + '/Settings')
+
+							id = -1
+
+							projects = ['SGC', 'SGC - Oxford', 'SGC/Supplier List', 'SGC/Search History',
+										'SGC - Oxford/Search History', 'SGC/Salts', 'SGC/Compound Classifications',
+										'SGC/Compound Series']
+
+							changes = {}
+
+							for project in projects:
+								changes[str(id)] = {
+									'id': str(id),
+									'compound_id': 'SGC' + '/' + user_user,
+									'is_administrator': False,
+									'default_project': True,
+									'is_administrator': False,
+									'user_user_id': user_user,
+									'user_project_id': project
+								}
+
+								id -= 1
+
+							self.save_changes('administrator', changes, 'User to Project')
+
 						updated_rows[entity_pkey] = self.fetch_manager.get_entity_by_id(changes[entity_pkey]['compound_id'], False)
-			
+
 						if new_project_def['enable_structure_field']:
 							self.batch_insert_ss_table(new_project_name, changes[entity_pkey]['upload_id'] )
 
 						# Handle the special projects table
 						if new_project_name == 'Projects' and not 'bypass' in changes[entity_pkey]:
 							self._create_project(changes, entity_pkey)
-			
+
 						continue
-					
+
 			entity = self.fetch_manager.get_entity(entity_pkey)
 			compound_id = entity['compound_id']
 			project_name = entity['project_name']
 			if not self.auth_manager.has_compound_permission(username, entity_pkey):
 				raise authenticate.UnauthorisedException('User not authorised for compound ' + compound_id)
-			
+
 			#TODO: Bottle-neck if updating a lot compounds
 			self.fetch_project_name_cur.execute('execute fetch_project_name (%s)', (entity_pkey,))
 			project_name = self.fetch_project_name_cur.fetchone()[0]
@@ -430,28 +503,28 @@ class CompoundManager(object):
 				self._update_user_to_project(changes, entity_pkey)
 			elif project_name.endswith('/Custom Fields') and not 'bypass' in changes[entity_pkey]:
 				self._update_custom_field(changes, entity_pkey, new_project_name)
-			
+
 			project_fields = self.auth_manager.get_custom_fields(project_name)
-			
+
 			# Strip any calculated fields the user shouldn't be able to access
 			for field_name in changes[entity_pkey]:
 				# Initial check is for the compound_sdf field which is not a real field
 				if field_name in project_fields:
 					field = project_fields[field_name]
-				
+
 					if field['calculated']:
 						del changes[entity_pkey][field_name]
-			
+
 			project_def = self.auth_manager.get_project_configuration(project_name)
-			
+
 			if project_def['enable_structure_field'] and 'compound_sdf' in changes[entity_pkey]:
 				if 'compound_sdf' in changes[entity_pkey] and changes[entity_pkey]['compound_sdf'] is not None and changes[entity_pkey]['compound_sdf'] != '':
 					mol = Chem.MolFromMolBlock(changes[entity_pkey]['compound_sdf'])
 				else:
 					mol = Chem.MolFromSmiles('')
-				
+
 				salts = self.fetch_manager.get_project_salts(project_name,username)
-				
+
 				changes[entity_pkey] = {**changes[entity_pkey], **self.process_mol(mol, {}, salts)}
 
 			sql = 'update compounds set '
@@ -465,20 +538,20 @@ class CompoundManager(object):
 
 			field_names.append('update_transaction_id')
 			values.append(self.transaction_id)
-			
+
 			field_blocks = []
 			for i in range(0, len(field_names)):
 				field_blocks.append(field_names[i] + '=%s')
 
 			sql += ','.join(field_blocks)
 
-			sql += ' where id = %s' 
-			
+			sql += ' where id = %s'
+
 			values.append(entity_pkey)
 
 			cur = self.conn.cursor()
 			cur.execute(sql, values)
-			
+
 			for field_name in changes[entity_pkey]:
 				if(field_name not in self.valid_field_list and field_name in project_fields and field_name != 'compound_sdf'):
 					field = project_fields[field_name]
@@ -487,16 +560,16 @@ class CompoundManager(object):
 					field_before_update_function = field['before_update_function']
 
 					# Handle custom functions
-					#if field_before_update_function is not None:
-				#		func_parts = field_before_update_function.split('.')
-			#			function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-		#				getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
+					if field_before_update_function is not None:
+						func_parts = field_before_update_function.split('.')
+						function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+						getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id, user)
 
 					cur = self.custom_field_cursors[field_type]
-					
+
 					if field['required'] == True and changes[entity_pkey][field_name] is None:
 						raise NotNullException({'compound_id': compound_id, 'field_name': field['field_name'], 'human_name': field['human_name']})
-					
+
 					if field_type == 'foreign_key':
 						if changes[entity_pkey][field_name] is None:
 							change = None
@@ -504,25 +577,25 @@ class CompoundManager(object):
 						else:
 							change = changes[entity_pkey][field_name]
 							parent_project_id = field['project_foreign_key_id']
-							
+
 						cur.execute("execute custom_field_" + field_type + " (%s,%s,%s,%s,%s)", (change, parent_project_id, entity_pkey, field_id, self.transaction_id))
 					else:
 						field_value = changes[entity_pkey][field_name]
-						
+
 						if field_value is not None:
 							# Note: Whitespace at the front of Mol columns is important
 							if type(field_value) is str and '_sdf' not in field_name:
 								field_value =  re.sub('^\s+', '', field_value)
 								field_value =  re.sub('\s+$', '', field_value)
-								
-								changes[entity_pkey][field_name] = field_value	
-							
+
+								changes[entity_pkey][field_name] = field_value
+
 							if field['type_name'] == 'float':
 								if type(field_value) is str and 'mM' in field_value:
 									field_value = field_value.replace('mM', '').replace(' ', '')
-									
-									changes[entity_pkey][field_name] = field_value	
-								
+
+									changes[entity_pkey][field_name] = field_value
+
 								try:
 									if field_value == '' or field_value == ' ':
 										field_value = None
@@ -530,7 +603,7 @@ class CompoundManager(object):
 										f=float(field_value)
 								except ValueError:
 									raise InvalidValueException({'compound_id': compound_id, 'field_name': field['field_name'], 'human_name': field['human_name'], 'value': field_value})
-							elif field['type_name'] == 'int':							
+							elif field['type_name'] == 'int':
 								try:
 									if field_value == '' or field_value == ' ':
 										field_value = None
@@ -541,20 +614,19 @@ class CompoundManager(object):
 							elif field['type_name'] == 'varchar':
 								if len(str(field_value)) > 4000:
 									raise ValueToLongException({'compound_id': compound_id, 'field_name': field['field_name'], 'human_name': field['human_name'], 'value': field_value})
-						elif field['type_name'] == 'varchar' and type(field_value) is float:	
+						elif field['type_name'] == 'varchar' and type(field_value) is float:
 							field_value = str(field_value)
-							field_value = re.sub('\.0$','', field_value)						
-							
+							field_value = re.sub('\.0$','', field_value)
+
 						cur.execute("execute custom_field_" + field_type + " (%s,%s,%s,%s)", (changes[entity_pkey][field_name], entity_pkey, field_id, self.transaction_id))
-					
+
 			if project_def['enable_structure_field'] and 'compound_sdf' in changes[entity_pkey]:
 				self.update_ss_table(project_name, entity_pkey)
-			
+
 			updated_rows[entity_pkey] = self.fetch_manager.get_entity(entity_pkey, False)
 
-		self.monotone_transaction_ids()
 
-		self.conn.commit()
+		self.monotone_transaction_ids()
 
 		return updated_rows
 
@@ -670,6 +742,7 @@ class CompoundManager(object):
 		username = None
 		password = None
 		account_type = None
+		site = None
 
 		skip_external_check = False
 
@@ -684,6 +757,9 @@ class CompoundManager(object):
 		if 'email' in entity:
 			email = entity['email']
 
+		if 'user_to_site' in entity:
+			site = entity['user_to_site']
+
 		if 'compound_id' in entity:
 			entity['compound_id'] = entity['compound_id'].lower()
 			username = entity['compound_id']
@@ -697,7 +773,7 @@ class CompoundManager(object):
 		if 'account_type' in entity:
 			account_type = entity['account_type']
 
-		self.auth_manager.register_user(first_name, last_name, email, username, password, account_type, skip_external_check)
+		self.auth_manager.register_user(first_name, last_name, email, username, password, site, account_type, skip_external_check)
 
 		if 'enable' in entity:
 			if entity['enable']:
@@ -750,6 +826,7 @@ class CompoundManager(object):
 		#password = old_entity['password']
 		password = None
 		account_type = old_entity['account_type']
+		site = old_entity['user_to_site']
 
 		if 'first_name' in entry:
 			first_name = entry['first_name']
@@ -768,13 +845,16 @@ class CompoundManager(object):
 		if 'account_type' in entry:
 			account_type = entry['account_type']
 
+		if 'user_to_site' in entry:
+			site = entry['user_to_site']
+
 		if 'compound_id' in entry:
 			username = entry['compound_id'].lower()
 
 			if not self.auth_manager.validate_project_term(username):
 				raise Exception('Username ends with a reserved word!')
 
-		self.auth_manager.update_user(original_username, first_name, last_name, email, username, password, account_type)
+		self.auth_manager.update_user(original_username, first_name, last_name, email, username, password, account_type, site)
 
 		if 'enable' in entry:
 			if entry['enable']:
@@ -1157,15 +1237,24 @@ class CompoundManager(object):
 							if not col_name in properties:
 								raise Exception('Property ' + str(col_name) + 'missing for ' + str(row_i))
 							else:
-								batchable_value = properties[col_name]
-								
-							batchable_value = batchable_value[0:len(batchable_value) -1]
-							
-																
-							self.custom_field_batch_cursors[batch_on_field_def['type_name']].execute("execute custom_field_batch_" + batch_on_field_def['type_name'] +" (%s,%s,%s)", (batchable_value,batch_on_field_def['field_id'],project_name))
-							
-							row = self.custom_field_batch_cursors[batch_on_field_def['type_name']].fetchone()
-			
+								batchable_value = str(properties[col_name])
+
+							row = None
+							if batch_on_field_def['field_name'] == 'old_sgc_global_id':
+								batchable_value = batchable_value[0:len(batchable_value) -1]
+
+								self.custom_field_batch_cursors[batch_on_field_def['type_name']].execute(
+									"execute custom_field_batch_" + batch_on_field_def['type_name'] + " (%s,%s,%s)",
+									(batchable_value, batch_on_field_def['field_id'], project_name))
+
+								row = self.custom_field_batch_cursors[batch_on_field_def['type_name']].fetchone()
+							else:
+								self.custom_field_batch_standard_cursors[batch_on_field_def['type_name']].execute(
+									"execute custom_field_batch_standard_" + batch_on_field_def['type_name'] + " (%s,%s,%s)",
+									(batchable_value, batch_on_field_def['field_id'], project_name))
+
+								row = self.custom_field_batch_standard_cursors[batch_on_field_def['type_name']].fetchone()
+
 							if not row is None and not row[0] is None:
 								compound_id = row[0][0:8] + chr(ord(row[0][8])+1)
 								generate_new_batch = False
@@ -1237,7 +1326,7 @@ class CompoundManager(object):
 					
 					prefixes[compound_id[0:2]] = True
 					
-					self.insert_entity(obj, project_name, project_fields_by_type)
+					self.insert_entity(obj, project_name, project_fields_by_type,user)
 					
 					break
 				except ConcurrentIDGenerationCollision:
@@ -1435,7 +1524,7 @@ class CompoundManager(object):
 		else:
 			print('No SS field')
 	
-	def insert_entity(self, obj, project_name, project_fields_by_type):
+	def insert_entity(self, obj, project_name, project_fields_by_type, user):
 		ss_field = self.auth_manager.get_ss_search_field(project_name)
 				
 		try:
@@ -1493,10 +1582,10 @@ class CompoundManager(object):
 				field_before_update_function = field['before_update_function']
 
 				# Handle custom functions
-				#f field_before_update_function is not None:
-				#func_parts = field_before_update_function.split('.')
-				#function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-				#getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
+				if field_before_update_function is not None:
+					func_parts = field_before_update_function.split('.')
+					function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+					getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'], user)
 				
 				field_value = None
 				
@@ -2009,7 +2098,16 @@ class CompoundManager(object):
 			raise authenticate.UnauthorisedException('User ' + username + ' not authorised for ' + project_name)
 		
 		self.delete_upload_set_cur.execute("execute delete_upload_set (%s,%s,%s,%s)", (upload_id, project_name, self.transaction_id,str(uuid.uuid4()) ))
-		
+
+	def delete_by_field(self, username: str, project_name: str, field_name: str, field_value: str):
+		if not self.auth_manager.has_project(username, project_name):
+			raise authenticate.UnauthorisedException('User ' + username + ' not authorised for ' + project_name)
+
+		entities: List[Entity] = self.fetch_manager.fetch_by_field(project_name, field_name, field_value)
+
+		for entity in entities:
+			self.delete_compound(username, entity.id)
+
 	def convert_value(self, project_name, field_name, original_value, new_value):
 		cur = self.conn.cursor()
 		
@@ -2079,6 +2177,9 @@ class CompoundManager(object):
 		cur.execute('update compounds set insert_transaction_id=%s where insert_transaction_id=%s', (new_transaction_id, self.transaction_id))
 		cur.execute('update compounds set update_transaction_id=%s where update_transaction_id=%s', (new_transaction_id, self.transaction_id))
 		cur.execute('update compounds set archived_transaction_id=%s where archived_transaction_id=%s', (new_transaction_id, self.transaction_id))
+
+	def commit(self):
+		self.conn.commit()
 
 	#def import_core_projects(self):
 #		cur = self.conn.cursor()#
@@ -2192,6 +2293,8 @@ if __name__ == '__main__':
 
 			try:
 				output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+				manager.commit()
+
 			except authenticate.UnauthorisedException as e:
 				error = e.value
 			except InvalidFieldNameException as e:
@@ -2222,7 +2325,7 @@ if __name__ == '__main__':
 			try:
 				manager.delete_file_upload(username, file_uuid)
 			except authenticate.UnauthorisedException as e:
-				ouput_json['error'] = str(e)
+				output_json['error'] = str(e)
 			except InvalidFileUUIDException as e:
 				output_json['error'] = str(e)
 
@@ -2235,6 +2338,20 @@ if __name__ == '__main__':
 
 			try:
 				manager.delete_compound(username, id)
+			except authenticate.UnauthorisedException as e:
+				output_json['error'] = str(e)
+		elif 'delete_compound_by_field' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			project_name = input_json['project_name']
+			field_name = input_json['field_name']
+			field_value = input_json['field_value']
+
+			username = input_json['_username']
+
+			output_json = {'error' : None}
+
+			try:
+				manager.delete_by_field(username, project_name, field_name, field_value)
 			except authenticate.UnauthorisedException as e:
 				output_json['error'] = str(e)
 		elif 'delete_upload_set' in input_json:
@@ -2314,6 +2431,8 @@ if __name__ == '__main__':
 
 							try:
 								output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+
+								manager.commit()
 							except authenticate.UnauthorisedException as e:
 								error = e.value
 							except InvalidFieldNameException as e:
@@ -2361,6 +2480,8 @@ if __name__ == '__main__':
 
 								try:
 									output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+
+									manager.commit()
 								except authenticate.UnauthorisedException as e:
 									error = e.value
 								except InvalidFieldNameException as e:
