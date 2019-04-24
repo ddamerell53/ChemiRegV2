@@ -62,6 +62,11 @@ from django_orm.chemireg.models import (
 	CustomField
 )
 
+import base64
+from io import BytesIO
+
+from PIL import Image, ImageChops
+
 class CompoundFetchManager(object):
 	def __init__(self, conn=None,auth_manager = None,crud_manager=None):
 		self.fetch_upload_set_cur = None
@@ -1676,6 +1681,23 @@ class CompoundFetchManager(object):
 		os.unlink(tmp_file.name)
 
 		return content
+        
+	def get_ctab_as_png(self, ctab_content):
+		mol = Chem.MolFromMolBlock(ctab_content)
+
+		image = Draw.MolToImage(mol,size=(200,200))
+
+		bg = Image.new(image.mode, image.size, image.getpixel((0,0)))
+		diff = ImageChops.difference(image, bg)
+		diff = ImageChops.add(diff, diff, 2.0, -100)
+		bbox = diff.getbbox()
+		image = image.crop(bbox)
+
+		buf = BytesIO()
+		image.save(buf, format='PNG')
+		content = base64.b64encode(buf.getvalue())
+
+		return content
 
 	def export_sdf_ctab_set(self, ctab, out_directory, username):
 		desalted_mol_block = self.ctab_to_desalted_ctab(ctab)
@@ -2229,6 +2251,9 @@ if __name__ == '__main__':
 						#            NodeJS protects this function from unauthenticated users
 						svg_content = manager.get_ctab_as_svg(input_json['ctab_content'])
 						output_json['svg_content'] = svg_content
+					elif input_json['action'] == 'as_png':
+						png_content = manager.get_ctab_as_png(input_json['ctab_content'])
+						output_json['png_content'] = png_content
 					elif input_json['action'] == 'fetch_prefixes':
 						#PROTECTION: no _username is provided to this function as the list of prefixes is currently not project specific.
 						#	     NodeJS protects this function from unathenticated users
