@@ -42,16 +42,22 @@
                          "format_request_method": "fetch_compound",
                          "http_method": "POST"
                      },
-		     {
+		            {
                          "route": "/api/compounds",
                          "format_request_clazz": "ChemiRegRoutes",
                          "format_request_method": "save_compounds",
                          "http_method": "POST"
                      },
-		     {
+		              {
                          "route": "/api/compounds/:id",
                          "format_request_clazz": "ChemiRegRoutes",
                          "format_request_method": "delete_compounds",
+                         "http_method": "DELETE"
+                     },
+                     {
+                         "route": "/api/compounds",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "delete_compounds_by_field",
                          "http_method": "DELETE"
                      }
 
