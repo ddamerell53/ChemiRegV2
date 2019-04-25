@@ -21,7 +21,7 @@ class ChemiRegTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_url = 'http://127.0.0.1:80'
+        cls.base_url = 'http://pan:8080'
 
         command = 'login'
         args = {
@@ -226,7 +226,7 @@ $$$$
             'project_name': 'TestA',
             'token': ChemiRegTester.token,
             'field_name':'elnid',
-            'eln_id': 'PAGE15-00001'
+            'field_value': 'PAGE15-00001'
         }
 
         res = run_query(ChemiRegTester.base_url, command, args,'DELETE')

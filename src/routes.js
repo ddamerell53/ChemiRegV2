@@ -88,6 +88,7 @@ ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle
     json.project_name = req.params.project_name;
     json.field_name = req.params.field_name;
     json.field_value = req.params.field_value;
+    json.delete_compound_by_field = true
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:SDFRegister';
 
