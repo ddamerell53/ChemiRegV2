@@ -6597,6 +6597,7 @@ saturn.db.Provider.prototype = {
 	,getByValues: null
 	,_closeConnection: null
 	,getConfig: null
+	,query: null
 	,addHook: null
 	,__class__: saturn.db.Provider
 };
@@ -6948,7 +6949,8 @@ saturn.db.DefaultProvider.prototype = {
 	,getByExample: function(obj,cb) {
 		var q = this.getQuery();
 		q.addExample(obj);
-		this.query(q,cb);
+		q.run(cb);
+		return q;
 	}
 	,query: function(query,cb) {
 		var _g = this;
@@ -7651,7 +7653,7 @@ saturn.db.DefaultProvider.prototype = {
 			var model = this.getModel(original);
 			if(model == null) continue;
 			var _g2 = 0;
-			var _g11 = model.getFields();
+			var _g11 = model.getAttributes();
 			while(_g2 < _g11.length) {
 				var field1 = _g11[_g2];
 				++_g2;
@@ -7758,7 +7760,7 @@ saturn.db.DefaultProvider.prototype = {
 			var model = models[_g1];
 			++_g1;
 			var _g11 = 0;
-			var _g2 = modelDef.getFields();
+			var _g2 = modelDef.getAttributes();
 			while(_g11 < _g2.length) {
 				var field = _g2[_g11];
 				++_g11;
@@ -7856,7 +7858,7 @@ saturn.db.DefaultProvider.prototype = {
 					++_g4;
 					var mappedModel = Type.createEmptyInstance(clazz);
 					var _g12 = 0;
-					var _g21 = modelDef.getFields();
+					var _g21 = modelDef.getAttributes();
 					while(_g12 < _g21.length) {
 						var field1 = _g21[_g12];
 						++_g12;
@@ -8717,6 +8719,9 @@ saturn.db.query_lang.Field.prototype = $extend(saturn.db.query_lang.Token.protot
 			this.clazz = Type.getClassName(c);
 		} else this.clazz = clazz;
 	}
+	,getAttributeName: function() {
+		return this.attributeName;
+	}
 	,__class__: saturn.db.query_lang.Field
 });
 saturn.db.query_lang.From = $hxClasses["saturn.db.query_lang.From"] = function() {
@@ -8797,6 +8802,28 @@ saturn.db.query_lang.Query = $hxClasses["saturn.db.query_lang.Query"] = function
 	this.orderToken = new saturn.db.query_lang.OrderBy();
 };
 saturn.db.query_lang.Query.__name__ = ["saturn","db","query_lang","Query"];
+saturn.db.query_lang.Query.deserialise = function(querySer) {
+	var clone = haxe.Unserializer.run(querySer);
+	saturn.db.query_lang.Query.deserialiseToken(clone);
+	return clone;
+};
+saturn.db.query_lang.Query.deserialiseToken = function(token) {
+	if(token == null) return;
+	if(token.getTokens() != null) {
+		var _g = 0;
+		var _g1 = token.getTokens();
+		while(_g < _g1.length) {
+			var token1 = _g1[_g];
+			++_g;
+			saturn.db.query_lang.Query.deserialiseToken(token1);
+		}
+	}
+	if(js.Boot.__instanceof(token,saturn.db.query_lang.Query)) {
+		var qToken;
+		qToken = js.Boot.__cast(token , saturn.db.query_lang.Query);
+		qToken.provider = null;
+	}
+};
 saturn.db.query_lang.Query.__super__ = saturn.db.query_lang.Token;
 saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	selectToken: null
@@ -8809,6 +8836,11 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 	,pageOn: null
 	,pageSize: null
 	,lastPagedRowValue: null
+	,results: null
+	,error: null
+	,setLastPagedRowValue: function(t) {
+		this.lastPagedRowValue = t;
+	}
 	,isPaging: function() {
 		return this.pageOn != null && this.pageSize != null;
 	}
@@ -8882,12 +8914,36 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 	,getWhere: function() {
 		return this.whereToken;
 	}
+	,clone: function() {
+		var str = this.serialise();
+		return saturn.db.query_lang.Query.deserialise(str);
+	}
 	,serialise: function() {
 		var keepMe = this.provider;
 		this.provider = null;
 		var newMe = haxe.Serializer.run(this);
 		this.provider = keepMe;
 		return newMe;
+	}
+	,run: function(cb) {
+		var _g = this;
+		var clone = this.clone();
+		clone.provider = null;
+		clone.getTokens();
+		this.provider.query(clone,function(objs,err) {
+			if(err == null && objs.length > 0 && _g.isPaging()) {
+				var fieldName = null;
+				if(_g.pageOn.name != null) fieldName = _g.pageOn.name; else if(js.Boot.__instanceof(_g.pageOn,saturn.db.query_lang.Field)) {
+					var fToken;
+					fToken = js.Boot.__cast(_g.pageOn , saturn.db.query_lang.Field);
+					fieldName = fToken.getAttributeName();
+				}
+				if(fieldName == null) err = "Unable to determine value of last paged row"; else _g.setLastPagedRowValue(new saturn.db.query_lang.Value(Reflect.field(objs[objs.length - 1],fieldName)));
+			}
+			_g.results = objs;
+			_g.error = err;
+			if(cb != null) cb(objs,err);
+		});
 	}
 	,getSelectClassList: function() {
 		var set = new haxe.ds.StringMap();
@@ -8947,7 +9003,7 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 				}
 			}
 		} else this.getSelect().addToken(new saturn.db.query_lang.Field(clazz,"*"));
-		var fields = model.getFields();
+		var fields = model.getAttributes();
 		var hasPrevious = false;
 		this.getWhere().addToken(new saturn.db.query_lang.StartBlock());
 		var _g1 = 0;
@@ -8958,14 +9014,17 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 			var value = Reflect.field(obj,field1);
 			if(value != null) {
 				if(hasPrevious) this.getWhere().addToken(new saturn.db.query_lang.And());
-				this.getWhere().addToken(new saturn.db.query_lang.Field(clazz,field1));
-				this.getWhere().addToken(new saturn.db.query_lang.Equals());
+				var fieldToken = new saturn.db.query_lang.Field(clazz,field1);
+				this.getWhere().addToken(fieldToken);
 				if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNull)) {
 					saturn.core.Util.print("Found NULL");
 					this.getWhere().addToken(new saturn.db.query_lang.IsNull());
-				} else if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNotNull)) this.getWhere().addToken(new saturn.db.query_lang.IsNotNull()); else {
-					saturn.core.Util.print("Found value" + Type.getClassName(value == null?null:js.Boot.getClass(value)));
-					this.getWhere().addToken(new saturn.db.query_lang.Value(value));
+				} else if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNotNull)) this.getWhere().addToken(new saturn.db.query_lang.IsNotNull()); else if(js.Boot.__instanceof(value,saturn.db.query_lang.Operator)) this.getWhere().addToken(value); else {
+					this.getWhere().addToken(new saturn.db.query_lang.Equals());
+					if(js.Boot.__instanceof(value,saturn.db.query_lang.Token)) this.getWhere().addToken(value); else {
+						saturn.core.Util.print("Found value" + Type.getClassName(value == null?null:js.Boot.getClass(value)));
+						this.getWhere().addToken(new saturn.db.query_lang.Value(value));
+					}
 				}
 				hasPrevious = true;
 			}
