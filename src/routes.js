@@ -76,3 +76,23 @@ ChemiRegRoutes.delete_compounds = function(path, req, res, next, handle_function
 
 	handle_function(path,req, res, next, command, d);
 };
+
+
+ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle_function){
+	var command = '_remote_provider_._data_request_objects_namedquery';
+
+	var d = {};
+	var json = {};
+
+    json._username =  null;
+    json.project_name = req.params.project_name;
+    json.field_name = req.params.field_name;
+    json.field_value = req.params.field_value;
+
+	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:SDFRegister';
+
+	d.parameters = haxe.Serializer.run([json]);
+
+	handle_function(path,req, res, next, command, d);
+};
+
