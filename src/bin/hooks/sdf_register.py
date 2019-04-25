@@ -2338,6 +2338,10 @@ if __name__ == '__main__':
 
 			try:
 				manager.delete_compound(username, id)
+
+				manager.monotone_transaction_ids()
+
+				manager.conn.commit()
 			except authenticate.UnauthorisedException as e:
 				output_json['error'] = str(e)
 		elif 'delete_compound_by_field' in input_json:
@@ -2352,6 +2356,10 @@ if __name__ == '__main__':
 
 			try:
 				manager.delete_by_field(username, project_name, field_name, field_value)
+
+				manager.monotone_transaction_ids()
+
+				manager.conn.commit()
 			except authenticate.UnauthorisedException as e:
 				output_json['error'] = str(e)
 		elif 'delete_upload_set' in input_json:
