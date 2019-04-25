@@ -6,5 +6,10 @@ RUN apt-get update && \
  apt-get install -y git vim
 RUN echo "2.1004" > /VERSION
 RUN cd /tmp/ && \
-git clone https://github.com/ddamerell53/ChemiRegV2.git
+
+ARG VERSION=unknown
+RUN VERSION=${VERSION}
+
+COPY . /tmp/ChemiRegV2
+
 RUN cp /tmp/ChemiRegV2/chemireg.sql /docker-entrypoint-initdb.d/chemireg.sql
