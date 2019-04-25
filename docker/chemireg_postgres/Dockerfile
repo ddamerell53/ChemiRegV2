@@ -5,7 +5,6 @@ MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 RUN apt-get update && \
  apt-get install -y git vim
 RUN echo "2.1004" > /VERSION
-RUN cd /tmp/ && \
 
 ARG VERSION=unknown
 RUN VERSION=${VERSION}
