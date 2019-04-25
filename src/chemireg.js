@@ -5262,7 +5262,8 @@ saturn.db.DefaultProvider.prototype = {
 	,getByExample: function(obj,cb) {
 		var q = this.getQuery();
 		q.addExample(obj);
-		this.query(q,cb);
+		q.run(cb);
+		return q;
 	}
 	,query: function(query,cb) {
 		var _g = this;
@@ -5965,7 +5966,7 @@ saturn.db.DefaultProvider.prototype = {
 			var model = this.getModel(original);
 			if(model == null) continue;
 			var _g2 = 0;
-			var _g11 = model.getFields();
+			var _g11 = model.getAttributes();
 			while(_g2 < _g11.length) {
 				var field1 = _g11[_g2];
 				++_g2;
@@ -6072,7 +6073,7 @@ saturn.db.DefaultProvider.prototype = {
 			var model = models[_g1];
 			++_g1;
 			var _g11 = 0;
-			var _g2 = modelDef.getFields();
+			var _g2 = modelDef.getAttributes();
 			while(_g11 < _g2.length) {
 				var field = _g2[_g11];
 				++_g11;
@@ -6170,7 +6171,7 @@ saturn.db.DefaultProvider.prototype = {
 					++_g4;
 					var mappedModel = Type.createEmptyInstance(clazz);
 					var _g12 = 0;
-					var _g21 = modelDef.getFields();
+					var _g21 = modelDef.getAttributes();
 					while(_g12 < _g21.length) {
 						var field1 = _g21[_g12];
 						++_g12;
@@ -8230,7 +8231,6 @@ saturn.db.provider.hooks.ExternalJsonHook.run = function(query,params,clazz,cb,h
 		} else {
 			var run = function() {
 				var inputJsonStr = JSON.stringify(config);
-				saturn.core.Util.debug(inputJsonStr);
 				js.Node.require("fs").writeFileSync(fh_input.path,inputJsonStr);
 				bindings.NodeTemp.open("output_json",function(err1,fh_output) {
 					if(err1 != null) {
@@ -8412,6 +8412,9 @@ saturn.db.query_lang.Token.prototype = {
 		}
 		return list;
 	}
+	,or: function() {
+		this.add(new saturn.db.query_lang.Or());
+	}
 	,__class__: saturn.db.query_lang.Token
 };
 saturn.db.query_lang.Operator = $hxClasses["saturn.db.query_lang.Operator"] = function(token) {
@@ -8445,6 +8448,14 @@ saturn.db.query_lang.Cast.__name__ = ["saturn","db","query_lang","Cast"];
 saturn.db.query_lang.Cast.__super__ = saturn.db.query_lang.Function;
 saturn.db.query_lang.Cast.prototype = $extend(saturn.db.query_lang.Function.prototype,{
 	__class__: saturn.db.query_lang.Cast
+});
+saturn.db.query_lang.CastAsInt = $hxClasses["saturn.db.query_lang.CastAsInt"] = function(token) {
+	saturn.db.query_lang.Function.call(this,[token]);
+};
+saturn.db.query_lang.CastAsInt.__name__ = ["saturn","db","query_lang","CastAsInt"];
+saturn.db.query_lang.CastAsInt.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.CastAsInt.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.CastAsInt
 });
 saturn.db.query_lang.ClassToken = $hxClasses["saturn.db.query_lang.ClassToken"] = function(clazz) {
 	this.setClass(clazz);
@@ -8736,6 +8747,17 @@ saturn.db.query_lang.Query.deserialiseToken = function(token) {
 		qToken.provider = null;
 	}
 };
+saturn.db.query_lang.Query.startsWith = function(value) {
+	var t = new saturn.db.query_lang.Like();
+	t.add(new saturn.db.query_lang.Value(value).concat("%"));
+	return t;
+};
+saturn.db.query_lang.Query.getByExample = function(provider,example,cb) {
+	var q = new saturn.db.query_lang.Query(provider);
+	q.addExample(example);
+	q.run(cb);
+	return q;
+};
 saturn.db.query_lang.Query.__super__ = saturn.db.query_lang.Token;
 saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.prototype,{
 	selectToken: null
@@ -8748,6 +8770,8 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 	,pageOn: null
 	,pageSize: null
 	,lastPagedRowValue: null
+	,results: null
+	,error: null
 	,setPageOnToken: function(t) {
 		this.pageOn = t;
 	}
@@ -8897,7 +8921,9 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 				}
 				if(fieldName == null) err = "Unable to determine value of last paged row"; else _g.setLastPagedRowValue(new saturn.db.query_lang.Value(Reflect.field(objs[objs.length - 1],fieldName)));
 			}
-			cb(objs,err);
+			_g.results = objs;
+			_g.error = err;
+			if(cb != null) cb(objs,err);
 		});
 	}
 	,getSelectClassList: function() {
@@ -8983,7 +9009,7 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 				}
 			}
 		} else this.getSelect().addToken(new saturn.db.query_lang.Field(clazz,"*"));
-		var fields = model.getFields();
+		var fields = model.getAttributes();
 		var hasPrevious = false;
 		this.getWhere().addToken(new saturn.db.query_lang.StartBlock());
 		var _g1 = 0;
@@ -8994,19 +9020,31 @@ saturn.db.query_lang.Query.prototype = $extend(saturn.db.query_lang.Token.protot
 			var value = Reflect.field(obj,field1);
 			if(value != null) {
 				if(hasPrevious) this.getWhere().addToken(new saturn.db.query_lang.And());
-				this.getWhere().addToken(new saturn.db.query_lang.Field(clazz,field1));
-				this.getWhere().addToken(new saturn.db.query_lang.Equals());
+				var fieldToken = new saturn.db.query_lang.Field(clazz,field1);
+				this.getWhere().addToken(fieldToken);
 				if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNull)) {
 					saturn.core.Util.print("Found NULL");
 					this.getWhere().addToken(new saturn.db.query_lang.IsNull());
-				} else if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNotNull)) this.getWhere().addToken(new saturn.db.query_lang.IsNotNull()); else {
-					saturn.core.Util.print("Found value" + Type.getClassName(value == null?null:js.Boot.getClass(value)));
-					this.getWhere().addToken(new saturn.db.query_lang.Value(value));
+				} else if(js.Boot.__instanceof(value,saturn.db.query_lang.IsNotNull)) this.getWhere().addToken(new saturn.db.query_lang.IsNotNull()); else if(js.Boot.__instanceof(value,saturn.db.query_lang.Operator)) this.getWhere().addToken(value); else {
+					this.getWhere().addToken(new saturn.db.query_lang.Equals());
+					if(js.Boot.__instanceof(value,saturn.db.query_lang.Token)) this.getWhere().addToken(value); else {
+						saturn.core.Util.print("Found value" + Type.getClassName(value == null?null:js.Boot.getClass(value)));
+						this.getWhere().addToken(new saturn.db.query_lang.Value(value));
+					}
 				}
 				hasPrevious = true;
 			}
 		}
 		this.getWhere().addToken(new saturn.db.query_lang.EndBlock());
+	}
+	,getResults: function() {
+		return this.results;
+	}
+	,hasResults: function() {
+		return this.results != null && this.results.length > 0;
+	}
+	,getError: function() {
+		return this.error;
 	}
 	,__class__: saturn.db.query_lang.Query
 });
@@ -9131,8 +9169,8 @@ saturn.db.query_lang.SQLVisitor.prototype = {
 					if(this.provider.getProviderType() == "SQLITE") sqlTranslation += "ltrim(" + nestedTranslation + ",'0'" + ")"; else sqlTranslation += "Trim( leading '0' from " + nestedTranslation + ")";
 				} else {
 					var funcName = "";
-					if(js.Boot.__instanceof(token,saturn.db.query_lang.Max)) funcName = "MAX"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Count)) funcName = "COUNT"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Instr)) funcName = "INSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Substr)) funcName = "SUBSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Length)) funcName = "LENGTH"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Concat)) funcName = "CONCAT";
-					sqlTranslation += funcName + "( " + nestedTranslation + " )";
+					if(js.Boot.__instanceof(token,saturn.db.query_lang.Max)) funcName = "MAX"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Count)) funcName = "COUNT"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Instr)) funcName = "INSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Substr)) funcName = "SUBSTR"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Length)) funcName = "LENGTH"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Concat)) funcName = "CONCAT"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.ToNumber)) funcName = "to_number"; else if(js.Boot.__instanceof(token,saturn.db.query_lang.CastAsInt)) funcName = "cast";
+					if(!js.Boot.__instanceof(token,saturn.db.query_lang.CastAsInt)) sqlTranslation += funcName + "( " + nestedTranslation + " )"; else sqlTranslation += funcName + "( " + nestedTranslation + " as int)";
 				}
 			} else if(js.Boot.__instanceof(token,saturn.db.query_lang.Select)) sqlTranslation += " SELECT " + nestedTranslation; else if(js.Boot.__instanceof(token,saturn.db.query_lang.Field)) {
 				var cToken1;
@@ -9284,6 +9322,14 @@ saturn.db.query_lang.Substr.__name__ = ["saturn","db","query_lang","Substr"];
 saturn.db.query_lang.Substr.__super__ = saturn.db.query_lang.Function;
 saturn.db.query_lang.Substr.prototype = $extend(saturn.db.query_lang.Function.prototype,{
 	__class__: saturn.db.query_lang.Substr
+});
+saturn.db.query_lang.ToNumber = $hxClasses["saturn.db.query_lang.ToNumber"] = function(token) {
+	saturn.db.query_lang.Function.call(this,[token]);
+};
+saturn.db.query_lang.ToNumber.__name__ = ["saturn","db","query_lang","ToNumber"];
+saturn.db.query_lang.ToNumber.__super__ = saturn.db.query_lang.Function;
+saturn.db.query_lang.ToNumber.prototype = $extend(saturn.db.query_lang.Function.prototype,{
+	__class__: saturn.db.query_lang.ToNumber
 });
 saturn.db.query_lang.Trim = $hxClasses["saturn.db.query_lang.Trim"] = function(value) {
 	saturn.db.query_lang.Function.call(this,[value]);
@@ -9934,6 +9980,16 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 						var clazz = Type.resolveClass(format_method_clazz[0]);
 						(Reflect.field(clazz,format_method_method[0]))(route[0],req5,res5,next5,handle_function);
 					};
+				})(format_method_method,format_method_clazz,route)); else if(http_method == "PUT") this.saturn.getServer().put(route[0],(function(format_method_method,format_method_clazz,route) {
+					return function(req6,res6,next6) {
+						var clazz1 = Type.resolveClass(format_method_clazz[0]);
+						(Reflect.field(clazz1,format_method_method[0]))(route[0],req6,res6,next6,handle_function);
+					};
+				})(format_method_method,format_method_clazz,route)); else if(http_method == "DELETE") this.saturn.getServer()["delete"](route[0],(function(format_method_method,format_method_clazz,route) {
+					return function(req7,res7,next7) {
+						var clazz2 = Type.resolveClass(format_method_clazz[0]);
+						(Reflect.field(clazz2,format_method_method[0]))(route[0],req7,res7,next7,handle_function);
+					};
 				})(format_method_method,format_method_clazz,route));
 			}
 		}
@@ -9959,6 +10015,23 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 	}
 	,__class__: saturn.server.plugins.core.RESTSocketWrapperPlugin
 });
+saturn.server.plugins.core.SATurnDefaultRESTRouter = $hxClasses["saturn.server.plugins.core.SATurnDefaultRESTRouter"] = function() {
+};
+saturn.server.plugins.core.SATurnDefaultRESTRouter.__name__ = ["saturn","server","plugins","core","SATurnDefaultRESTRouter"];
+saturn.server.plugins.core.SATurnDefaultRESTRouter.update_blastdb = function(path,req,res,next,handle_function) {
+	var command = "_blast_updater_";
+	if(!Object.prototype.hasOwnProperty.call(req.params,"database") || req.params.database == null) {
+		res.status(400);
+		res.send("Bad Request - database parameter missing");
+		next();
+	} else {
+		var jsonObj = { 'database' : req.params.database};
+		handle_function(path,req,res,next,command,jsonObj);
+	}
+};
+saturn.server.plugins.core.SATurnDefaultRESTRouter.prototype = {
+	__class__: saturn.server.plugins.core.SATurnDefaultRESTRouter
+};
 saturn.server.plugins.core.SocketPlugin = $hxClasses["saturn.server.plugins.core.SocketPlugin"] = function(server,config) {
 	saturn.server.plugins.core.BaseServerPlugin.call(this,server,config);
 	this.startSocketServer();
