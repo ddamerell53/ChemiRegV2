@@ -2114,7 +2114,7 @@ class CompoundFetchManager(object):
 
 			if custom_field_type == 'varchar':
 				# Identify matching entities
-				query_set = CustomVarcharField.objects.filter(custom_field__id=custom_field_def.id, custom_field_value=field_value, archived_transaction_id__isnull=True)
+				query_set = CustomVarcharField.objects.filter(custom_field__id=custom_field_def.id, custom_field_value=field_value, entity__archived_transaction_id__isnull=True)
 
 				# Build up list of entities from custom field instances
 				for item in query_set:
