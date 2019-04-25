@@ -9985,7 +9985,7 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 						var clazz1 = Type.resolveClass(format_method_clazz[0]);
 						(Reflect.field(clazz1,format_method_method[0]))(route[0],req6,res6,next6,handle_function);
 					};
-				})(format_method_method,format_method_clazz,route)); else if(http_method == "DELETE") this.saturn.getServer()["delete"](route[0],(function(format_method_method,format_method_clazz,route) {
+				})(format_method_method,format_method_clazz,route)); else if(http_method == "DELETE") this.saturn.getServer().del(route[0],(function(format_method_method,format_method_clazz,route) {
 					return function(req7,res7,next7) {
 						var clazz2 = Type.resolveClass(format_method_clazz[0]);
 						(Reflect.field(clazz2,format_method_method[0]))(route[0],req7,res7,next7,handle_function);
