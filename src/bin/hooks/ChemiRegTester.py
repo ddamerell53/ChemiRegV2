@@ -4,12 +4,12 @@ import urllib.parse
 import json
 
 
-def run_query(base_url, command, args):
+def run_query(base_url, command, args, method='POST'):
     url = base_url + '/' + command
     data = urllib.parse.urlencode(args)
     data = data.encode('ascii')
 
-    req = urllib.request.Request(url, data)
+    req = urllib.request.Request(url, data, method=method)
 
     with urllib.request.urlopen(req) as res:
         ret_val = res.read()
@@ -66,12 +66,8 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
 
-        self.assertIsNotNone(res)
-        self.assertIn('uuid', res)
-        self.assertIn('error', res)
-        self.assertIn('result-set', res)
-        self.assertIsNone(res['error'])
-        self.assertIsNotNone(res['uuid'])
+        self._test_basic_res(res)
+
         self.assertIsNotNone(res['result-set'])
         self.assertEqual(len(res['result-set']), 1)
         self.assertIsNotNone(res['result-set'][0])
@@ -104,12 +100,8 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
 
-        self.assertIsNotNone(res)
-        self.assertIn('uuid', res)
-        self.assertIn('error', res)
-        self.assertIn('result-set', res)
-        self.assertIsNone(res['error'])
-        self.assertIsNotNone(res['uuid'])
+        self._test_basic_res(res)
+
         self.assertIsNotNone(res['result-set'])
         self.assertEqual(len(res['result-set']), 1)
         self.assertIsNotNone(res['result-set'][0])
@@ -137,24 +129,7 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
 
-        self.assertIsNotNone(res)
-        self.assertIn('uuid', res)
-        self.assertIn('error', res)
-        self.assertIn('result-set', res)
-        self.assertIsNone(res['error'])
-        self.assertIsNotNone(res['uuid'])
-        self.assertIsNotNone(res['result-set'])
-        self.assertEqual(len(res['result-set']), 1)
-        self.assertIsNotNone(res['result-set'][0])
-
-        obj = res['result-set'][0]
-
-        self.assertIsNotNone(obj)
-
-        self.assertIn('refreshed_objects', obj)
-
-        obj2 = obj['refreshed_objects']
-        self.assertIsNotNone(obj2)
+        obj2 = self._test_upload_response(res)
 
         matched = False
 
@@ -204,6 +179,84 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
         print(res)
+
+    def test_compound_field_delete(self):
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'Test/Supplier List',
+            'token': ChemiRegTester.token,
+            'compounds': json.dumps({
+                '-1': {
+                    'id': '-1',
+                    'compound_id': 'Test3',
+                }
+            })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'compounds': json.dumps({
+                '-1': {
+                    'id': '-1',
+                    'smiles': 'C',
+                    'classification': 'ZZ',
+                    'supplier': 'Test3',
+                    'supplier_id': 'AA',
+                    'elnid': 'PAGE15-00001'
+                }
+            })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        self._test_basic_res(res)
+
+        refreshed_objects = self._test_upload_response(res)
+
+        command = 'api/compounds'
+
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'field_name':'elnid',
+            'eln_id': 'PAGE15-00001'
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args,'DELETE')
+
+        self._test_basic_res(res)
+
+    def _test_basic_res(self, res):
+        self.assertIsNotNone(res)
+        self.assertIn('uuid', res)
+        self.assertIn('error', res)
+        self.assertIn('result-set', res)
+        self.assertIsNone(res['error'])
+        self.assertIsNotNone(res['uuid'])
+
+    def _test_upload_response(self, res):
+
+        self.assertIsNotNone(res['result-set'])
+        self.assertEqual(len(res['result-set']), 1)
+        self.assertIsNotNone(res['result-set'][0])
+
+        obj = res['result-set'][0]
+
+        self.assertIsNotNone(obj)
+
+        self.assertIn('refreshed_objects', obj)
+
+        obj2 = obj['refreshed_objects']
+        self.assertIsNotNone(obj2)
+
+        return obj2
 
 if __name__ == '__main__':
     unittest.main()
