@@ -269,6 +269,67 @@ $$$$
                 if eof:
                     break
 
+    def test_file_upload_and_register(self):
+        chunk_size = 1024 * 60000
+
+        command = 'api/uploads'
+
+        upload_id = None
+
+        with open('upload1.sdf', 'rb') as f:
+            while True:
+                byte_buf = f.read(chunk_size)
+
+                contents_b64 = base64.b64encode(byte_buf).decode('ascii')
+
+                args = {
+                    'wait': 'yes',
+                    'token': ChemiRegTester.token,
+                    'upload_id': upload_id,
+                    'contents': contents_b64
+                }
+
+                eof = len(byte_buf) != chunk_size
+
+                res = run_query(ChemiRegTester.base_url, command, args)
+
+                print(res)
+
+                self.assertIsNotNone(res)
+                self.assertIn('json', res)
+                self.assertIn('upload_id', res['json'])
+
+                upload_id = res['json']['upload_id']
+
+                if eof:
+                    break
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'Test/Supplier List',
+            'token': ChemiRegTester.token,
+            'compounds': json.dumps({
+                '-1': {
+                    'id': '-1',
+                    'compound_id': 'Test4',
+                }
+            })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'upload_key': upload_id
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        self._test_basic_res(res)
+
     def _test_basic_res(self, res):
         self.assertIsNotNone(res)
         self.assertIn('uuid', res)
