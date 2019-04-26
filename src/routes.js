@@ -106,15 +106,15 @@ ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle
 ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 	var command = '_remote_provider_._data_request_upload_file';
 
-	var d = {};
+	//var d = {};
 	var json = {};
 
     json._username =  null;
     json.file_identifier = req.params.upload_id;
     json.contents = req.params.contents;
 
-	d.parameters = haxe.Serializer.run([json]);
+	//d.parameters = haxe.Serializer.run([json]);
 
-	handle_function(path,req, res, next, command, d);
+	handle_function(path,req, res, next, command, json);
 };
 
