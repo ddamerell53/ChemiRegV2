@@ -111,6 +111,11 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 
     json._username =  null;
     json.file_identifier = req.params.upload_id;
+
+    if(json.file_identifier == 'None'){
+        json.file_identifier = null;
+    }
+
     json.contents = req.params.contents;
 
 	//d.parameters = haxe.Serializer.run([json]);
