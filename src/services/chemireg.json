@@ -59,6 +59,12 @@
                          "format_request_clazz": "ChemiRegRoutes",
                          "format_request_method": "delete_compounds_by_field",
                          "http_method": "DELETE"
+                     },
+                     {
+                         "route": "/api/uploads",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "upload_file",
+                         "http_method": "POST"
                      }
 
 		
