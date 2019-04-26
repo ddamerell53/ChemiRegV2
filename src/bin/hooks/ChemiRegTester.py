@@ -2,6 +2,7 @@ import unittest
 import urllib.request
 import urllib.parse
 import json
+import base64
 
 
 def run_query(base_url, command, args, method='POST'):
@@ -232,6 +233,37 @@ $$$$
         res = run_query(ChemiRegTester.base_url, command, args,'DELETE')
 
         self._test_basic_res(res)
+
+    def test_file_upload(self):
+        chunk_size = 1024 * 60000
+
+        upload_id = None
+
+        command = 'api/uploads'
+
+        with open('upload1.sdf', 'rb') as f:
+            while True:
+                byte_buf = f.read(chunk_size)
+
+                contents_b64 = base64.b64encode(byte_buf).decode('ascii')
+
+                args = {
+                    'wait': 'yes',
+                    'token': ChemiRegTester.token,
+                    'upload_id': upload_id,
+                    'contents': contents_b64
+                }
+
+                eof = len(byte_buf) != chunk_size
+
+                res = run_query(ChemiRegTester.base_url, command, args)
+
+                print(res)
+
+                self._test_basic_res(res)
+
+                if eof:
+                    break
 
     def _test_basic_res(self, res):
         self.assertIsNotNone(res)
