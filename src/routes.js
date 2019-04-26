@@ -47,7 +47,12 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
 	var d = {};
 	var json = {};
 
-	json.save_changes = JSON.parse(req.params.compounds);
+	if(Reflect.hasField(req.params, 'compounds')){
+	    json.save_changes = JSON.parse(req.params.compounds);
+	}else if(Reflect.hasField(req.params, 'upload_key')){
+	    json.upload_key_sdf = req.params.upload_key;
+	}
+
 	json._username =  null;
 	json.project_name = req.params.project_name;
 
