@@ -320,11 +320,31 @@ $$$$
         res = run_query(ChemiRegTester.base_url, command, args)
 
         command = 'api/compounds'
+
+        # Upload configuration
+        config = {
+            'batchable': {
+                'default_value': True, 'map_column': None,
+            }, 'classification': {
+                'default_value': None, 'map_column': 'classification'
+            }, 'supplier_id': {
+                'default_value': None,
+                'map_column': 'supplier_id'
+            }, 'supplier': {
+                'default_value': None,
+                'map_column': 'supplier'
+            }, 'old_sgc_global_id': {
+                'default_value': None,
+                'map_column': 'supplier_id'
+            }
+        }
+
         args = {
             'wait': 'yes',
             'project_name': 'TestA',
             'token': ChemiRegTester.token,
-            'upload_key': upload_id
+            'upload_key': upload_id,
+            'upload_defaults': config
         }
 
         res = run_query(ChemiRegTester.base_url, command, args)
