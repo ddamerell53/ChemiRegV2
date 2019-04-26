@@ -323,6 +323,7 @@ $$$$
         args = {
             'wait': 'yes',
             'project_name': 'TestA',
+            'token': ChemiRegTester.token,
             'upload_key': upload_id
         }
 
