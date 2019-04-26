@@ -260,7 +260,11 @@ $$$$
 
                 print(res)
 
-                self._test_basic_res(res)
+                self.assertIsNotNone(res)
+                self.assertIn('json', res)
+                self.assertIn('upload_id', res['json'])
+
+                upload_id = res['json']['upload_id']
 
                 if eof:
                     break
