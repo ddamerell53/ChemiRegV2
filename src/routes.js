@@ -25,6 +25,12 @@ ChemiRegRoutes.fetch_compound = function(path, req, res, next, handle_function){
 	}else if(Reflect.hasField(req.params, 'format') && req.params.format == 'png'){
 	    json.action = 'as_png';
 	    json.ctab_content = req.params.molblock;
+	}else if(Reflect.hasField(req.params, 'format') && req.params.format == 'svg_link'){
+	    json.action = 'as_svg_file';
+	    json.ctab_content = req.params.molblock;
+	}else if(Reflect.hasField(req.params, 'format') && req.params.format == 'png_link'){
+	    json.action = 'as_png_file';
+	    json.ctab_content = req.params.molblock;
 	}
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
@@ -91,6 +97,21 @@ ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle
     json.delete_compound_by_field = true
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:SDFRegister';
+
+	d.parameters = haxe.Serializer.run([json]);
+
+	handle_function(path,req, res, next, command, d);
+};
+
+ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
+	var command = '_remote_provider_._data_request_upload_file';
+
+	var d = {};
+	var json = {};
+
+    json._username =  null;
+    json.file_identifier = req.params.upload_id;
+    json.contents = req.params.contents;
 
 	d.parameters = haxe.Serializer.run([json]);
 
