@@ -344,7 +344,7 @@ $$$$
             'project_name': 'TestA',
             'token': ChemiRegTester.token,
             'upload_key': upload_id,
-            'upload_defaults': json.dumps({config}),
+            'upload_defaults': json.dumps(config),
             'upload_name': 'upload1.sdf'
         }
 
