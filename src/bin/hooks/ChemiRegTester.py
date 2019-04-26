@@ -344,7 +344,8 @@ $$$$
             'project_name': 'TestA',
             'token': ChemiRegTester.token,
             'upload_key': upload_id,
-            'upload_defaults': config
+            'upload_defaults': config,
+            'upload_name': 'upload1.sdf'
         }
 
         res = run_query(ChemiRegTester.base_url, command, args)
