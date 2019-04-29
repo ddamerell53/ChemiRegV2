@@ -9990,6 +9990,11 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 						var clazz2 = Type.resolveClass(format_method_clazz[0]);
 						(Reflect.field(clazz2,format_method_method[0]))(route[0],req7,res7,next7,handle_function);
 					};
+				})(format_method_method,format_method_clazz,route)); else if(http_method == "GET") this.saturn.getServer().get(route[0],(function(format_method_method,format_method_clazz,route) {
+					return function(req8,res8,next8) {
+						var clazz3 = Type.resolveClass(format_method_clazz[0]);
+						(Reflect.field(clazz3,format_method_method[0]))(route[0],req8,res8,next8,handle_function);
+					};
 				})(format_method_method,format_method_clazz,route));
 			}
 		}
