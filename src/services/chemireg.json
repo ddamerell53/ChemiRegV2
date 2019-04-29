@@ -36,7 +36,13 @@
         {
              "clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin",
                  "commands": [
-		     {
+                    {
+                         "route": "/api/compounds",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "find_entities",
+                         "http_method": "GET"
+                     },
+		            {
                          "route": "/api/compound_utils/image",
                          "format_request_clazz": "ChemiRegRoutes",
                          "format_request_method": "fetch_compound",

@@ -46,7 +46,7 @@ from rdkit.Chem import AllChem
 from connection_manager import ConnectionManager
 import authenticate
 
-from typing import List
+from typing import List, Dict
 
 # Initialise Django environment
 import django
@@ -1699,6 +1699,42 @@ class CompoundFetchManager(object):
 
 		return content
 
+	def get_ctab_as_svg_link(self, ctab_content):
+		mol = Chem.MolFromMolBlock(ctab_content)
+		tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.svg')
+		tmp_file.close()
+
+		Draw.MolToFile(mol, tmp_file.name, size=(200, 200), imageType='svg')
+
+		content = ''
+		with open(tmp_file.name, 'r') as f:
+			content = f.read()
+
+		content = re.sub('glyph', hashlib.md5(ctab_content.encode()).hexdigest(), content)
+
+		os.unlink(tmp_file.name)
+
+		return content
+
+	def get_ctab_as_png_link(self, ctab_content):
+		mol = Chem.MolFromMolBlock(ctab_content)
+
+		image = Draw.MolToImage(mol, size=(200, 200), imageType='png')
+
+		bg = Image.new(image.mode, image.size, image.getpixel((0, 0)))
+		diff = ImageChops.difference(image, bg)
+		diff = ImageChops.add(diff, diff, 2.0, -100)
+		bbox = diff.getbbox()
+		image = image.crop(bbox)
+
+		buf = BytesIO()
+		image.save(buf, format='PNG')
+		content = base64.b64encode(buf.getvalue())
+
+		return content
+
+	file_store = os.getcwd() + '/public/static/out/permanent'
+
 	def export_sdf_ctab_set(self, ctab, out_directory, username):
 		desalted_mol_block = self.ctab_to_desalted_ctab(ctab)
 		
@@ -1712,6 +1748,12 @@ class CompoundFetchManager(object):
 		
 		rows = self.fetch_ctab_set_cur.fetchall()
 		return self.export_set_to_sdf(rows,out_directory)
+
+
+
+
+
+
 
 	def export_set_to_sdf(self, rows, out_directory):
 		tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.sdf', dir=out_directory)
@@ -2101,32 +2143,53 @@ class CompoundFetchManager(object):
 		:return List[Entity]: List of entities with matching custom field value
 		"""
 
-		# Retrieve the custom field definition so we can identify the correct class
-		# TODO: Investigate if the Django ORM supports discrimintor fields so we don't have to statically lookup the type to infer class
-		query_set = CustomField.objects.filter(project__project_name=project_name, name=field_name)
+		entity_direct_fields : Dict[str, str] = {'upload_id': 'upload_id'}
 
-		custom_field_def: CustomField = query_set.first()
-
-		if custom_field_def:
-			custom_field_type: str = custom_field_def.type.name
-
+		if field_name in entity_direct_fields:
 			entities: List[Entity] = []
 
-			if custom_field_type == 'varchar':
-				# Identify matching entities
-				query_set = CustomVarcharField.objects.filter(custom_field__id=custom_field_def.id, custom_field_value=field_value, entity__archived_transaction_id__isnull=True)
+			filter_args: Dict[str, str] = {'project__project_name': project_name}
 
-				# Build up list of entities from custom field instances
-				for item in query_set:
-					entities.append(item.entity)
+			if field_name == 'upload_id':
+				filter_args['upload_id'] = field_value
+			else:
+				FieldMissingError('Field ' + field_name + ' not found for project ' + project_name)
 
-				return entities
+			query_set = Entity.objects.filter(**filter_args)
+
+			for item in query_set:
+				entities.append(item)
+
+			return entities
 		else:
-			raise CustomFieldMissingError('Field ' + field_name + ' not found for project ' + project_name)
+			# Retrieve the custom field definition so we can identify the correct class
+			# TODO: Investigate if the Django ORM supports discrimintor fields so we don't have to statically lookup the type to infer class
+			query_set = CustomField.objects.filter(project__project_name=project_name, name=field_name)
+
+			custom_field_def: CustomField = query_set.first()
+
+			if custom_field_def:
+				custom_field_type: str = custom_field_def.type.name
+
+				entities: List[Entity] = []
+
+				if custom_field_type == 'varchar':
+					# Identify matching entities
+					query_set = CustomVarcharField.objects.filter(custom_field__id=custom_field_def.id, custom_field_value=field_value, entity__archived_transaction_id__isnull=True)
+
+					# Build up list of entities from custom field instances
+					for item in query_set:
+						entities.append(item.entity)
+
+					return entities
+			else:
+				raise CustomFieldMissingError('Field ' + field_name + ' not found for project ' + project_name)
 
 class CustomFieldMissingError(Exception):
 	pass
 
+class FieldMissingError(Exception):
+	pass
 
 
 
@@ -2190,7 +2253,9 @@ if __name__ == '__main__':
 						output_json['entities'] = terms
 			elif 'action' in input_json:
 					if input_json['action'] == 'search':
-						if input_json['task'] == 'fetch':
+						if input_json['fetch_by_field'] == 'fetch_by_field':
+							output_json['result-set'] = manager.fetch_by_field(input_json['project_name'], input_json['field_name'], input_json['field_value'])
+						elif input_json['task'] == 'fetch':
 							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
 							upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
 							output_json['upload_set'] = upload_set
@@ -2254,6 +2319,14 @@ if __name__ == '__main__':
 					elif input_json['action'] == 'as_png':
 						png_content = manager.get_ctab_as_png(input_json['ctab_content'])
 						output_json['png_content'] = png_content
+					elif input_json['action'] == 'as_svg_link':
+						#PROTECTION: no _username is provided to this call as this function only returns an SVG of the supplied ctab.
+						#            NodeJS protects this function from unauthenticated users
+						svg_content = manager.get_ctab_as_svg_link(input_json['ctab_content'])
+						output_json['svg_link'] = svg_content
+					elif input_json['action'] == 'as_png_link':
+						png_content = manager.get_ctab_as_png_link(input_json['ctab_content'])
+						output_json['png_link'] = png_content
 					elif input_json['action'] == 'fetch_prefixes':
 						#PROTECTION: no _username is provided to this function as the list of prefixes is currently not project specific.
 						#	     NodeJS protects this function from unathenticated users

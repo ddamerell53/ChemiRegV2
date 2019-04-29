@@ -130,3 +130,27 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 	handle_function(path,req, res, next, command, json);
 };
 
+ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
+	var command = '_remote_provider_._data_request_objects_namedquery';
+
+    var fields = ['project_name', 'field_name', 'field_value'];
+
+    var json = {};
+
+    for(var i=0;i<fields.length;i++){
+        var field = fields[i];
+
+        Reflect.setField(json, field, Reflect.field(req.params, field));
+    }
+
+    json._username =  null;
+    json.action = 'search';
+    json.task = 'fetch_by_field';
+
+    d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
+
+	d.parameters = haxe.Serializer.run([json]);
+
+	handle_function(path,req, res, next, command, d);
+}
+
