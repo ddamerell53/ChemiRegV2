@@ -133,19 +133,28 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 	var command = '_remote_provider_._data_request_objects_namedquery';
 
-    var fields = ['project_name', 'field_name', 'field_value'];
+	var json = {};
 
-    var json = {};
-
-    for(var i=0;i<fields.length;i++){
-        var field = fields[i];
-
-        Reflect.setField(json, field, Reflect.field(req.params, field));
-    }
-
-    json._username =  null;
+	json._username =  null;
     json.action = 'search';
-    json.task = 'fetch_by_field';
+
+	if(Reflect.hasField(req.params, 'field_name')){
+        var fields = ['project_name', 'field_name', 'field_value'];
+
+        for(var i=0;i<fields.length;i++){
+            var field = fields[i];
+
+            Reflect.setField(json, field, Reflect.field(req.params, field));
+        }
+
+        json.task = 'fetch_by_field';
+	}else if(Reflect.hasField(req.params, 'mol_block')){
+	    json.task = 'ctab_content';
+
+	    json.mol_block = req.params.mol_block;
+	}
+
+	var d = {};
 
     d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
 
