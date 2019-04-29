@@ -2135,7 +2135,7 @@ class CompoundFetchManager(object):
 
 		return error_uuid
 
-	def _format_django_query_set(self, query_set, format)-> List<Any>:
+	def _format_django_query_set(self, query_set, format)-> List[Any]:
 		entities: List[Entity] = []
 
 		if format == 'JSON':
