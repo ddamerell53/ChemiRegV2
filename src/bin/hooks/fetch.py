@@ -46,7 +46,7 @@ from rdkit.Chem import AllChem
 from connection_manager import ConnectionManager
 import authenticate
 
-from typing import List, Dict
+from typing import List, Dict, Any
 
 # Initialise Django environment
 import django
@@ -61,6 +61,8 @@ from django_orm.chemireg.models import (
     CustomVarcharField,
 	CustomField
 )
+
+from django.forms.models import model_to_dict
 
 import base64
 from io import BytesIO
@@ -2133,7 +2135,19 @@ class CompoundFetchManager(object):
 
 		return error_uuid
 
-	def fetch_by_field(self, project_name: str, field_name: str, field_value: str) -> List[Entity] :
+	def _format_django_query_set(self, query_set, format)-> List<Any>:
+		entities: List[Entity] = []
+
+		if format == 'JSON':
+			for item in query_set:
+				entities.append(model_to_dict(item))
+		else:
+			for item in query_set:
+				entities.append(item)
+
+		return entities
+
+	def fetch_by_field(self, project_name: str, field_name: str, field_value: str, format='NATIVE') -> List[Any] :
 		"""
 		Returns entities based on custom field value
 
@@ -2146,8 +2160,6 @@ class CompoundFetchManager(object):
 		entity_direct_fields : Dict[str, str] = {'upload_id': 'upload_id'}
 
 		if field_name in entity_direct_fields:
-			entities: List[Entity] = []
-
 			filter_args: Dict[str, str] = {'project__project_name': project_name}
 
 			if field_name == 'upload_id':
@@ -2157,10 +2169,7 @@ class CompoundFetchManager(object):
 
 			query_set = Entity.objects.filter(**filter_args)
 
-			for item in query_set:
-				entities.append(item)
-
-			return entities
+			return self._format_django_query_set(query_set, format)
 		else:
 			# Retrieve the custom field definition so we can identify the correct class
 			# TODO: Investigate if the Django ORM supports discrimintor fields so we don't have to statically lookup the type to infer class
@@ -2181,7 +2190,7 @@ class CompoundFetchManager(object):
 					for item in query_set:
 						entities.append(item.entity)
 
-					return entities
+					return self._format_django_query_set(entities, format)
 			else:
 				raise CustomFieldMissingError('Field ' + field_name + ' not found for project ' + project_name)
 
@@ -2254,7 +2263,7 @@ if __name__ == '__main__':
 			elif 'action' in input_json:
 					if input_json['action'] == 'search':
 						if input_json['task'] == 'fetch_by_field':
-							output_json['result-set'] = manager.fetch_by_field(input_json['project_name'], input_json['field_name'], input_json['field_value'])
+							output_json['result-set'] = manager.fetch_by_field(input_json['project_name'], input_json['field_name'], input_json['field_value'], 'JSON')
 						elif input_json['task'] == 'fetch':
 							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
 							upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
