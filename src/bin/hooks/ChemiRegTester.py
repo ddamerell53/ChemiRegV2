@@ -352,6 +352,55 @@ $$$$
 
         self._test_basic_res(res)
 
+    def test_compound_search1(self):
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'Test/Supplier List',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': {
+              'id': '-1',
+              'compound_id': 'Test5',
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'TestA',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': {
+              'id': '-1',
+              'smiles': 'C',
+              'classification':'ZZ',
+              'supplier': 'Test5',
+              'supplier_id':'FETCH_TEST_1'
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'field_name': 'supplier_id',
+            'field_value': 'FETCH_TEST_1'
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        print(res)
+
+        self._test_basic_res(res)
+
     def _test_basic_res(self, res):
         self.assertIsNotNone(res)
         self.assertIn('uuid', res)
