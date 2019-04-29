@@ -2471,4 +2471,4 @@ if __name__ == '__main__':
 		output_json['error'] = 'Internal error - please contact the system administrator'
 
 	with open(output_json_path, 'w') as fw:
-    		fw.write(rapidjson.dumps(output_json))
+    		fw.write(rapidjson.dumps(output_json, datetime_mode=1))
