@@ -2253,7 +2253,7 @@ if __name__ == '__main__':
 						output_json['entities'] = terms
 			elif 'action' in input_json:
 					if input_json['action'] == 'search':
-						if input_json['fetch_by_field'] == 'fetch_by_field':
+						if input_json['task'] == 'fetch_by_field':
 							output_json['result-set'] = manager.fetch_by_field(input_json['project_name'], input_json['field_name'], input_json['field_value'])
 						elif input_json['task'] == 'fetch':
 							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
