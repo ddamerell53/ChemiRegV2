@@ -10001,8 +10001,9 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 	}
 	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
 		var remappedData = data;
-		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error")) remappedData = { 'uuid' : data.bioinfJobId, 'error' : data.json.error};
 		if(Object.prototype.hasOwnProperty.call(data,"json")) {
+			if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId")) remappedData = { 'uuid' : data.bioinfJobId};
+			if(Object.prototype.hasOwnProperty.call(data.json,"error")) remappedData.error = data.json.error;
 			if(Object.prototype.hasOwnProperty.call(data.json,"objects")) {
 				var objects = data.json.objects;
 				var returnKey = "result-set";
@@ -10026,7 +10027,8 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 			res.status(statusCode);
 			res.send(remappedData);
 		} else this.debug("Not sending response");
-		this.uuidToResponse.set(uuid,remappedData);
+		var value = remappedData;
+		this.uuidToResponse.set(uuid,value);
 		socket.disconnect();
 		status.set("disconnected",true);
 	}
