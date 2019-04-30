@@ -10000,23 +10000,33 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 		}
 	}
 	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
-		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error") && Object.prototype.hasOwnProperty.call(data.json,"objects")) {
-			var objects = data.json.objects;
-			var returnKey = "result-set";
-			if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set"); else if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"refreshed_objects")) {
-				objects = Reflect.field(objects[0],"refreshed_objects");
-				returnKey = "refreshed-objects";
+		var remappedData = data;
+		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error")) remappedData = { 'uuid' : data.bioinfJobId, 'error' : data.json.error};
+		if(Object.prototype.hasOwnProperty.call(data,"json")) {
+			if(Object.prototype.hasOwnProperty.call(data.json,"objects")) {
+				var objects = data.json.objects;
+				var returnKey = "result-set";
+				if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set"); else if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"refreshed_objects")) {
+					objects = Reflect.field(objects[0],"refreshed_objects");
+					returnKey = "refreshed-objects";
+				}
+				remappedData[returnKey] = objects;
+			} else {
+				var _g = 0;
+				var _g1 = Reflect.fields(data.json);
+				while(_g < _g1.length) {
+					var field = _g1[_g];
+					++_g;
+					Reflect.setField(remappedData,field,Reflect.field(data.json,field));
+				}
 			}
-			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error};
-			data[returnKey] = objects;
 		}
 		if(wait == "yes") {
 			this.debug("Sending response");
 			res.status(statusCode);
-			res.send(data);
+			res.send(remappedData);
 		} else this.debug("Not sending response");
-		var value = data;
-		this.uuidToResponse.set(uuid,value);
+		this.uuidToResponse.set(uuid,remappedData);
 		socket.disconnect();
 		status.set("disconnected",true);
 	}
