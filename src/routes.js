@@ -156,7 +156,7 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 	}else if(Reflect.hasField(req.params, 'mol_block')){
 	    json.task = 'fetch';
 
-	    json.mol_block = req.params.mol_block;
+	    json.ctab_content = req.params.mol_block;
 	    json.from_row = req.params.from_row;
 	    json.to_row = req.params.to_row;
 	    json.search_terms = req.params.search_terms;
