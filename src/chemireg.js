@@ -10002,8 +10002,12 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
 		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error") && Object.prototype.hasOwnProperty.call(data.json,"objects")) {
 			var objects = data.json.objects;
-			if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set");
-			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, 'result-set' : objects};
+			var returnKey = "result-set";
+			if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set"); else if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"refreshed-objects")) {
+				objects = Reflect.field(objects[0],"refreshed-objects");
+				returnKey = "refreshed-objects";
+			}
+			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, returnKey : objects};
 		}
 		if(wait == "yes") {
 			this.debug("Sending response");
