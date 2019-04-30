@@ -71,6 +71,12 @@
                          "format_request_clazz": "ChemiRegRoutes",
                          "format_request_method": "upload_file",
                          "http_method": "POST"
+                     },
+                     {
+                         "route": "/api/uploads",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "get_upload_file",
+                         "http_method": "GET"
                      }
 
 		

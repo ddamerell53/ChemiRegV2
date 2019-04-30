@@ -53,6 +53,11 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
 	    json.upload_key_sdf = req.params.upload_key;
 	    json.upload_defaults = JSON.parse(req.params.upload_defaults);
 	    json.name = req.params.upload_name;
+	}else{
+	    res.status(403);
+        res.send('Invalid request');
+        next();
+        return;
 	}
 
 	json._username =  null;
@@ -159,6 +164,30 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
     d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
 
 	d.parameters = haxe.Serializer.run([json]);
+
+	console.log(json)
+
+	handle_function(path,req, res, next, command, d);
+}
+
+ChemiRegRoutes.get_upload_file = function(path, req, res, next, handle_function){
+	var command = '_remote_provider_._data_request_objects_namedquery';
+
+	var json = {};
+
+	json._username =  null;
+    json.action = req.params.action;
+
+	json.upload_key = req.params.upload_id;
+	json.project_name = req.params.project_name;
+
+	var d = {};
+
+    d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
+
+	d.parameters = haxe.Serializer.run([json]);
+
+	console.log(json)
 
 	handle_function(path,req, res, next, command, d);
 }
