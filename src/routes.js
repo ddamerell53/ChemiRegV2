@@ -160,6 +160,7 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 	    json.from_row = req.params.from_row;
 	    json.to_row = req.params.to_row;
 	    json.search_terms = req.params.search_terms;
+	    json.project_name = req.params.project_name;
 	}
 
 	var d = {};
