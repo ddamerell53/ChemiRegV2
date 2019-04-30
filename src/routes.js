@@ -178,8 +178,9 @@ ChemiRegRoutes.get_upload_file = function(path, req, res, next, handle_function)
 	json._username =  null;
     json.action = req.params.action;
 
-	json.upload_key = req.params.upload_id;
+	json.upload_key_sdf = req.params.upload_id;
 	json.project_name = req.params.project_name;
+	json.limit = req.params.limit;
 
 	var d = {};
 
