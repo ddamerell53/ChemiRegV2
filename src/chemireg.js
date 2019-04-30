@@ -6386,7 +6386,7 @@ saturn.db.DefaultProvider.prototype = {
 		}); else {
 			var client1 = saturn.app.SaturnServer.getDefaultServer().getRedisClient();
 			client1.get(file_identifier,function(err2,filePath) {
-				if(err2 != null) cb(err2,null); else {
+				if(err2 != null || filePath == null || filePath == "") cb(err2,null); else {
 					var decodedContents = new Buffer(contents,"base64");
 					js.Node.require("fs").appendFile(filePath,decodedContents,function(err3) {
 						cb(err3,file_identifier);
@@ -10000,7 +10000,11 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 		}
 	}
 	,respond: function(uuid,statusCode,socket,wait,data,status,res) {
-		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error") && Object.prototype.hasOwnProperty.call(data.json,"objects")) data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, 'result-set' : data.json.objects};
+		if(Object.prototype.hasOwnProperty.call(data,"bioinfJobId") && Object.prototype.hasOwnProperty.call(data,"json") && Object.prototype.hasOwnProperty.call(data.json,"error") && Object.prototype.hasOwnProperty.call(data.json,"objects")) {
+			var objects = data.json.objects;
+			if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set");
+			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, 'result-set' : objects};
+		}
 		if(wait == "yes") {
 			this.debug("Sending response");
 			res.status(statusCode);
