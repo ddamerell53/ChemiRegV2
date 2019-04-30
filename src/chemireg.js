@@ -10007,7 +10007,8 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 				objects = Reflect.field(objects[0],"refreshed-objects");
 				returnKey = "refreshed-objects";
 			}
-			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error, returnKey : objects};
+			data = { 'uuid' : data.bioinfJobId, 'error' : data.json.error};
+			data[returnKey] = objects;
 		}
 		if(wait == "yes") {
 			this.debug("Sending response");
