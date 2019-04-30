@@ -8,7 +8,13 @@ import base64
 def run_query(base_url, command, args, method='POST'):
     url = base_url + '/' + command
     data = urllib.parse.urlencode(args)
-    data = data.encode('ascii')
+
+
+    if method == 'GET':
+        url = url + '?' + data
+        data = None
+    else:
+        data = data.encode('ascii')
 
     req = urllib.request.Request(url, data, method=method)
 
@@ -134,17 +140,9 @@ $$$$
 
         matched = False
 
-        for refreshed_obj_id in obj2:
-            refreshed_obj = obj2[refreshed_obj_id]
-            self.assertIsNotNone(refreshed_obj)
-            self.assertIn('compound_id', refreshed_obj)
-            self.assertEqual('Test', refreshed_obj['compound_id'])
-            matched = True
-            break
-
-        self.assertEqual(matched, True)
-
-        print(res)
+        self.assertIsNotNone(obj2)
+        self.assertIn('compound_id', obj2)
+        self.assertEqual('Test', obj2['compound_id'])
 
     def test_compound_upload(self):
         command = 'api/compounds'
@@ -261,10 +259,9 @@ $$$$
                 print(res)
 
                 self.assertIsNotNone(res)
-                self.assertIn('json', res)
-                self.assertIn('upload_id', res['json'])
+                self.assertIn('upload_id', res)
 
-                upload_id = res['json']['upload_id']
+                upload_id = res['upload_id']
 
                 if eof:
                     break
@@ -296,10 +293,9 @@ $$$$
                 print(res)
 
                 self.assertIsNotNone(res)
-                self.assertIn('json', res)
-                self.assertIn('upload_id', res['json'])
+                self.assertIn('upload_id', res)
 
-                upload_id = res['json']['upload_id']
+                upload_id = res['upload_id']
 
                 if eof:
                     break
@@ -350,6 +346,8 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
 
+        print(res)
+
         self._test_basic_res(res)
 
     def test_compound_search1(self):
@@ -386,6 +384,15 @@ $$$$
 
         res = run_query(ChemiRegTester.base_url, command, args)
 
+        print(res)
+
+        self._test_upload_response(res)
+
+        compound_id = res['refreshed-objects']['-1']['compound_id']
+
+
+        print(compound_id)
+
         command = 'api/compounds'
         args = {
             'wait': 'yes',
@@ -401,30 +408,169 @@ $$$$
 
         self._test_basic_res(res)
 
+        self.assertEquals(res['result-set'][0]['compound_id'], compound_id)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'field_name': 'upload_id',
+            'field_value': res['result-set']['-1']['upload_id']
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        print(res)
+
+        self._test_basic_res(res)
+
+        self.assertEquals(res['result-set'][0]['compound_id'], compound_id)
+
+
+    def test_file_upload_preview(self):
+        chunk_size = 1024 * 60000
+
+        upload_id = None
+
+        command = 'api/uploads'
+
+        with open('upload1.sdf', 'rb') as f:
+            while True:
+                byte_buf = f.read(chunk_size)
+
+                contents_b64 = base64.b64encode(byte_buf).decode('ascii')
+
+                args = {
+                    'wait': 'yes',
+                    'token': ChemiRegTester.token,
+                    'upload_id': upload_id,
+                    'contents': contents_b64
+                }
+
+                eof = len(byte_buf) != chunk_size
+
+                res = run_query(ChemiRegTester.base_url, command, args)
+
+                self.assertIsNotNone(res)
+                self.assertIn('upload_id', res)
+
+                upload_id = res['upload_id']
+
+                if eof:
+                    break
+
+        command = 'api/uploads'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'action': 'preview_sdf_upload',
+            'upload_id': upload_id,
+            'limit': 1
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        self._test_basic_res(res)
+
+        self.assertIsNotNone(res['result-set'])
+        self.assertEqual(len(res['result-set']),1)
+        self.assertEqual(res['result-set'][0]['smiles'], 'c1ccccc1')
+        self.assertIsNotNone(res['result-set'][0]['mol_image'])
+        self.assertIsNotNone(res['result-set'][0]['mw'])
+
+    def test_compound_search2(self):
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'Test/Supplier List',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': {
+              'id': '-1',
+              'compound_id': 'Test6',
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'TestA',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': {
+              'id': '-1',
+              'smiles': 'c1ccccc1',
+              'classification':'ZZ',
+              'supplier': 'Test6',
+              'supplier_id':'FETCH_TEST_1'
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        print(res)
+
+        self._test_upload_response(res)
+
+        compound_id = res['refreshed-objects']['-1']['compound_id']
+
+
+        print(compound_id)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'search_terms': [],
+            'from_row':0,
+            'to_row': 10,
+            'mol_block': '''C6H6
+  MOLSOFT 04261914482D
+
+  6  6  0  0  0  0  0  0  0  0999 V2000
+   26.2079   -5.8304    0.0000 C   0  0  0
+   24.9955   -5.1304    0.0000 C   0  0  0
+   24.9955   -3.7304    0.0000 C   0  0  0
+   26.2079   -3.0304    0.0000 C   0  0  0
+   27.4203   -3.7304    0.0000 C   0  0  0
+   27.4203   -5.1304    0.0000 C   0  0  0
+  1  2  2
+  2  3  1
+  3  4  2
+  4  5  1
+  6  1  1
+  5  6  2
+M  END
+            '''
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        print(res)
+
+        self._test_basic_res(res)
+
+        self.assertEquals(res['result-set'][0]['compound_id'], compound_id)
+
     def _test_basic_res(self, res):
         self.assertIsNotNone(res)
         self.assertIn('uuid', res)
         self.assertIn('error', res)
-        self.assertIn('result-set', res)
         self.assertIsNone(res['error'])
         self.assertIsNotNone(res['uuid'])
 
     def _test_upload_response(self, res):
+        self.assertIsNotNone(res['refreshed-objects'])
 
-        self.assertIsNotNone(res['result-set'])
-        self.assertEqual(len(res['result-set']), 1)
-        self.assertIsNotNone(res['result-set'][0])
 
-        obj = res['result-set'][0]
-
-        self.assertIsNotNone(obj)
-
-        self.assertIn('refreshed_objects', obj)
-
-        obj2 = obj['refreshed_objects']
-        self.assertIsNotNone(obj2)
-
-        return obj2
+        return res['refreshed-objects']['-1']
 
 if __name__ == '__main__':
     unittest.main()
