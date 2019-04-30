@@ -10010,7 +10010,7 @@ saturn.server.plugins.core.RESTSocketWrapperPlugin.prototype = $extend(saturn.se
 				if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"result-set")) objects = Reflect.field(objects[0],"result-set"); else if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"refreshed_objects")) {
 					objects = Reflect.field(objects[0],"refreshed_objects");
 					returnKey = "refreshed-objects";
-				}
+				} else if(objects != null && objects.length > 0 && Object.prototype.hasOwnProperty.call(objects[0],"upload_set")) objects = Reflect.field(objects[0],"upload_set");
 				remappedData[returnKey] = objects;
 			} else {
 				var _g = 0;
