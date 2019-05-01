@@ -24,13 +24,28 @@ ChemiRegRoutes.error_on_field_missing = function(fields, req, res, next){
         var field = fields[i];
 
         if(!Reflect.hasField(req.params, field)){
-            handle_invalid_request('Invalid request - ' + field + ' field missing', res, next);
+            ChemiRegRoutes.handle_invalid_request('Invalid request - ' + field + ' field missing', res, next);
             return true;
         }else{
             return false;
         }
     }
+}
 
+ChemiRegRoutes.error_on_field_empty = function(fields, req, res, next){
+    for(var i=0;i<fields.length;i++){
+        var field = fields[i];
+
+        var value = Reflect.field(req.params, field);
+
+
+        if(value == null || value == ''){
+            ChemiRegRoutes.handle_invalid_request('Invalid request - ' + field + ' field missing', res, next);
+            return true;
+        }else{
+            return false;
+        }
+    }
 }
 
 // fetch_compound returns to the caller a PNG or SVG representation of a MolBlock 
@@ -41,6 +56,10 @@ ChemiRegRoutes.fetch_compound = function(path, req, res, next, handle_function){
 	var json = {};
 
 	if(ChemiRegRoutes.error_on_field_missing(['molblock'], req, res, next)){
+	    return;
+	}
+
+	if(ChemiRegRoutes.error_on_field_empty(['molblock'], req, res, next)){
 	    return;
 	}
 
@@ -76,6 +95,10 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
 	var json = {};
 
 	if(Reflect.hasField(req.params, 'compounds')){
+	    if(ChemiRegRoutes.error_on_field_empty(['compounds'], req, res, next)){
+            return;
+        }
+
 	    json.save_changes = JSON.parse(req.params.compounds);
 	}else if(Reflect.hasField(req.params, 'upload_key')){
 	    json.upload_key_sdf = req.params.upload_key;
@@ -85,6 +108,10 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
         }
 
         if(ChemiRegRoutes.error_on_field_missing(['upload_name'], req, res, next)){
+            return;
+        }
+
+        if(ChemiRegRoutes.error_on_field_empty(['upload_defaults', 'upload_name'], req, res, next)){
             return;
         }
 
@@ -99,6 +126,10 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
 	json._username =  null;
 
 	if(ChemiRegRoutes.error_on_field_missing(['project_name'], req, res, next)){
+        return;
+    }
+
+    if(ChemiRegRoutes.error_on_field_empty(['project_name'], req, res, next)){
         return;
     }
 
@@ -123,6 +154,10 @@ ChemiRegRoutes.delete_compounds = function(path, req, res, next, handle_function
         return;
     }
 
+    if(ChemiRegRoutes.error_on_field_empty(['id'], req, res, next)){
+        return;
+    }
+
 	json.delete_compound = req.params.id
 	json._username =  null;
 
@@ -141,7 +176,13 @@ ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle
 
     json._username =  null;
 
-    if(ChemiRegRoutes.error_on_field_missing(['project_name', 'field_name', 'field_value'], req, res, next)){
+    var required_fields = ['project_name', 'field_name', 'field_value'];
+
+    if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
+        return;
+    }
+
+    if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
         return;
     }
 
@@ -165,7 +206,13 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 
     json._username =  null;
 
-    if(ChemiRegRoutes.error_on_field_missing(['upload_id', 'contents'], req, res, next)){
+    var required_fields = ['upload_id', 'contents'];
+
+    if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
+        return;
+    }
+
+    if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
         return;
     }
 
@@ -197,6 +244,10 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
             return;
         }
 
+        if(ChemiRegRoutes.error_on_field_empty(fields, req, res, next)){
+            return;
+        }
+
         for(var i=0;i<fields.length;i++){
             var field = fields[i];
 
@@ -207,7 +258,13 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 	}else if(Reflect.hasField(req.params, 'mol_block')){
 	    json.task = 'fetch';
 
-	    if(ChemiRegRoutes.error_on_field_missing(['mol_block','from_row', 'to_row', 'search_terms','project_name'], req, res, next)){
+        var required_fields = ['mol_block','from_row', 'to_row', 'search_terms','project_name'];
+
+	    if(ChemiRegRoutes.error_on_field_missing(fields, req, res, next)){
+            return;
+        }
+
+        if(ChemiRegRoutes.error_on_field_empty(fields, req, res, next)){
             return;
         }
 
@@ -239,7 +296,13 @@ ChemiRegRoutes.get_upload_file = function(path, req, res, next, handle_function)
 
 	json._username =  null;
 
+	var required_fields =
+
 	if(ChemiRegRoutes.error_on_field_missing(['action','upload_id', 'project_name', 'limit'], req, res, next)){
+        return;
+    }
+
+    if(ChemiRegRoutes.error_on_field_empty(fields, req, res, next)){
         return;
     }
 
