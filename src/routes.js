@@ -260,11 +260,11 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 
         var required_fields = ['mol_block','from_row', 'to_row', 'search_terms','project_name'];
 
-	    if(ChemiRegRoutes.error_on_field_missing(fields, req, res, next)){
+	    if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
             return;
         }
 
-        if(ChemiRegRoutes.error_on_field_empty(fields, req, res, next)){
+        if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
             return;
         }
 
