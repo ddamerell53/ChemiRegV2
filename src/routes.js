@@ -40,7 +40,7 @@ ChemiRegRoutes.error_on_field_empty = function(fields, req, res, next){
 
 
         if(value == null || value == ''){
-            ChemiRegRoutes.handle_invalid_request('Invalid request - ' + field + ' field missing', res, next);
+            ChemiRegRoutes.handle_invalid_request('Invalid request - ' + field + ' field is empty', res, next);
             return true;
         }else{
             return false;
@@ -206,7 +206,7 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 
     json._username =  null;
 
-    var required_fields = ['upload_id', 'contents'];
+    var required_fields = ['contents'];
 
     if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
         return;
