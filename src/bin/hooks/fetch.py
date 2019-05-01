@@ -1691,6 +1691,11 @@ class CompoundFetchManager(object):
 
         return self.get_mol_as_png(mol)
 
+    def get_smiles(self, ctab_content):
+        mol = Chem.MolFromMolBlock(ctab_content)
+
+        return Chem.MolToSmiles(mol)
+
     def get_mol_as_png(self, mol):
         image = Draw.MolToImage(mol,size=(200,200))
 
@@ -2350,6 +2355,7 @@ if __name__ == '__main__':
                     elif input_json['action'] == 'as_png':
                         png_content = manager.get_ctab_as_png(input_json['ctab_content'])
                         output_json['png_content'] = png_content
+                        output_json['smiles'] = manager.get_smiles(input_json['ctab_content'])
                     elif input_json['action'] == 'as_svg_link':
                         #PROTECTION: no _username is provided to this call as this function only returns an SVG of the supplied ctab.
                         #            NodeJS protects this function from unauthenticated users
