@@ -2212,10 +2212,11 @@ class CompoundFetchManager(object):
                 'mol_image': self.get_mol_as_png(mol)
             })
 
+            count += 1
+
             if limit is not None and count == limit:
                     break
-            else:
-                count += 1
+
 
         return result_set
 
