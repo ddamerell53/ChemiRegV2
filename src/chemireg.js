@@ -1845,7 +1845,7 @@ saturn.app.SaturnServer.prototype = {
 		} else this.server = this.restify.createServer();
 		var bunyan = js.Node.require("bunyan");
 		var $process = js.Node.require("process");
-		this.server.on("after",this.restify.plugins.auditLogger({ log : bunyan.createLogger({ name : "audit", stream : $process.stdout}), body : true}));
+		this.server.on("after",this.restify.plugins.auditLogger({ log : bunyan.createLogger({ name : "audit", stream : $process.stdout}), body : true, event : "after"}));
 		this.server["use"](this.restify.plugins.queryParser({ mapParams : true}));
 		this.server["use"](this.restify.plugins.bodyParser({ mapParams : true}));
 		var CookieParser = js.Node.require("restify-cookies");
