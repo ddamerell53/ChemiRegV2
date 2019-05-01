@@ -212,7 +212,7 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
         return;
     }
 
-    if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
+    if(ChemiRegRoutes.error_on_field_empty(['contents'], req, res, next)){
         return;
     }
 
@@ -223,8 +223,6 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
     }
 
     json.contents = req.params.contents;
-
-	//d.parameters = haxe.Serializer.run([json]);
 
 	handle_function(path,req, res, next, command, json);
 };
