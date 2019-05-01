@@ -296,13 +296,13 @@ ChemiRegRoutes.get_upload_file = function(path, req, res, next, handle_function)
 
 	json._username =  null;
 
-	var required_fields =
+	var required_fields = ['action','upload_id', 'project_name', 'limit']
 
-	if(ChemiRegRoutes.error_on_field_missing(['action','upload_id', 'project_name', 'limit'], req, res, next)){
+	if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
         return;
     }
 
-    if(ChemiRegRoutes.error_on_field_empty(fields, req, res, next)){
+    if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
         return;
     }
 
