@@ -12,12 +12,37 @@ var ChemiRegRoutes = $hxClasses["ChemiRegRoutes"] = function() {
 
 ChemiRegRoutes.__name__ = ["ChemiRegRoutes"]
 
+ChemiRegRoutes.handle_invalid_request = function(msg, res, next){
+    res.status(400);
+    res.send(msg);
+    next();
+    return;
+}
+
+ChemiRegRoutes.error_on_field_missing = function(fields, req, res, next){
+    for(var i=0;i<fields.length;i++){
+        var field = fields[i];
+
+        if(!Reflect.hasField(req.params, field)){
+            handle_invalid_request('Invalid request - ' + field + ' field missing', res, next);
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+}
+
 // fetch_compound returns to the caller a PNG or SVG representation of a MolBlock 
 ChemiRegRoutes.fetch_compound = function(path, req, res, next, handle_function){
 	var command = '_remote_provider_._data_request_objects_namedquery';
 
 	var d = {};
 	var json = {};
+
+	if(ChemiRegRoutes.error_on_field_missing(['molblock'], req, res, next)){
+	    return;
+	}
 
 	if(Reflect.hasField(req.params, 'format') && req.params.format == 'svg'){
 	    json.action = 'as_svg';
@@ -31,6 +56,9 @@ ChemiRegRoutes.fetch_compound = function(path, req, res, next, handle_function){
 	}else if(Reflect.hasField(req.params, 'format') && req.params.format == 'png_link'){
 	    json.action = 'as_png_file';
 	    json.ctab_content = req.params.molblock;
+	}else{
+	    ChemiRegRoutes.handle_invalid_request('Invalid request', res, next);
+        return;
 	}
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
@@ -51,16 +79,29 @@ ChemiRegRoutes.save_compounds = function(path, req, res, next, handle_function){
 	    json.save_changes = JSON.parse(req.params.compounds);
 	}else if(Reflect.hasField(req.params, 'upload_key')){
 	    json.upload_key_sdf = req.params.upload_key;
+
+	    if(ChemiRegRoutes.error_on_field_missing(['upload_defaults'], req, res, next)){
+            return;
+        }
+
+        if(ChemiRegRoutes.error_on_field_missing(['upload_name'], req, res, next)){
+            return;
+        }
+
 	    json.upload_defaults = JSON.parse(req.params.upload_defaults);
 	    json.name = req.params.upload_name;
 	}else{
-	    res.status(403);
-        res.send('Invalid request');
-        next();
+	    ChemiRegRoutes.handle_invalid_request('Invalid request', res, next);
+
         return;
 	}
 
 	json._username =  null;
+
+	if(ChemiRegRoutes.error_on_field_missing(['project_name'], req, res, next)){
+        return;
+    }
+
 	json.project_name = req.params.project_name;
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:SDFRegister';
@@ -78,12 +119,9 @@ ChemiRegRoutes.delete_compounds = function(path, req, res, next, handle_function
 	var d = {};
 	var json = {};
 
-	if(!Reflect.hasField(req.params,'id')){
-		res.status(400);
-		res.send('Object ID to delete is missing');
-		next();
-		return;
-	}
+	if(ChemiRegRoutes.error_on_field_missing(['id'], req, res, next)){
+        return;
+    }
 
 	json.delete_compound = req.params.id
 	json._username =  null;
@@ -95,7 +133,6 @@ ChemiRegRoutes.delete_compounds = function(path, req, res, next, handle_function
 	handle_function(path,req, res, next, command, d);
 };
 
-
 ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle_function){
 	var command = '_remote_provider_._data_request_objects_namedquery';
 
@@ -103,6 +140,11 @@ ChemiRegRoutes.delete_compounds_by_field = function(path, req, res, next, handle
 	var json = {};
 
     json._username =  null;
+
+    if(ChemiRegRoutes.error_on_field_missing(['project_name', 'field_name', 'field_value'], req, res, next)){
+        return;
+    }
+
     json.project_name = req.params.project_name;
     json.field_name = req.params.field_name;
     json.field_value = req.params.field_value;
@@ -122,6 +164,11 @@ ChemiRegRoutes.upload_file = function(path, req, res, next, handle_function){
 	var json = {};
 
     json._username =  null;
+
+    if(ChemiRegRoutes.error_on_field_missing(['upload_id', 'contents'], req, res, next)){
+        return;
+    }
+
     json.file_identifier = req.params.upload_id;
 
     if(json.file_identifier == 'None'){
@@ -144,7 +191,11 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
     json.action = 'search';
 
 	if(Reflect.hasField(req.params, 'field_name')){
-        var fields = ['project_name', 'field_name', 'field_value'];
+	    var fields = ['project_name', 'field_name', 'field_value'];
+
+	    if(ChemiRegRoutes.error_on_field_missing(fields, req, res, next)){
+            return;
+        }
 
         for(var i=0;i<fields.length;i++){
             var field = fields[i];
@@ -156,11 +207,18 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
 	}else if(Reflect.hasField(req.params, 'mol_block')){
 	    json.task = 'fetch';
 
+	    if(ChemiRegRoutes.error_on_field_missing(['mol_block','from_row', 'to_row', 'search_terms','project_name'], req, res, next)){
+            return;
+        }
+
 	    json.ctab_content = req.params.mol_block;
 	    json.from_row = parseInt(req.params.from_row);
 	    json.to_row = parseInt(req.params.to_row);
 	    json.search_terms = req.params.search_terms;
 	    json.project = req.params.project_name;
+	}else{
+	    ChemiRegRoutes.handle_invalid_request('Invalid request', res, next);
+        return;
 	}
 
 	var d = {};
@@ -180,6 +238,11 @@ ChemiRegRoutes.get_upload_file = function(path, req, res, next, handle_function)
 	var json = {};
 
 	json._username =  null;
+
+	if(ChemiRegRoutes.error_on_field_missing(['action','upload_id', 'project_name', 'limit'], req, res, next)){
+        return;
+    }
+
     json.action = req.params.action;
 
 	json.upload_key_sdf = req.params.upload_id;
