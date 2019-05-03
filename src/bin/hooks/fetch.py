@@ -1670,6 +1670,8 @@ class CompoundFetchManager(object):
                 obj['compound_sdf'] = Chem.MolToMolBlock(mol) #obj['salted_sdf']
                 obj['mol_image'] = content
 
+                obj['png_image'] = self.get_mol_as_png(mol)
+
     def get_ctab_as_svg(self, ctab_content):
         mol = Chem.MolFromMolBlock(ctab_content)
         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.svg')
