@@ -1558,7 +1558,7 @@ class CompoundFetchManager(object):
         else:
             smiles = Chem.MolToSmiles(mol)
 
-            if len(terms) > 0:
+            if terms is not None and len(terms) > 0:
                 self.fetch_ctab_set_cur.execute('''
                     execute fetch_ctab_set (%s,%s, %s,%s,%s)
                 ''', (smiles,to_row - from_row + 1,from_row, project, any_terms))
