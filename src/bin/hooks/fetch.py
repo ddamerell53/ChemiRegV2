@@ -1538,11 +1538,12 @@ class CompoundFetchManager(object):
             desalted_mol_block = self.ctab_to_desalted_ctab(ctab)
 
         any_terms = []
-        for term in terms:
-            if term == None or term == '':
-                continue
+        if terms is not None:
+            for term in terms:
+                if term == None or term == '':
+                    continue
 
-            any_terms.append('%' + term.upper() + '%')
+                any_terms.append('%' + term.upper() + '%')
 
         mol = Chem.MolFromMolBlock(desalted_mol_block)
 
