@@ -1670,7 +1670,7 @@ class CompoundFetchManager(object):
                 obj['compound_sdf'] = Chem.MolToMolBlock(mol) #obj['salted_sdf']
                 obj['mol_image'] = content
 
-                obj['png_image'] = self.get_mol_as_png(mol)
+                obj['png_image'] = self.get_mol_as_png(mol, matching_atoms).decode('ascii')
 
     def get_ctab_as_svg(self, ctab_content):
         mol = Chem.MolFromMolBlock(ctab_content)
@@ -1699,8 +1699,8 @@ class CompoundFetchManager(object):
 
         return Chem.MolToSmiles(mol)
 
-    def get_mol_as_png(self, mol):
-        image = Draw.MolToImage(mol,size=(200,200))
+    def get_mol_as_png(self, mol, highlight_atoms = None):
+        image = Draw.MolToImage(mol,size=(200,200), highlightAtoms = highlight_atoms)
 
         bg = Image.new(image.mode, image.size, image.getpixel((0,0)))
         diff = ImageChops.difference(image, bg)
