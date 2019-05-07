@@ -4,9 +4,13 @@ cd sgc_rdkit_postgres
 docker build -t sgc_rdkit_postgres:latest .
 cd ../sgc_rdkit_postgres_bigm
 docker build -t sgc_rdkit_postgres_bigm:latest .
-cd ../chemireg_postgres
-docker build -t chemireg_postgres:latest . 
+
 cd ../../
+docker build --build-arg VERSION=`date +%s` -t chemireg_postgres:latest -f docker/chemireg_postgres/Dockerfile .
+
+
+
+docker build -t chemireg_postgres:latest . 
 docker pull continuumio/anaconda3
 docker build --build-arg VERSION=`date +%s` -t chemireg -f docker/chemireg/Dockerfile .
 

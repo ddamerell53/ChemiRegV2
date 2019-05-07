@@ -1,0 +1,13 @@
+sudo: required
+
+services:
+  - docker
+ 
+before_install:
+  - sudo /etc/init.d/postgresql stop
+  - cd docker
+  - sh redeploy_travis.sh 
+  - sleep 10
+
+script:
+  - docker exec -i -t docker_chemireg_1 python /home/chemireg/src/bin/hooks/ChemiRegTester.py

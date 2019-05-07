@@ -7,7 +7,7 @@ docker build --build-arg VERSION=`date +%s` -t chemireg_postgres:latest -f docke
 
 docker build --build-arg VERSION=`date +%s` -t chemireg -f docker/chemireg_code_update/Dockerfile .
 
-docker tag chemireg sgcit/chemireg:latest
-docker tag chemireg_postgres sgcit/chemireg:postgres
+#docker tag chemireg sgcit/chemireg:latest
+#docker tag chemireg_postgres sgcit/chemireg:postgres
 
 
