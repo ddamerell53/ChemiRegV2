@@ -1825,6 +1825,123 @@ class AuthenticationManager(object):
 		self.crud_manager.save_changes('administrator', changes, 'Test/Compound Classifications')
 
 		self.crud_manager.commit()
+
+	def create_wordpress_environment(self, default_password):
+		projects = ['WordPress']
+
+		complete_project_list = projects + ['WordPress/Supplier List', 'WordPress/Compound Classifications', 'WordPress/Salts']
+
+		for project in complete_project_list:
+			self.delete_project_entities(project)
+
+			self.delete_project_entities(project + '/Uploads')
+
+			self.delete_project_entities(project + '/Search History')
+
+		users = {
+			'testuser1': {
+				'WordPressA': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
+			},
+			'testuser2': {
+				'WordPressB': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
+			}
+		}
+
+		for user in users.keys():
+			if self.is_user(user, 'internal'):
+				self.delete_user(user)
+
+		for project in complete_project_list:
+			self.delete_project(project)
+
+		self.create_project('WordPress/Supplier List')
+		self.update_project_configuration('WordPress/Supplier List', False, False, 'Supplier')
+
+		self.create_project('WordPress/Compound Classifications')
+		self.update_project_configuration('WordPress/Compound Classifications', False, False, 'Compound Classification')
+		self.add_custom_field('WordPress/Compound Classifications', 'varchar', 'description', 'Description', False, True,
+							  False)
+
+		self.create_project('WordPress/Salts')
+		self.update_project_configuration('WordPress/Salts', False, False, 'Salt')
+		self.add_custom_field('WordPress/Salts', 'varchar', 'smarts', 'SMARTS', False, True, False)
+		self.add_custom_field('WordPress/Salts', 'text', 'mol', 'mol', False, False, True)
+
+		for project_name in projects:
+			self.create_project(project_name, 'WordPress')
+			self.update_project_configuration(project_name, True, True, 'Compound')
+
+			self.add_custom_field(project_name, 'text', 'desalted_sdf', 'desalted_sdf', False, False, True)
+			self.add_custom_field(project_name, 'text', 'desalted_smiles', 'desalted_smiles', False, False, True)
+			self.add_custom_field(project_name, 'text', 'salted_sdf', 'salted_sdf', False, False, True)
+			self.set_ss_search_field(project_name, 'salted_sdf')
+			self.add_custom_field(project_name, 'text', 'salted_smiles', 'salted_smiles', False, False, True)
+			self.add_custom_field(project_name, 'text', 'desalted_inchi', 'desalted_inchi', False, False, True)
+			self.add_custom_field(project_name, 'text', 'desalted_inchi_no_tautomer', 'desalted_inchi_no_tautomer',
+								  False, False, True)
+			self.add_custom_field(project_name, 'varchar', 'desalted_inchi_key', 'desalted_inchi_key', False, False,
+								  True)
+			self.add_custom_field(project_name, 'varchar', 'desalted_inchi_key_no_tautomer',
+								  'desalted_inchi_key_no_tautomer', False, False, True)
+			self.add_custom_field(project_name, 'text', 'salted_inchi', 'InChi', False, True, True)
+			self.add_custom_field(project_name, 'text', 'salted_inchi_no_tautomer', 'InChi No Tautomer', False, False,
+								  True)
+			self.add_custom_field(project_name, 'varchar', 'salted_inchi_key', 'salted_inchi_key', False, False, True)
+			self.add_custom_field(project_name, 'varchar', 'salted_inchi_key_no_tautomer',
+								  'salted_inchi_key_no_tautomer', False, False, True)
+
+			self.add_custom_field(project_name, 'float', 'cost', 'Cost', False, False, False)
+			self.add_custom_field(project_name, 'varchar', 'purchased', 'Purchased', False, False, False)
+
+			self.add_custom_field(project_name, 'varchar', 'parent_series', 'Parent series', False, False, False)
+
+			self.add_custom_field(project_name, 'varchar', 'comments', 'Comments', False, True, False)
+			self.add_custom_field(project_name, 'varchar', 'description', 'Description', False, True, False)
+
+			self.add_custom_field(project_name, 'varchar', 'elnid', 'ELN ID', False, True, False)
+			self.add_custom_field(project_name, 'float', 'amount', 'Amount', False, True, False)
+			self.add_custom_field(project_name, 'float', 'concentration', 'Concentration', False, True, False)
+
+			self.add_custom_field(project_name, 'varchar', 'library_name', 'Library Name', False, True, False)
+			self.add_custom_field(project_name, 'varchar', 'target', 'Target', False, True, False)
+
+			self.add_custom_field(project_name, 'foreign_key', 'classification', 'Classification', True, True, False)
+			self.create_foreign_key(project_name, 'classification', 'WordPress/Compound Classifications')
+
+			self.add_custom_field(project_name, 'varchar', 'supplier_id', 'Supplier ID', True, True, False)
+
+			# Create custom field to store supplier name
+			self.add_custom_field(project_name, 'foreign_key', 'supplier', 'Supplier', True, True, False)
+			self.create_foreign_key(project_name, 'supplier', 'WordPress/Supplier List')
+
+			self.add_custom_field(project_name, 'foreign_key', 'salt', 'Salt', False, True, False)
+			self.create_foreign_key(project_name, 'salt', 'WordPress/Salts')
+
+			self.add_custom_field(project_name, 'varchar', 'old_sgc_global_id', 'Old SGC Global ID', False, True, False)
+			self.add_custom_field(project_name, 'varchar', 'old_sgc_local_id', 'Old Local SGC ID', False, True, False)
+
+			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)
+
+		self.user_registration_enabled = True
+
+		for user in users.keys():
+			self.register_user(user, user, 'sgcit@sgc.ox.ac.uk', user, default_password, None, 'internal', False)
+
+			for project in users[user].keys():
+				self.add_user_to_project(user, project)
+
+				self.set_user_as_administrator(user, project, users[user][project])
+
+		changes = {
+			'-1': {
+				'compound_id': 'ZZ',
+				'description': 'ZZ - Miscellaneous'
+			}
+		}
+
+		self.crud_manager.save_changes('administrator', changes, 'WordPress/Compound Classifications')
+
+		self.crud_manager.commit()
 			
 	def create_oxchem(self):
 		projects = ['OxChem']
