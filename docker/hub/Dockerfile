@@ -1,4 +1,4 @@
-FROM chemireg:latest 
+FROM sgcit/chemireg:latest 
 
 MAINTAINER David Damerell <david.damerell@sgc.ox.ac.uk>
 

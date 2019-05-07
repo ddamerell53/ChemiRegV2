@@ -4,3 +4,4 @@ python-rapidjson
 xlsxwriter
 pymysql
 passlib
+sqlparse

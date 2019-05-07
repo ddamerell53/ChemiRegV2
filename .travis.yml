@@ -5,8 +5,8 @@ services:
  
 before_install:
   - sudo /etc/init.d/postgresql stop
-  - cd docker
-  - sh redeploy_travis_minimal.sh 
+  - cd docker/hub
+  - sh code_update.sh 
   - sleep 10
 
 script:
