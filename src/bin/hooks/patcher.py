@@ -34,6 +34,8 @@ class Patcher(object):
 
 
 	def import_users_from_user_table(self,exclude_users=[], include_users=None):
+		self.manager.save_changes('administrator',{'-1':{'id':'-1','compound_id':'ANY'}}, 'Sites',{})
+
 		conn = self.manager.conn
 
 		cur = conn.cursor()
@@ -74,7 +76,7 @@ class Patcher(object):
 
 			id -= 1
 
-			changes[id] = {'id':id,'first_name':first_name,'last_name':last_name,'email':email, 'compound_id':username,'account_type':account_type, 'bypass':True,'password':'<HIDDEN>'}
+			changes[id] = {'id':id,'first_name':first_name,'last_name':last_name,'email':email, 'compound_id':username,'account_type':account_type, 'bypass':True,'password':'<HIDDEN>','enable':True, 'user_to_site':'ANY'}
 
 			print(username)
 
