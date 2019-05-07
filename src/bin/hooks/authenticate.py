@@ -1839,10 +1839,10 @@ class AuthenticationManager(object):
 			self.delete_project_entities(project + '/Search History')
 
 		users = {
-			'testuser1': {
+			'wordpress1': {
 				'WordPressA': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
 			},
-			'testuser2': {
+			'wordpress2': {
 				'WordPressB': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
 			}
 		}
