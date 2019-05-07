@@ -4,33 +4,33 @@ class Patcher(object):
 	def __init__(self):
 		self.manager = CompoundManager()
 
-	#def import_projects(self):
-	#	conn = self.manager.conn
-#
-#		cur = conn.cursor()
-#		cur.execute('''
-#			select
-#				project_name,
-#				entity_name,
-#				enable_structure_field,
-#				enable_attachment_field,
-#				id_group_name,
-#				enable_addition
-#				archived_date
-#			from
-#				projects
-#		''', None)
-#
-#		for row in cur:
-#			project_name = row[0]
-#			entity_name = row[1]
-#			enable_structure_field = row[2]
-#			enable_attachment_field = row[3]
-#			id_group_name = row[4]
-#			enable_addition = row[5]
-#			archived_date = row[6]
-#
-#			self.manager.create_custom_fields_project(project_name, None, False)
+	def import_projects(self):
+		conn = self.manager.conn
+
+		cur = conn.cursor()
+		cur.execute('''
+			select
+				project_name,
+				entity_name,
+				enable_structure_field,
+				enable_attachment_field,
+				id_group_name,
+				enable_addition,
+				archived_date
+			from
+				projects
+		''', None)
+
+		for row in cur:
+			project_name = row[0]
+			entity_name = row[1]
+			enable_structure_field = row[2]
+			enable_attachment_field = row[3]
+			id_group_name = row[4]
+			enable_addition = row[5]
+			archived_date = row[6]
+
+			self.manager.auth_manager.create_custom_fields_project(project_name)
 
 
 	def import_users_from_user_table(self,exclude_users=[], include_users=None):
@@ -80,57 +80,7 @@ class Patcher(object):
 
 		self.manager.save_changes('administrator',changes,'Users',{})
 
-	def import_user_sites(self):
-		conn = self.manager.conn
-
-		cur = conn.cursor()
-		cur.execute('''
-			SELECT
-				id
-			FROM
-				custom_fields
-			WHERE
-				project_id = (select id from projects where project_name = 'SGC') AND
-				name = 'site'
-		''')
-
-		custom_field_id = cur.fetchone()[0]
-
-		print(custom_field_id)
-
-		cur = conn.cursor()
-		cur.execute('''
-			SELECT
-				a.id,
-				b.site
-			FROM
-				v_sgc a,
-				users b
-			WHERE
-				a.site IS NULL AND
-				a.user_id = b.id AND
-				b.username <> 'ddamerell' and b.username<> 'administrator'
-		''')
-
-		'''
-			UPDATE
-				custom_varchar_fields
-			SET
-
-			WHERE
-				custom_field_id = (
-					SELECT
-						id
-					FROM
-						custom_fields
-					WHERE
-						project_id = (select id from projects where project_name = 'SGC') AND
-						name = 'site'
-				)
-
-		'''
-
-	def import_projects(self):
+	def import_projects2(self):
 		conn = self.manager.conn
 
 		cur = conn.cursor()
@@ -146,7 +96,7 @@ class Patcher(object):
 			from
 				projects
 			where
-				archived_date is null
+				archived_date is null and project_name<>'Public'
 		''')
 
 		changes = {}
@@ -161,13 +111,18 @@ class Patcher(object):
 			id_group_name = row[4]
 			enable_addition = row[5]
 
+			if entity_name is None:
+				entity_name = project_name
+
 			changes[id] = {
-				'id': id, 'project_name': project_name, 'entity_name':entity_name, 'enable_structure_field': enable_structure_field,
+				'id': id, 'compound_id': project_name, 'entity_name':entity_name, 'enable_structure_field': enable_structure_field,
 				'enable_attachment_field' : enable_attachment_field, 'id_group_name': id_group_name, 'enable_addition': enable_addition,
 				'bypass': True
 			}
 
 			id -= 1
+
+		print(changes)
 
 		self.manager.save_changes('administrator', changes, 'Projects', {})
 
@@ -180,35 +135,60 @@ class Patcher(object):
 			from
 				projects
 			where
-				project_name = 'Public'
+				project_name <> 'OxXChem' and project_name <> 'Public' and project_name <> 'SGC'
 		''')
 
 		custom_fields_cur = self.manager.conn.cursor()
 		custom_fields_cur.execute('''
-			prepare fetch_custom_fields as
+			prepare fetch_custom_fields2 as
 			select
-				before_update_function,
-				calculated,
-				searchable,
-				human_name,
-				visible,
-				auto_convert_mol,
-				required,
-				foreign_key_project,
-				type,
-				name
+				a.before_update_function,
+				a.calculated,
+				a.searchable,
+				a.human_name,
+				a.visible,
+				a.auto_convert_mol,
+				a.required,
+				a.project_foreign_key_id,
+				b.name as type_name,
+				a.name
 			from
-				custom_fields
+				custom_fields a,
+				custom_field_types b
 			where
-				project_id = $1
+				a.project_id = $1 and
+				a.type_id = b.id
 
 		''')
+
+		lookup_project = self.manager.conn.cursor()
+		lookup_project.execute('''
+			prepare fetch_project as
+			select
+				project_name
+			from
+				projects
+			where
+				id = $1
+		''')
+
+		custom_fields_exist = self.manager.conn.cursor()
+		custom_fields_exist.execute('''
+			prepare custom_fields_exist as
+			select
+				count(*) 
+			from
+				compounds
+			where
+				project_id = (select id from projects where project_name = $1)
+		''')
+
 
 		for project_row in project_cur:
 			project_id = project_row[0]
 			project_name = project_row[1]
 
-			custom_fields_cur.execute('execute fetch_custom_fields (%s)', (project_id,))
+			custom_fields_cur.execute('execute fetch_custom_fields2 (%s)', (project_id,))
 
 			changes = {}
 
@@ -222,15 +202,25 @@ class Patcher(object):
 				visible = custom_field_row[4]
 				auto_convert_mol = custom_field_row[5]
 				required = custom_field_row[6]
-				foreign_key_project = custom_field_row[7]
+				foreign_key_project_id = custom_field_row[7]
 				field_type = custom_field_row[8]
 				name = custom_field_row[9]
+
+				#print(human_name)
+
+				foreign_key_project = None
+
+				if foreign_key_project_id is not None:
+					lookup_project.execute('execute fetch_project (%s)', (foreign_key_project_id,))
+					row = lookup_project.fetchone()
+					foreign_key_project = row[0]
+
 
 				id -= 1
 
 				changes[id] = {
 					'id': id,
-					'entity_name': name,
+					'compound_id': name,
 					'before_update_function':before_update_function,
 					'calculated': calculated,
 					'searchable': searchable,
@@ -239,12 +229,24 @@ class Patcher(object):
 					'auto_convert_mol': auto_convert_mol,
 					'required': required,
 					'foreign_key_project':foreign_key_project,
-					'field_type': field_type
+					'type': field_type,
+					'bypass':True
 				}
 
 			custom_field_project_name = project_name + '/Custom Fields'
 
-			self.manager.save_changes('administrator', changes, custom_field_project_name, {})
+			custom_fields_exist.execute('execute custom_fields_exist (%s)',(custom_field_project_name,))
+
+			row = custom_fields_exist.fetchone()
+
+			if row is not None and row[0] > 0:
+				print('Skippingi ' + custom_field_project_name)
+			else:
+				print(changes)
+				try:
+					self.manager.save_changes('administrator', changes, custom_field_project_name, {})
+				except:
+					pass
 
 	def import_user_to_project(self):
 		user_to_project_cur = self.manager.conn.cursor()
@@ -273,6 +275,12 @@ class Patcher(object):
 			is_administrator = row[2]
 			default_project = row[3]
 
+			if default_project is None:
+				default_project = False
+
+			if is_administrator is None:
+				is_administrator = False
+
 			id -= 1
 
 			changes[id] = {
@@ -281,15 +289,17 @@ class Patcher(object):
 				'is_administrator': False,
 				'default_project': default_project,
 				'is_administrator': is_administrator,
-				'bypass': True
+				'bypass': True,
+				'user_user_id': user_name,
+				'user_project_id': project_name
 			}
 
 		self.manager.save_changes('administrator', changes, 'User to Project', {})
 
 
+	
 if __name__ == '__main__':
 	patcher = Patcher()
 	#patcher.import_users_from_user_table()
-	#patcher.import_projects()
-	#patcher.import_user_sites()
-	patcher.import_projects()
+	#patcher.import_custom_fields()
+	patcher.import_user_to_project()
