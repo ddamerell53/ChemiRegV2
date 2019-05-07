@@ -1840,10 +1840,10 @@ class AuthenticationManager(object):
 
 		users = {
 			'wordpress1': {
-				'WordPressA': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
+				'WordPress': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
 			},
 			'wordpress2': {
-				'WordPressB': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
+				'WordPress': True, 'WordPress/Supplier List': False, 'WordPress/Compound Classifications': False, 'WordPress/Salts': False
 			}
 		}
 
