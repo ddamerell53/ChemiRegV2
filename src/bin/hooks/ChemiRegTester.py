@@ -28,7 +28,7 @@ class ChemiRegTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_url = 'http://pan:8080'
+        cls.base_url = 'http://127.0.0.1:80'
 
         command = 'login'
         args = {
@@ -119,6 +119,8 @@ $$$$
 
         self.assertIn('png_content', obj)
         self.assertIsNotNone(obj['png_content'])
+        self.assertIsNotNone(obj['smiles'])
+        self.assertEqual(obj['smiles'], 'C')
 
     def test_supplier_upload(self):
         command = 'api/compounds'
@@ -254,6 +256,8 @@ $$$$
 
                 eof = len(byte_buf) != chunk_size
 
+                print(args)
+
                 res = run_query(ChemiRegTester.base_url, command, args)
 
                 print(res)
@@ -265,6 +269,8 @@ $$$$
 
                 if eof:
                     break
+
+
 
     def test_file_upload_and_register(self):
         chunk_size = 1024 * 60000
@@ -416,7 +422,7 @@ $$$$
             'project_name': 'TestA',
             'token': ChemiRegTester.token,
             'field_name': 'upload_id',
-            'field_value': res['result-set']['-1']['upload_id']
+            'field_value': res['result-set'][0]['upload_id']
         }
 
         res = run_query(ChemiRegTester.base_url, command, args, method='GET')
@@ -436,6 +442,58 @@ $$$$
         command = 'api/uploads'
 
         with open('upload1.sdf', 'rb') as f:
+            while True:
+                byte_buf = f.read(chunk_size)
+
+                contents_b64 = base64.b64encode(byte_buf).decode('ascii')
+
+                args = {
+                    'wait': 'yes',
+                    'token': ChemiRegTester.token,
+                    'upload_id': upload_id,
+                    'contents': contents_b64
+                }
+
+                eof = len(byte_buf) != chunk_size
+
+                res = run_query(ChemiRegTester.base_url, command, args)
+
+                self.assertIsNotNone(res)
+                self.assertIn('upload_id', res)
+
+                upload_id = res['upload_id']
+
+                if eof:
+                    break
+
+        command = 'api/uploads'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'action': 'preview_sdf_upload',
+            'upload_id': upload_id,
+            'limit': 1
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        self._test_basic_res(res)
+
+        self.assertIsNotNone(res['result-set'])
+        self.assertEqual(len(res['result-set']),1)
+        self.assertEqual(res['result-set'][0]['smiles'], 'c1ccccc1')
+        self.assertIsNotNone(res['result-set'][0]['mol_image'])
+        self.assertIsNotNone(res['result-set'][0]['mw'])
+
+    def test_file_upload_preview2(self):
+        chunk_size = 1024 * 60000
+
+        upload_id = None
+
+        command = 'api/uploads'
+
+        with open('test_leo.sdf', 'rb') as f:
             while True:
                 byte_buf = f.read(chunk_size)
 
