@@ -5410,15 +5410,19 @@ saturn.db.DefaultProvider.prototype = {
 					this._getByNamedQuery(queryId,parameters,clazz,privateCB);
 				}
 			} else if(this.namedQueryHooks.exists(queryId)) {
+				saturn.core.Util.debug("Hook is known");
 				var config1 = null;
 				if(this.namedQueryHookConfigs.exists(queryId)) config1 = this.namedQueryHookConfigs.get(queryId);
 				saturn.core.Util.debug("Calling hook");
 				this.namedQueryHooks.get(queryId)(queryId,parameters,clazz,privateCB,config1);
-			} else this._getByNamedQuery(queryId,parameters,clazz,privateCB);
+			} else {
+				saturn.core.Util.debug("Hook is not known");
+				this._getByNamedQuery(queryId,parameters,clazz,privateCB);
+			}
 		} catch( ex ) {
 			if (ex instanceof js._Boot.HaxeError) ex = ex.val;
-			callBack(null,"An unexpected exception has occurred");
 			saturn.core.Util.debug(ex);
+			callBack(null,"An unexpected exception has occurred");
 		}
 	}
 	,addHooks: function(hooks) {
@@ -7592,7 +7596,11 @@ saturn.db.provider.GenericRDBMSProvider.prototype = $extend(saturn.db.DefaultPro
 	}
 	,_getByNamedQuery: function(queryId,parameters,clazz,cb) {
 		var _g = this;
-		if(!Object.prototype.hasOwnProperty.call(this.config.named_queries,queryId)) cb(null,"Query " + queryId + " not found "); else {
+		if(!Object.prototype.hasOwnProperty.call(this.config.named_queries,queryId)) {
+			this.debug("Hook is missing");
+			cb(null,"Query " + queryId + " not found ");
+		} else {
+			this.debug("Calling SQL query");
 			var sql = Reflect.field(this.config.named_queries,queryId);
 			var realParameters = [];
 			if((parameters instanceof Array) && parameters.__enum__ == null) {
@@ -10502,7 +10510,7 @@ saturn.server.plugins.socket.core.RemoteProviderPlugin.prototype = $extend(satur
 	,getByNamedQuery: function(data,provider,user,cb) {
 		var _g = this;
 		try {
-			this.debug("Start");
+			this.debug("Start " + Std.string(data.queryId));
 			var params = haxe.Unserializer.run(data.parameters);
 			this.debug("End");
 			if(data.queryId == "saturn.workflow") params[1].setRemote(true);
@@ -10510,6 +10518,7 @@ saturn.server.plugins.socket.core.RemoteProviderPlugin.prototype = $extend(satur
 			var clazz = null;
 			if(data.class_name != null) clazz = Type.resolveClass(data.class_name);
 			provider.getByNamedQuery(data.queryId,params,clazz,provider.getConfig().enable_cache,function(objs,err) {
+				_g.debug("Returning from named query " + Std.string(data.queryId));
 				var json = { };
 				saturn.client.core.CommonCore.releaseResource(provider);
 				json.error = err;

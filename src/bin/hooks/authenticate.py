@@ -1941,6 +1941,10 @@ class AuthenticationManager(object):
 
 		self.crud_manager.save_changes('administrator', changes, 'WordPress/Compound Classifications')
 
+
+		self.crud_manager.save_changes('administrator', {'-1':{'id':'-1','compound_id':'wordpress'}}, 'WordPress/Supplier List', {})
+
+
 		self.crud_manager.commit()
 			
 	def create_oxchem(self):

@@ -5,7 +5,7 @@
     "port" : 80,
     "redis_port" : 6380,
     "index_page":"/static/chemireg/theme/index.html",
-    "origins" : "https://*:*/ https://localhost:*/",
+    "origins" : "https://*:*/ https://localhost:*/ http://*:*/ http://localhost:*/",
     "internalConnectionHostName": "127.0.0.1",
     "socket_plugins": [
          {
@@ -125,8 +125,8 @@
                         "arguments": ["bin/hooks/authenticate.py"]
                       },
 			{
-                        "name": "saturn.server.plugins.ConfigurationPlugin:clientConfiguration",
-                        "class": "saturn.server.plugins.ConfigurationPlugin",
+                        "name": "saturn.server.plugins.core.ConfigurationPlugin:clientConfiguration",
+                        "class": "saturn.server.plugins.core.ConfigurationPlugin",
                         "method": "getConfiguration",
                         "config":{
                           "connections":[

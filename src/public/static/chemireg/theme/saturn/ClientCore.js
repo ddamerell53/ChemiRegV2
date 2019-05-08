@@ -5808,12 +5808,11 @@ saturn.client.core.ClientCore.prototype = {
 				return;
 			}
 			var cookies = Cookies;
-			cookies.set("user",{ 'fullname' : obj.full_name, 'token' : obj.token, 'username' : username.toUpperCase(), 'projects' : obj.projects},{ 'expires' : 14});
+			cookies.set("user",{ 'fullname' : obj.full_name, 'token' : obj.token, 'username' : username.toUpperCase()},{ 'expires' : 14});
 			var user = new saturn.core.User();
 			user.fullname = obj.full_name;
 			user.token = obj.token;
 			user.username = username.toUpperCase();
-			user.projects = obj.projects;
 			_g.refreshSession(cb);
 		};
 		req.onError = function(err) {
@@ -5831,7 +5830,6 @@ saturn.client.core.ClientCore.prototype = {
 			user.fullname = cookie.fullname;
 			user.token = cookie.token;
 			user.username = cookie.username;
-			user.projects = cookie.projects;
 			this.authenticateSocket(user,function(err,user1) {
 				if(err == null) _g.installProviders();
 				if(cb != null) cb(err);
@@ -6289,7 +6287,6 @@ saturn.core.User.prototype = {
 	username: null
 	,fullname: null
 	,token: null
-	,projects: null
 	,__class__: saturn.core.User
 };
 saturn.core.Util = $hxClasses["saturn.core.Util"] = function() {
@@ -7094,15 +7091,19 @@ saturn.db.DefaultProvider.prototype = {
 					this._getByNamedQuery(queryId,parameters,clazz,privateCB);
 				}
 			} else if(this.namedQueryHooks.exists(queryId)) {
+				saturn.core.Util.debug("Hook is known");
 				var config1 = null;
 				if(this.namedQueryHookConfigs.exists(queryId)) config1 = this.namedQueryHookConfigs.get(queryId);
 				saturn.core.Util.debug("Calling hook");
 				this.namedQueryHooks.get(queryId)(queryId,parameters,clazz,privateCB,config1);
-			} else this._getByNamedQuery(queryId,parameters,clazz,privateCB);
+			} else {
+				saturn.core.Util.debug("Hook is not known");
+				this._getByNamedQuery(queryId,parameters,clazz,privateCB);
+			}
 		} catch( ex ) {
 			if (ex instanceof js._Boot.HaxeError) ex = ex.val;
-			callBack(null,"An unexpected exception has occurred");
 			saturn.core.Util.debug(ex);
+			callBack(null,"An unexpected exception has occurred");
 		}
 	}
 	,addHooks: function(hooks) {
