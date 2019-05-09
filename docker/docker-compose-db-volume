@@ -9,10 +9,14 @@ services:
        - "5432:5432"
      command: -c "listen_addresses=*" 
      volumes:
-       - "./postgres_data:/var/lib/postgresql/data"
+       - "./container_directories/postgres_data:/var/lib/postgresql/data"
   chemireg:
      image: chemireg:latest
      restart: always
      ports: 
        - "8080:80"
        - "8888:8888"
+     volumes:
+       - "./container_directories/redis:/home/chemireg/redis"
+       - "./container_directories/tmp:/tmp"
+       - "./container_directories/permanent:/home/chemireg/ChemiRegV2/src/public/static/out/permanent"

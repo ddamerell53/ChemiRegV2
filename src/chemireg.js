@@ -417,6 +417,15 @@ bindings.NodeTemp.__name__ = ["bindings","NodeTemp"];
 bindings.NodeTemp.open = function(prefix,cb) {
 	return bindings.NodeTemp.temp.open(prefix,cb);
 };
+bindings.NodeTemp.open_untracked = function(prefix,cb) {
+	var filePath = bindings.NodeTemp.temp.path(prefix);
+	var cnst = js.Node.require("constants");
+	var RDWR_EXCL = cnst.O_CREAT | cnst.O_TRUNC | cnst.O_RDWR | cnst.O_EXCL;
+	js.Node.require("fs").open(filePath,RDWR_EXCL,parseInt("0600",8),function(err,fd) {
+		if(cb != null) cb(err,{ path : filePath, fd : fd});
+	});
+	return 1;
+};
 var com = com || {};
 if(!com.dongxiguo) com.dongxiguo = {};
 if(!com.dongxiguo.continuation) com.dongxiguo.continuation = {};
@@ -6377,7 +6386,7 @@ saturn.db.DefaultProvider.prototype = {
 		}); else run();
 	}
 	,uploadFile: function(contents,file_identifier,cb) {
-		if(file_identifier == null) bindings.NodeTemp.open("upload_file",function(err,info) {
+		if(file_identifier == null) bindings.NodeTemp.open_untracked("upload_file",function(err,info) {
 			if(err != null) cb(err,null); else {
 				var buffer = new Buffer(contents,"base64");
 				js.Node.require("fs").writeFile(info.path,buffer,function(err1) {
