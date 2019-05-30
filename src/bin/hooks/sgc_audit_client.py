@@ -16,7 +16,7 @@ import os
 import cx_Oracle
 
 class SGCAuditClient(AuditClient):
-    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart, include_extra_columns=True):
+    def __init__(self, hostname, port, username, password, projects, no_records, oracle_info, mysql_info, has_molcart, include_extra_columns=True, field_constraint = None):
         self.bh = cx_Oracle.connect(oracle_info['username']+'/'+oracle_info['password']+'@'+oracle_info['tns_name'])
         
         self.has_molcart = has_molcart
@@ -51,7 +51,7 @@ class SGCAuditClient(AuditClient):
             extra_sql_cols=',CLASSIFICATION,SERIES, FOLLOW_UP_LIST'
             extra_sql_placeholders=',:CLASSIFICATION,:SERIES, :FOLLOW_UP_LIST'
 
-        super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records)
+        super(SGCAuditClient, self).__init__(hostname,  port, username, password, transaction_id, complete_projects, no_records, field_constraint)
 
         compound_insert_statement = self.bh.cursor()
         compound_insert_statement.prepare('''
@@ -371,6 +371,8 @@ class SGCAuditClient(AuditClient):
                 self.sdf_writer.write(mol)
  
     def update_items(self, items):
+        from org.sgc.CommonCore import CommonCore
+
         locked_fields = {'id': True, 'username': True, 'date_record_created' : True}
         for item in items:
             project = item['project']

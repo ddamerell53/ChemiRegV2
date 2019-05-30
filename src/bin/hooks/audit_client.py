@@ -7,19 +7,20 @@ import ijson
 
 
 class AuditClient(ABC):
-    def __init__(self, hostname, port, username, password, since_transaction_id, projects, no_records):
+    def __init__(self, hostname, port, username, password, since_transaction_id, projects, no_records, field_constraint):
         self.since_transaction_id = since_transaction_id
         self.transaction_log = None
         self.no_records = no_records
         
         self.projects = projects
+        self.field_constraint = field_constraint
         
         self.chemireg = ChemiReg(hostname, port, username, password)
         
     def process_updates(self):
         self.chemireg.connect()
         
-        self.transaction_log = self.chemireg.fetch_updates(since_transaction_id=self.since_transaction_id,project=self.projects,no_records=self.no_records)
+        self.transaction_log = self.chemireg.fetch_updates(since_transaction_id=self.since_transaction_id,project=self.projects,no_records=self.no_records, field_constraint=self.field_constraint)
        
         self.process_log()
 

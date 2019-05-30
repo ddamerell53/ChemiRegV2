@@ -196,7 +196,7 @@ class ChemiReg(object):
 
         return self.block_call()
     
-    def fetch_updates(self, since_transaction_id, no_records, project):
+    def fetch_updates(self, since_transaction_id, no_records, project, field_constraint):
         arguments = {
             'action':'update_instructions',
             'task':'generate_update_instruction_file',
@@ -204,7 +204,8 @@ class ChemiReg(object):
             'project': project,
             'since_transaction_id':since_transaction_id,
             'no_records':no_records,
-            'out_file': None
+            'out_file': None,
+            'field_constraint': field_constraint
         }
         
         response = self.query('saturn.db.provider.hooks.ExternalJsonHook:Fetch',arguments)
