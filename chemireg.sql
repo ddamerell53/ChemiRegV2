@@ -11,7 +11,6 @@ create extension rdkit;
 
 \c chemireg chemireg
 
-
 drop table if exists custom_varchar_fields;
 drop table if exists custom_float_fields;
 drop table if exists custom_int_fields;
@@ -20,8 +19,6 @@ drop table if exists custom_text_fields;
 drop table if exists custom_foreign_key_field;
 drop table if exists custom_bool_fields;
 
-alter table if exists custom_fields drop constraint if exists custom_fields_custom_field_fk_id_fkey;
-
 drop table if exists custom_fields;
 drop table if exists custom_field_types;
 
@@ -29,17 +26,15 @@ drop table if exists file_uploads;
 drop table if exists compounds;
 drop table if exists suppliers;
 drop table if exists compound_prefixes;
-drop table if exists compound_salts;
 
 drop table if exists user_to_project;
 drop table if exists projects;
 drop table if exists users;
 drop table if exists compound_salts;
+drop table if exists error_log;
 
 create sequence transaction_counter increment by 1 minvalue 1;
 create sequence monotone_transaction_counter;
-
-
 
 create table suppliers (
     id serial PRIMARY KEY,
@@ -57,7 +52,20 @@ create table users (
     password_hash varchar(2000),
     account_type varchar(200) default 'internal',
     reset_password_token varchar(200),
-    reset_token_timestamp timestamp
+    reset_token_timestamp timestamp,
+    archive_date timestamp
+);
+
+-- alter table users add archive_date timestamp;
+
+insert into users (first_name, last_name, email, username, password_hash)
+
+values(
+    'Administrator',
+    'Administrator',
+    'email@email.com',
+    'administrator',
+    '$pbkdf2-sha256$29000$vPe.19obQwhBaA0BgNDamw$8FLG.7VTaObPM158JQ6inygMkXANY6OK83IQRBmt8DI'
 );
 
 alter table users add constraint users_idx UNIQUE (username);
@@ -71,9 +79,40 @@ create table projects (
    	enable_structure_field boolean default false,
     enable_attachment_field boolean default false,
     id_group_name varchar(400),
-    enable_addition boolean default true
+    enable_addition boolean default true,
+    archived_date timestamp
 );
 
+insert into projects (project_name, entity_name, enable_structure_field,enable_attachment_field, enable_addition)
+
+values(
+    'Projects',
+    'Project',
+    false,
+    false,
+    true
+),
+(
+    'Users',
+    'User',
+    false,
+    false,
+    true
+),
+(
+    'User to Project',
+    'User Permissions',
+    false,
+    false,
+    true
+),
+(
+    'Custom Field Types',
+    'Custom Field Type',
+    false,
+    false,
+    true
+);
 
 alter table projects add constraint project_idx UNIQUE (project_name);
 
@@ -84,16 +123,43 @@ create table user_to_project (
     project_id int REFERENCES projects (id) on delete cascade,
     user_id int REFERENCES users (id) on delete cascade,
     default_project boolean,
-    is_administrator boolean default false
+    is_administrator boolean default false,
+    archive_date timestamp
 );
 
-alter table user_to_project add constraint useR_project_idx UNIQUE (project_id, user_id);
+-- alter table user_to_project add column archive_date timestamp;
 
-create table error_log (
-	id SERIAL primary key,
-	error_uuid char(55),
-	error_description text
-)
+insert into user_to_project (project_id, user_id, is_administrator, default_project)
+values(
+    (select id from projects where project_name = 'Projects'),
+    (select id from users where username = 'administrator'),
+    true,
+    true
+),
+(
+    (select id from projects where project_name = 'Users'),
+    (select id from users where username = 'administrator'),
+    true,
+    true
+),
+(
+    (select id from projects where project_name = 'User to Project'),
+    (select id from users where username = 'administrator'),
+    true,
+    true
+),
+(
+    (select id from projects where project_name = 'Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    true,
+    true
+);
+
+-- alter table user_to_project drop constraint useR_project_idx;
+
+alter table user_to_project add constraint useR_project_idx UNIQUE (project_id, user_id, archive_date);
+
+
 
 create table compounds (
   id SERIAL primary key,
@@ -108,10 +174,52 @@ create table compounds (
   update_transaction_id bigint,
   archived_transaction_id bigint,
   archived boolean default false
- 
 );
 
-create unique index compounds_uidx1 on compounds(project_id,compound_id);
+insert into compounds (
+    compound_id,
+    project_id,
+    user_id,
+    insert_transaction_id
+)
+values(
+    'varchar',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+),
+(
+    'float',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+),
+(
+    'int',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+),
+(
+    'text',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+),
+(
+    'bool',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+),
+(
+    'foreign_key',
+    (select id from projects where project_name='Custom Field Types'),
+    (select id from users where username = 'administrator'),
+    0
+);
+
+create unique index copounds_idx0 on compounds(compound_id, project_id);
 create index copounds_idx1 on compounds(compound_id);
 create index copounds_idx2 on compounds(upper(compound_id));
 
@@ -177,6 +285,13 @@ create table custom_field_types (
 	table_name varchar(4000)
 );
 
+create table error_log (
+    id SERIAL primary key,
+    error_uuid text,
+    error_description text,
+    date_record_created timestamp default current_timestamp
+);
+
 insert into custom_field_types (
 	name,
 	table_name
@@ -202,9 +317,243 @@ create table custom_fields (
 	project_foreign_key_id int references projects(id),
 	calculated bool default false,
 	searchable bool default false,
-	before_update_function varchar(400)
+	before_update_function varchar(400),
+	archived_date timestamp
 );
 
+insert into custom_fields(
+    project_id,
+    name,
+    type_id,
+    required,
+    ss_field,
+    visible,
+    human_name,
+    calculated,
+    searchable
+)
+values(
+    (select id from projects where project_name='Projects'),
+    'entity_name',
+    (select id from custom_field_types where name='varchar'),
+    true,
+    false,
+    true,
+    'Entity Name',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Projects'),
+    'enable_structure_field',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Enable Structure Field',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Projects'),
+    'enable_attachment_field',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Enable Attachment Field',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Projects'),
+    'id_group_name',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'ID Group Name',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Projects'),
+    'enable_addition',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Enable Addition',
+    false,
+    true
+);
+
+
+
+-- Insert user project
+insert into custom_fields(
+    project_id,
+    name,
+    type_id,
+    required,
+    ss_field,
+    visible,
+    human_name,
+    calculated,
+    searchable
+)
+values
+(
+    (select id from projects where project_name='Users'),
+    'password',
+    (select id from custom_field_types where name='varchar'),
+    true,
+    false,
+    true,
+    'Password',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'first_name',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'First Name',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'last_name',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'Last Name',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'email',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'Email',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'password_hash',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'Password Hash',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'account_type',
+    (select id from custom_field_types where name='varchar'),
+    true,
+    false,
+    true,
+    'Account Type',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'reset_password_token',
+    (select id from custom_field_types where name='varchar'),
+    false,
+    false,
+    true,
+    'Password reset token',
+    false,
+    true
+),
+(
+    (select id from projects where project_name='Users'),
+    'enable',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Enable',
+    false,
+    true
+);
+
+-- Insert user to project
+insert into custom_fields(
+    project_id,
+    name,
+    type_id,
+    required,
+    ss_field,
+    visible,
+    human_name,
+    calculated,
+    searchable,
+    project_foreign_key_id
+)
+values
+(
+    (select id from projects where project_name='User to Project'),
+    'user_project_id',
+    (select id from custom_field_types where name='foreign_key'),
+    true,
+    false,
+    true,
+    'Project',
+    false,
+    true,
+    (select id from projects where project_name='Projects')
+),
+(
+    (select id from projects where project_name='User to Project'),
+    'user_user_id',
+    (select id from custom_field_types where name='foreign_key'),
+    true,
+    false,
+    true,
+    'User',
+    false,
+    true,
+    (select id from projects where project_name='Users')
+),
+(
+    (select id from projects where project_name='User to Project'),
+    'default_project',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Default Project',
+    false,
+    true,
+    null
+),
+(
+    (select id from projects where project_name='User to Project'),
+    'is_administrator',
+    (select id from custom_field_types where name='bool'),
+    true,
+    false,
+    true,
+    'Is Administrator',
+    false,
+    true,
+    null
+);
 
 create unique index custom_fields_uqx on custom_fields(project_id, name);
 create unique index custom_fields_uqx2 on custom_fields(project_id, human_name);
@@ -332,11 +681,13 @@ create table custom_foreign_key_field (
 	custom_field_value varchar(300),
 	parent_project_id int references projects(id),
 	entity_id int references compounds(id) on delete cascade,
-	foreign key(parent_project_id, custom_field_value) references compounds(project_id, compound_id),
+	foreign key(parent_project_id, custom_field_value) references compounds(project_id, compound_id) DEFERRABLE INITIALLY IMMEDIATE,
 	insert_transaction_id bigint not null,
   	update_transaction_id bigint,
   	archived_transaction_id bigint
 );
+
+-- alter table custom_foreign_key_field add constraint custom_foreign_key_field_parent_project_id_fkey1 FOREIGN KEY (parent_project_id, custom_field_value) REFERENCES compounds(project_id, compound_id) DEFERRABLE INITIALLY IMMEDIATE;
 
 create index custom_foreign_fields_value_id8 on custom_foreign_key_field using gin (custom_field_value gin_bigm_ops );
 create index custom_foreign_fields_value_id9 on custom_foreign_key_field using gin (upper(custom_field_value) gin_bigm_ops );
@@ -365,5 +716,3 @@ create index molecule_mol_idx on compounds_idx using gist(molecule);
 -- import string into the following
 -- sudo  vim /usr/local/anaconda_cos6/envs/sat_reg/lib/python2.7/site-packages/rdkit/sping/SVG/pidSVG.py
 -- (sat_reg) -bash-4.1$ sudo vim /usr/local/anaconda_cos6/envs/sat_reg/lib/python2.7/site-packages/rdkit/sping/PDF/pdfmetrics.py
-
--- create index test1 on compounds using gist(project_id, archived_transaction_id, upper(compound_id) gin_bigm_ops);

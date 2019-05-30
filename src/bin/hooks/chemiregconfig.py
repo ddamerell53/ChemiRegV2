@@ -27,20 +27,20 @@ class ChemiRegConfig(object):
     
     @staticmethod
     def get_email_address():
-        return 'email@email.com'
+        return None
     
     @staticmethod
     def get_email_hostname():
-        return 'hostname'
+        return None
     
     @staticmethod
     def get_email_port():
-        return 25
+        return None
 
     @staticmethod
     def get_email_username():
-        return 'username'
+        return None
     
     @staticmethod
     def get_email_password():
-        return 'password'
+        return None

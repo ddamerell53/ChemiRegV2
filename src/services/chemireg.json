@@ -6,10 +6,7 @@
     "redis_port" : 6380,
     "index_page":"/static/chemireg/theme/index.html",
     "origins" : "https://*:*/ https://localhost:*/",
-    "restify_http_options":{
-      "socketio": "true"
-    },
-    
+    "internalConnectionHostName": "127.0.0.1",
     "socket_plugins": [
          {
             "clazz": "saturn.server.plugins.socket.core.RemoteProviderPlugin",
@@ -36,6 +33,32 @@
         }
     ],
     "plugins":[
+        {
+             "clazz": "saturn.server.plugins.core.RESTSocketWrapperPlugin",
+                 "commands": [
+		     {
+                         "route": "/api/compound_utils/image",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "fetch_compound",
+                         "http_method": "POST"
+                     },
+		     {
+                         "route": "/api/compounds",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "save_compounds",
+                         "http_method": "POST"
+                     },
+		     {
+                         "route": "/api/compounds/:id",
+                         "format_request_clazz": "ChemiRegRoutes",
+                         "format_request_method": "delete_compounds",
+                         "http_method": "DELETE"
+                     }
+
+		
+
+                 ]
+        },
         {
             "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
             "connections" : [{
@@ -110,7 +133,7 @@
 
 		    },
                     "jwt_timeout": "300",
-                    "jwt_secret": "&&Wk&gh9B9fNFk&0ioNx9d7oM68$adaE#$@uakqom^t$g&wdfsdfsdfsdfsdfsdfdsq",
+                    "jwt_secret": "&&Wk&gh9B9fNFk&0ioNx9d7oM68$adaE",
                     "password_in_token": false 
         }
 

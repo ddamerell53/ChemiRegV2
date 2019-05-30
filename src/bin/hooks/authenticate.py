@@ -34,6 +34,7 @@ from zxcvbn import zxcvbn
 from email_manager import EmailManager
 from connection_manager import ConnectionManager
 import sdf_register
+import re
 
 class AuthenticationManager(object):
 	def __init__(self, conn=None, fetch_manager = None, crud_manager=None):
@@ -42,7 +43,7 @@ class AuthenticationManager(object):
 
 		self.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
 
-		self.include_scarab = True
+		self.include_scarab = False 
 		self.user_registration_enabled = True
 		self.user_registration_disabled_msg = 'Access by invitation only'
 		self.email_manager = EmailManager()
@@ -57,10 +58,15 @@ class AuthenticationManager(object):
 		
 		if fetch_manager is None:
 			import fetch
-		
+
 			self.fetch_manager = fetch.CompoundFetchManager(None, self)
 		else:
 			self.fetch_manager = fetch_manager
+
+		if crud_manager is None:
+			import sdf_register
+
+			crud_manager = sdf_register.CompoundManager(self.conn, self)
 			
 		self.crud_manager = crud_manager
 
@@ -79,7 +85,7 @@ class AuthenticationManager(object):
 		self.transaction_id = fetch_transaction.fetchone()[0]
 
 		if self.include_scarab:
-			self.scarab_conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', 'icmdb', 'molsoft')
+			self.scarab_conn =  MySQLdb.connect('<hostname>', '<username>', '<password>')
 		
 		self.check_user_exists_cur = self.conn.cursor()
 		self.check_user_exists_cur.execute('''
@@ -90,7 +96,8 @@ class AuthenticationManager(object):
 				users
 			where
 				username = $1 and
-				account_type = $2
+				account_type = $2 and
+				archive_date is null
 		''')
 
 		self.check_user_exists_all_cur = self.conn.cursor()
@@ -101,7 +108,8 @@ class AuthenticationManager(object):
 			from
 				users
 			where
-				username = $1
+				username = $1 and
+				archive_date is null
 		''')
 
 		self.insert_user_cur = self.conn.cursor()
@@ -117,6 +125,21 @@ class AuthenticationManager(object):
 				account_type
 			)
 			values($1,$2,$3,$4,$5, $6)
+		''')
+
+		self.update_user_cur = self.conn.cursor()
+		self.update_user_cur.execute('''
+			prepare update_user as
+			update
+				users
+			set
+				first_name = $2,
+				last_name = $3,
+				email = $4,
+				username = $5,
+				account_type = $6
+			where
+				username = $1
 		''')
 
 		self.delete_user_cur = self.conn.cursor()
@@ -152,7 +175,8 @@ class AuthenticationManager(object):
 			from
 				projects
 			where 
-				project_name = $1
+				project_name = $1 and
+				archived_date is null
 		''')
 
 		self.create_project_cur = self.conn.cursor()
@@ -184,7 +208,9 @@ class AuthenticationManager(object):
 			from 
 				projects
 			where 
-				project_name = $1
+				project_name = $1 and
+				archived_date is null
+
 		''')
 		
 		self.fetch_project_by_id_cur = self.conn.cursor()
@@ -195,7 +221,8 @@ class AuthenticationManager(object):
 			from 
 				projects
 			where 
-				id = $1
+				id = $1 and
+				archived_date is null
 		''')
 
 		self.insert_project_association_cur = self.conn.cursor()
@@ -207,6 +234,23 @@ class AuthenticationManager(object):
 				user_id
 			)
 			values($1, $2)
+		''')
+
+		self.fetch_users_with_project_cur = self.conn.cursor()
+		self.fetch_users_with_project_cur.execute('''
+			prepare fetch_users_with_project as
+			select
+				c.username,
+				a.user_id
+			from
+				user_to_project a,
+				projects b,
+				users c
+			where
+				a.project_id = b.id and
+				b.project_name = $1 and
+				a.user_id = c.id and
+				b.archived_date is null
 		''')
 
 		self.remove_project_association_cur = self.conn.cursor()
@@ -228,7 +272,8 @@ class AuthenticationManager(object):
 			where
 				b.username = $1 and
 				c.user_id = b.id and
-				c.project_id = a.id
+				c.project_id = a.id and
+				a.archived_date is null
 			order by
 				c.default_project, project_name
 		''')
@@ -258,7 +303,9 @@ class AuthenticationManager(object):
 				a.username = $1 and
 				b.project_name = $2 and
 				c.user_id = a.id and
-				c.project_id = b.id
+				c.project_id = b.id and
+				b.archived_date is null and
+				c.archive_date is null
 		''')
 
 		self.user_compound_check_cur = self.conn.cursor()
@@ -274,7 +321,8 @@ class AuthenticationManager(object):
 				a.id = $1 and
 				b.username = $2 and
 				c.user_id = b.id and 
-				a.project_id = c.project_id
+				a.project_id = c.project_id and
+				c.archive_date is null
 		''')
 
 		self.update_user_reset_code_cur = self.conn.cursor()
@@ -295,6 +343,20 @@ class AuthenticationManager(object):
 			insert into custom_fields
 			(project_id, name, type_id, required, visible, human_name, calculated)
 			values ($1, $2, $3, $4, $5, $6, $7)
+		''')
+
+		self.update_custom_field_cur = self.conn.cursor()
+		self.update_custom_field_cur.execute('''
+			prepare update_custom_field as
+			update custom_fields
+				set name=$3,
+				required=$4,
+				visible=$5,
+				human_name=$6,
+				calculated=$7
+			where
+				project_id = (select id from projects where project_name = $2) and
+				name = $1
 		''')
 		
 		self.fetch_custom_field_type_id_cur = self.conn.cursor()
@@ -342,7 +404,8 @@ class AuthenticationManager(object):
 				custom_field_types b
 			where
 				a.project_id = $1 and
-				a.type_id = b.id
+				a.type_id = b.id and
+				a.archived_date is null
 		''')
 		
 		self.fetch_custom_field_cur = self.conn.cursor()
@@ -371,7 +434,8 @@ class AuthenticationManager(object):
 				a.project_id = c.id and
 				c.project_name = $1 and
 				a.name = $2 and
-				a.type_id = b.id
+				a.type_id = b.id and
+				c.archived_date is null
 		''')
 		
 		self.update_foreign_key_cur = self.conn.cursor()
@@ -441,9 +505,16 @@ class AuthenticationManager(object):
 			from
 				projects
 			where
-				project_name = $1	
+				project_name = $1 and
+				archived_date is null
 		''')
-		
+
+		self.delete_custom_field_cur = self.conn.cursor()
+		self.delete_custom_field_cur.execute('''
+			prepare delete_custom_field as
+			delete from custom_fields where project_id=(select id from projects where project_name = $1) and name = $2
+		''')
+
 		self.is_user_administrator_cur = self.conn.cursor()
 		self.is_user_administrator_cur.execute(''' 
 			prepare is_user_administrator as
@@ -457,7 +528,8 @@ class AuthenticationManager(object):
 				projects.project_name = $1 and
 				users.username = $2 and
 				user_to_project.user_id = users.id and
-				user_to_project.project_id = projects.id
+				user_to_project.project_id = projects.id and
+				user_to_project.archive_date is null
 		''')
 		
 		self.update_project_configuration_cur = self.conn.cursor()
@@ -471,7 +543,44 @@ class AuthenticationManager(object):
 				entity_name = $3,
 				enable_addition = $5
 			where
-				project_name= $4
+				project_name= $4 and
+				archived_date is null
+		''')
+
+		self.rename_project_cur = self.conn.cursor()
+		self.rename_project_cur.execute('''
+			prepare rename_project as
+			update
+				projects
+			set
+				project_name = $1
+			where
+				project_name = $2 and
+				archived_date is null
+		''')
+
+		self.rename_child_projects_cur = self.conn.cursor()
+		self.rename_child_projects_cur.execute('''
+			prepare rename_child_projects as
+			update
+				projects
+			set
+				project_name = REGEXP_REPLACE(project_name, '^' || $1 || '/', $2 || '/')
+			where
+				project_name like $1 || '/%' and
+				archived_date is null
+		''')
+
+		self.rename_project_entity_cur = self.conn.cursor()
+		self.rename_project_entity_cur.execute('''
+			prepare rename_project_entity as
+			update
+				projects
+			set
+				entity_name = $2
+			where
+				project_name = $1 and
+				archived_date is null
 		''')
 		
 		self.custom_field_cursors = {}
@@ -514,7 +623,8 @@ class AuthenticationManager(object):
 							compounds join
 							projects on (compounds.project_id = projects.id)
 						where
-							projects.project_name = $1
+							projects.project_name = $1 and
+							archived_date is null
 				
 				
 				''')
@@ -542,17 +652,32 @@ class AuthenticationManager(object):
 							compounds join
 							projects on (compounds.project_id = projects.id)
 						where
-							projects.project_name = $1
+							projects.project_name = $1 and
+							archived_date is null
 				
 				
 				''')
+
+	def validate_project_term(self, term):
+		if term.endswith('/Settings') or term.endswith('/Uploads') or term.endswith('/Search History') or term.endswith('/Custom Row Buttons'):
+			return False
+		else:
+			return True
+
+	def rename_project(self, new_project_name, old_project_name):
+		self.rename_project_cur.execute('execute rename_project (%s,%s)',(new_project_name, old_project_name))
+
+		self.rename_child_projects_cur.execute('execute rename_child_projects (%s,%s)', (old_project_name, new_project_name))
+
+	def rename_project_entity(self, project_name, new_entity_name):
+		self.rename_project_entity_cur.execute('execute rename_child_projects (%s, %s)', (project_name, new_entity_name))
 				
 	def delete_project_entities(self, project_name):
 		self.conn.cursor().execute(
 			'''delete from
 				compounds
 			where
-				compounds.project_id = (select id from projects where project_name=%s)''', 
+				compounds.project_id = (select id from projects where project_name=%s and archived_date is null)''',
 			(project_name,)
 		)
 		
@@ -561,31 +686,72 @@ class AuthenticationManager(object):
 			delete from
 				user_to_project
 			where
-				user_to_project.project_id = (select id from projects where project_name=%s)
+				user_to_project.project_id = (select id from projects where project_name=%s and archived_date is null)
 		''', (project_name, ))
 		
-	def delete_project(self, project_name):
-		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads'):
-			self.delete_project(project_name + '/Custom Row Buttons')
-			
-			if not project_name.endswith('/Uploads') and not project_name.endswith('/Search History'):
-				self.delete_project(project_name + '/Uploads')
-				self.delete_project(project_name + '/Search History')
-		else:
-			if not project_name.endswith('/Custom Row Buttons/Uploads'):
-				self.delete_project(project_name + '/Uploads')
+	def delete_project(self, project_name,  uuid_str = str(uuid.uuid4())):
+		# When a project gets deleted all pointers to that project need to be archived
+		self.conn.cursor().execute('''set constraints custom_foreign_key_field_parent_project_id_fkey1 deferred''')
 
-		
-		self.delete_project_entities(project_name)
+		#self.delete_project_entities(project_name)
 		self.delete_project_user_associations(project_name)
-		
+
+		# First archive any records which are pointing directly at the row for entity['compound_id'] (which is itself a project name) in the Projects project
+		self.conn.cursor().execute('''
+			update
+				custom_foreign_key_field
+			set
+				custom_field_value = custom_field_value || '_archived_' || %s
+			where
+				parent_project_id = (select id from projects where project_name = 'Projects') and
+				custom_field_value = %s
+		''', (uuid_str, project_name))
+
+		# Next archive all custom fields pointing at this project
+		self.conn.cursor().execute('''
+			update
+				custom_fields
+			set
+				name = name || '_archived_' || %s,
+				archived_date = localtimestamp
+			where
+				project_foreign_key_id = (select id from projects where project_name = %s)
+		''', (uuid_str, project_name))
+
+		self.crud_manager.archive_all(project_name, True, uuid_str)
+
 		self.conn.cursor().execute(''' 
-			delete from
+			update
 				projects
+			set
+				project_name = project_name || '_archived_' || %s,
+				archived_date = localtimestamp
 			where
 				project_name = %s
-		''',(project_name,))
-		
+		''',(uuid_str,project_name))
+
+		if not project_name.endswith('/Custom Row Buttons') and not project_name.endswith('/Custom Row Buttons/Uploads') \
+				and not project_name.endswith('/Custom Row Buttons/Templates') and not project_name.endswith(
+			'/Custom Row Buttons/Custom Fields'):
+			self.delete_project(project_name + '/Custom Row Buttons')
+
+			if not project_name.endswith('/Uploads') and not project_name.endswith(
+					'/Search History') and not project_name.endswith('/Templates') and not project_name.endswith(
+					'/Custom Fields'):
+				self.delete_project(project_name + '/Uploads')
+				self.delete_project(project_name + '/Search History')
+				self.delete_project(project_name + '/Templates')
+				self.delete_project(project_name + '/Custom Fields')
+		else:
+			if not project_name.endswith('/Custom Row Buttons/Uploads') and not project_name.endswith(
+					'/Custom Row Buttons/Templates') and not project_name.endswith('/Custom Row Buttons/Custom Fields'):
+				self.delete_project(project_name + '/Uploads')
+
+				self.delete_project(project_name + '/Templates')
+				self.delete_project(project_name + '/Custom Fields')
+
+
+
 	def set_user_as_administrator(self, username, project_name, is_administrator):
 		self.conn.cursor().execute('''
 			update
@@ -594,7 +760,7 @@ class AuthenticationManager(object):
 				is_administrator = %s
 			where
 				user_id = (select id from users where username = %s) and
-				project_id = (select id from projects where project_name = %s)
+				project_id = (select id from projects where project_name = %s and archived_date is null)
 		''',(is_administrator, username, project_name))
 		
 		
@@ -687,10 +853,31 @@ class AuthenticationManager(object):
 			
 		if self.is_project(project_name + '/Search History'):
 			self.add_user_to_project(username, project_name + '/Search History')
+
+		if self.is_project(project_name + '/Templates'):
+			self.add_user_to_project(username, project_name + '/Templates')
 		
 		self.conn.commit()
+
+	def copy_user_permissions(self, source_project, destination_project):
+		user_names = self.get_users_with_project(source_project)
+
+		for user_name in user_names:
+			print('Adding user ' + user_name + ' to ' + destination_project)
+			self.add_user_to_project(user_name, destination_project)
+
+		self.conn.commit()
 		
-		
+	def get_users_with_project(self, project_name):
+		self.fetch_users_with_project_cur.execute('execute fetch_users_with_project (%s)', (project_name,))
+
+		user_names = []
+
+		for row in self.fetch_users_with_project_cur:
+			user_names.append(row[0])
+
+		return user_names
+
 	def set_default_user_project(self, username, project_name):
 		project_id = self.get_project_id(project_name)
 
@@ -712,18 +899,29 @@ class AuthenticationManager(object):
 		self.conn.commit()
 
 	def remove_user_from_project(self, username, project_name):
-		project_id = self.get_project_id(project_name)
+		#project_id = self.get_project_id(project_name)
 
-		if project_id is None:
-			raise ProjectAssociationException('Project ' + project_name + ' doesn\'t exist')
+		#if project_id is None:
+		#	raise ProjectAssociationException('Project ' + project_name + ' doesn\'t exist')
 
 		user_id = self.get_user_id(username)
 
 		if user_id is None:
 			raise ProjectAssociationException('User ' + username + ' doesn\'t exist')
 
-		self.remove_project_association_cur.execute('execute remove_project_association (%s, %s)', (user_id, project_id))
-		self.conn.commit()
+		self.conn.cursor().execute('''
+			update
+				user_to_project
+			set
+				archive_date = localtimestamp
+			where
+				user_id = %s and
+				project_id = (select id from projects where project_name = %s) and
+				archive_date is null
+		''',(user_id, project_name))
+
+		#self.remove_project_association_cur.execute('execute remove_project_association (%s, %s)', (user_id, project_id))
+		#self.conn.commit()
 
 	def get_project_id(self, project_name):
 		self.fetch_project_id_cur.execute('execute fetch_project_id (%s)', (project_name,))
@@ -801,8 +999,56 @@ class AuthenticationManager(object):
 			self.create_project_projects(project_name)
 
 		self.conn.commit()
+
+	def create_custom_fields_project(self, parent_project_name):
+		project_name = parent_project_name + '/Custom Fields'
+
+		self.create_project(project_name, None, False)
+
+		self.update_project_configuration(
+			project_name=project_name,
+			enable_structure_field=False,
+			enable_attachment_field=False,
+			entity_name='Custom Field',
+			enable_addition=True
+		)
+
+		self.add_custom_field(project_name, 'foreign_key', 'type', 'Type', True, True, False)
+
+		self.create_foreign_key(project_name, 'type', 'Custom Field Types')
+
+		self.add_custom_field(project_name, 'foreign_key', 'foreign_key_project', 'Points to', False, True, False)
+
+		self.create_foreign_key(project_name, 'foreign_key_project', 'Projects')
+
+		self.add_custom_field(project_name, 'bool', 'required', 'Required', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'auto_convert_mol', 'Auto convert mol', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'visible', 'visible', True, True, False)
+		self.add_custom_field(project_name, 'varchar', 'human_name', 'Human Name', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'searchable', 'searchable', True, True, False)
+		self.add_custom_field(project_name, 'bool', 'calculated', 'Calculated', True, True, False)
+		self.add_custom_field(project_name, 'varchar', 'before_update_function', 'Before update function', False, True, False)
+
+	def create_template_project(self, parent_project_name):
+		project_name = parent_project_name + '/Templates'
+
+		self.create_project(project_name, None, False)
+
+		self.update_project_configuration(
+			project_name=project_name,
+			enable_structure_field=False,
+			enable_attachment_field=True,
+			entity_name='Template',
+			enable_addition=True
+		)
+
+		self.add_custom_field(project_name, 'varchar', 'description', 'Description', True, True, False)
 		
 	def create_project_projects(self, parent_project_name):
+		self.create_custom_fields_project(parent_project_name)
+
+		self.create_template_project(parent_project_name)
+
 		project_name = parent_project_name + '/Uploads'
 		
 		self.create_project(project_name, None, False)
@@ -871,10 +1117,17 @@ class AuthenticationManager(object):
 		
 		self.crud_manager.save_changes('administrator', changes, project_name + '/Custom Row Buttons')
 		
-		self.conn.commit()		
+		self.conn.commit()
+
+	def add_crud_manager(self):
+		if self.crud_manager is None:
+			self.crud_manager = sdf_register.CompoundManager(None, self)
 	
 	def authenticate_scarab(self, username, password):
-		conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', username, password)
+		try:
+			conn =  MySQLdb.connect('fides.sgc.ox.ac.uk', username, password)
+		except:
+			return False
 
 		cur = conn.cursor()
 		cur.execute('''
@@ -895,24 +1148,105 @@ class AuthenticationManager(object):
 		else:
 			if not self.is_user(username, 'scarab'):
 				print('Registering user')
-				self.register_user(row[0], row[1], row[2], username, None, 'scarab', True)
+
+				changes = {
+					'-1': {
+						'first_name': row[0],
+						'last_name': row[1],
+						'email': row[2],
+						'compound_id': username,
+						'password': password,
+						'account_type': 'scarab'
+					}
+				}
+
+				self.add_crud_manager()
+
+				self.crud_manager.save_changes('administrator', changes, 'Users')
+
+				#self.register_user(row[0], row[1], row[2], username, None, 'scarab', True)
 
 			return True
 
-	def delete_user(self, username):
-		if self.is_user(username):
-			self.delete_project(username + '/Settings')
-			
-			self.delete_user_cur.execute("execute delete_user (%s)", (username,))
-			self.conn.commit()
+	def disable_user(self, username):
+		self.conn.cursor().execute('''
+			update
+				users
+			set
+				archive_date = localtimestamp
+			where
+				username = %s
+		''', (username,))
+
+	def enable_user(self, username):
+		self.conn.cursor.execute('''
+			update
+				users
+			set
+				archive_date = null
+			where
+				username = %s
+		''', (username,))
+
+	def delete_custom_field(self, id):
+		entity = self.fetch_manager.get_entity(id, False)
+
+		parent_project_name = re.sub('/Custom Fields$', '', entity['project_name'])
+
+		print('Removing ' + entity['compound_id'] + ' from '+ parent_project_name + ' ')
+
+		uuid_str = str(uuid.uuid4())
+
+		self.conn.cursor().execute('''
+			update
+				custom_fields
+			set
+				name = name || '_archived_' || %s,
+				archived_date = localtimestamp
+			where
+				project_id = (select id from projects where project_name = %s)
+		''', (uuid_str, parent_project_name))
+
+	def update_user(self, original_username, first_name, last_name, email, username, password, account_type):
+		if original_username != username and self.is_user(username):
+			raise UserRegistrationException('User already exists')
+
+		if account_type != 'scarab'   and not password is None and not self.password_passes(password, [first_name, last_name, email, username]):
+			raise InsecurePasswordException('Insecure password, please try another')
+
+		password_hash = None
+
+		if account_type == 'internal' and password is not None:
+			password_hash = self.pwd_context.hash(password)
 		else:
-			raise InvalidUserException('User ' + username + ' doesn\'t exit')
+			password_hash = None
+
+		self.update_user_cur.execute("execute update_user (%s,%s,%s,%s,%s,%s)", (
+			original_username,
+			first_name,
+			last_name,
+			email,
+			username,
+			account_type
+		))
+
+		if password_hash is not None:
+			self.conn.cursor().execute('''
+				update
+					users
+				set
+					password_hash = %s
+				where
+					username = %s
+			''', (password_hash, username))
+
+		self.rename_project(username + '/Settings', original_username + '/Settings')
 
 	def register_user(self, first_name, last_name, email, username, password, account_type = 'internal', skip_external_check = False):
 		if not self.user_registration_enabled and account_type != 'scarab':
 			raise UserRegistrationDisabledException(self.user_registration_disabled_msg)
 
-		if (not skip_external_check) and self.include_scarab:
+		if (not skip_external_check) and self.include_scarab and account_type != 'scarab':
 			cur = self.scarab_conn.cursor()
 			cur.execute('''
 				SELECT
@@ -965,14 +1299,14 @@ class AuthenticationManager(object):
 				
 			self.crud_manager.save_changes('administrator', changes, username + '/Settings')
 			
-			self.add_user_to_project(username, 'SGC')			
+			self.add_user_to_project(username, 'SGC')
 			self.add_user_to_project(username, 'SGC - Oxford')
 			self.add_user_to_project(username, 'SGC/Supplier List')
 			self.add_user_to_project(username, 'SGC/Search History')
 			self.add_user_to_project(username, 'SGC - Oxford/Search History')
 			self.add_user_to_project(username, 'SGC/Salts')
 			self.add_user_to_project(username, 'SGC/Compound Classifications')
-			
+			self.add_user_to_project(username, 'SGC/Compound Series')
 
 		self.conn.commit()
 		
@@ -1019,15 +1353,20 @@ class AuthenticationManager(object):
 			return True
 
 	def authenticate(self, username, password, src):
-		if (self.include_scarab and (not self.is_user(username)) and self.authenticate_scarab(username, password)):
-			self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Success\n')
-	
-			user = self.get_user(username, None)
+		attempt_administrator_login = False
 
-			if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]) and user['account_type'] != 'scarab':
-				raise InsecurePasswordException('Insecure password.  Please use the password reset facility to reset your password')
+		if self.include_scarab and (not self.is_user(username)):
+			if self.authenticate_scarab(username, password):
+				self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Success\n')
 
-			return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
+				user = self.get_user(username, None)
+
+				if not self.password_passes(password, [user['first_name'], user['last_name'], user['email'], username]) and user['account_type'] != 'scarab':
+					raise InsecurePasswordException('Insecure password.  Please use the password reset facility to reset your password')
+
+				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
+			else:
+				attempt_administrator_login = True
 		elif self.is_user(username):
 			user = self.get_user(username, None)
 
@@ -1041,8 +1380,15 @@ class AuthenticationManager(object):
 
 				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'], 'email': user['email'], 'projects':user['projects']}
 			else:
-				self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
-				return {'outcome': 'failure'}
+				attempt_administrator_login = True
+
+		if attempt_administrator_login:
+			user = self.get_user(username, None)
+
+			administrator_user = self.get_user('administrator')
+
+			if self.pwd_context.verify(password, administrator_user['password_hash']):
+				return {'outcome': 'success', 'firstName': user['first_name'], 'lastName': user['last_name'],'email': user['email'], 'projects': user['projects']}
 
 		self.authentication_fw.write(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + '\t' + username + '\t' + src + '\t' + 'Failed\n')
 
@@ -1190,7 +1536,11 @@ class AuthenticationManager(object):
 		if type_name != 'foreign_key':
 			self.custom_field_cursors[type_name].execute("execute custom_create_field_" + type_name + " (%s, %s, %s)",(project_name, field_name, self.transaction_id))
 		
-		self.conn.commit()
+		#self.conn.commit()
+
+	def update_custom_field_definition(self, old_name, project_name, name, required, visible, human_name, calculated):
+		self.update_custom_field_cur.execute('execute update_custom_field (%s,%s,%s,%s,%s,%s,%s)',(old_name, project_name, name,required,visible, human_name,calculated))
+
 		
 	def set_ss_search_field(self, project_name, field_name):
 		project_id = self.get_project_id(project_name)
@@ -1547,9 +1897,61 @@ class AuthenticationManager(object):
 			self.add_custom_field(project_name, 'foreign_key', 'supplier','Supplier', True, True, False)
 			self.create_foreign_key(project_name, 'supplier', 'OxChem/Supplier List')
 			
-			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)	
-		
-				
+			self.add_custom_field(project_name, 'float', 'mw', 'MW', False, True, False)
+
+	def update_project_view(self, project_name):
+		custom_fields = self.get_custom_fields(project_name)
+
+		custom_field_types = self.get_custom_field_types()
+
+		field_id_to_table = {}
+
+		for field_type in custom_field_types:
+			field_id_to_table[field_type['id']] = field_type['table_name']
+
+		corrected_project_name = 'v_' + project_name.lower().replace('/', '_')
+
+		view_sql = 'create or replace view ' + corrected_project_name + ' '
+
+		select_sql = ' as select compounds.compound_id'
+		tables_sql = ' from compounds '
+		join_sql = ['compounds.archived_transaction_id is null']
+
+		table_id = 1
+
+		previous_field = 'compounds.id'
+
+		for field in custom_fields.values():
+			field_name = field['field_name']
+			type_id = field['type_id']
+			field_id = field['field_id']
+
+			table_alias = 'tbx_' + str(table_id)
+
+			select_sql += ',' + table_alias + '.custom_field_value' + ' as ' + field_name
+			tables_sql += ',' + field_id_to_table[type_id] + ' as ' + table_alias
+			join_sql.append(table_alias + '.custom_field_id = ' + str(
+				field_id) + ' and ' + table_alias + '.entity_id = ' + previous_field + ' and ' + table_alias + '.archived_transaction_id is null')
+
+			previous_field = table_alias + '.entity_id'
+
+			table_id += 1
+
+		view_sql += select_sql + tables_sql + ' where ' + (' and '.join(join_sql))
+
+		self.conn.cursor().execute(view_sql)
+
+		print('Created view ' + corrected_project_name)
+
+	def add_users_to_template_project(self, project_name):
+		cur = self.conn.cursor()
+		cur.execute('select username from users a, user_to_project b, projects c where a.id = b.user_id and b.project_id=c.id and c.project_name=%s',(project_name,))
+
+		for row in cur:
+			username = row[0]
+			self.add_user_to_project(username, project_name + '/Templates')
+
+
 class InsecurePasswordException(Exception):
 	def __init__(self, value):
 		self.value = value
@@ -1672,7 +2074,24 @@ if __name__ == '__main__':
 		output_json = {'outcome':'success'}
 
 		try:
-			manager.register_user(input_json['first_name'], input_json['last_name'], input_json['email'], input_json['username'], input_json['password'])
+
+			changes = {
+				'-1': {
+					'first_name':input_json['first_name'],
+					'last_name':input_json['last_name'],
+					'email':input_json['email'],
+					'compound_id':input_json['username'],
+					'password':input_json['password'],
+					'account_type': 'internal'
+				}
+			}
+
+			if manager.crud_manager is None:
+				manager.crud_manager = sdf_register.CompoundManager(None, manager)
+
+			manager.crud_manager.save_changes('administrator', changes, 'Users')
+
+			#manager.register_user(input_json['first_name'], input_json['last_name'], input_json['email'], input_json['username'], input_json['password'])
 		except UserRegistrationException as e:
 			output_json['outcome'] = 'failure'
 			output_json['error'] = str(e.value)

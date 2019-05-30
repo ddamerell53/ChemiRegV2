@@ -25,6 +25,8 @@ import time
 import re
 import hashlib
 
+import traceback
+
 # BSD 2013 John McNamara
 import xlsxwriter
 
@@ -42,6 +44,11 @@ from rdkit.Chem import AllChem
 # ChemiReg - CC0
 from connection_manager import ConnectionManager
 import authenticate 
+
+import base64
+from io import BytesIO
+
+from PIL import Image, ImageChops
 
 class CompoundFetchManager(object):
 	def __init__(self, conn=None,auth_manager = None,crud_manager=None):
@@ -79,6 +86,16 @@ class CompoundFetchManager(object):
 			
 		#https://www.postgresql.org/docs/9.4/static/explicit-joins.html
 		self.conn.cursor().execute("set join_collapse_limit =1")
+
+		self.error_cur = self.conn.cursor()
+		self.error_cur.execute('''
+			prepare insert_error2 as
+			insert into error_log (
+				error_uuid,
+				error_description
+			)
+			values($1,$2)
+		''')
 		
 		self.fetch_upload_set_cur = self.conn.cursor()
 		self.fetch_upload_set_cur.execute('''
@@ -1041,7 +1058,7 @@ class CompoundFetchManager(object):
 			if not minimal:
 				self.process_entity(entity)
 				
-			return entity 
+			return entity
 		
 	def get_entity_by_id(self, entity_id,  minimal = True):
 		self.fetch_entity_pkey.execute('execute fetch_entity_pkey (%s)', (entity_id,))
@@ -1204,6 +1221,10 @@ class CompoundFetchManager(object):
 				fields.append(custom_fields)
 				field_names.append(custom_fields[field_name]['field_name'])
 				field_name_to_human_name[custom_fields[field_name]['field_name']]= custom_fields[field_name]['human_name']
+
+		field_names += ['id']
+		field_name_to_human_name['id'] = 'ChemiReg PKEY'
+
 		
 		tz = dateutil.tz.gettz(tz)
 		
@@ -1276,6 +1297,9 @@ class CompoundFetchManager(object):
 		field_names += ['username', 'date_record_created']
 		field_name_to_human_name['username'] = 'Record Creator'
 		field_name_to_human_name['date_record_created'] = 'Date Record Created'
+
+		field_names += ['id']
+		field_name_to_human_name['id'] = 'ChemiReg PKEY'
 		
 		col_i = 0
 		
@@ -1609,7 +1633,7 @@ class CompoundFetchManager(object):
 	
 				os.unlink(tmp_file.name)
 				
-				obj['compound_sdf'] = obj['salted_sdf']
+				obj['compound_sdf'] = Chem.MolToMolBlock(mol) #obj['salted_sdf']
 				obj['mol_image'] = content
 
 	def get_ctab_as_svg(self, ctab_content):
@@ -1626,6 +1650,23 @@ class CompoundFetchManager(object):
 		content = re.sub('glyph',hashlib.md5(ctab_content.encode()).hexdigest(),content)
 			
 		os.unlink(tmp_file.name)
+
+		return content
+        
+	def get_ctab_as_png(self, ctab_content):
+		mol = Chem.MolFromMolBlock(ctab_content)
+
+		image = Draw.MolToImage(mol,size=(200,200))
+
+		bg = Image.new(image.mode, image.size, image.getpixel((0,0)))
+		diff = ImageChops.difference(image, bg)
+		diff = ImageChops.add(diff, diff, 2.0, -100)
+		bbox = diff.getbbox()
+		image = image.crop(bbox)
+
+		buf = BytesIO()
+		image.save(buf, format='PNG')
+		content = base64.b64encode(buf.getvalue())
 
 		return content
 
@@ -1944,248 +1985,267 @@ class CompoundFetchManager(object):
 		
 		return Chem.MolToMolBlock(mol)
 
+	def log_error(self, error_description):
+		error_uuid = str(uuid.uuid1())
+
+		self.error_cur.execute("execute insert_error2 (%s, %s)", (error_uuid, error_description))
+
+		self.conn.commit()
+
+		return error_uuid
+
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
   		sys.exit('Invalid number of arguments provided')
-	
-	input_json_path = sys.argv[len(sys.argv)-2]
-	output_json_path = sys.argv[len(sys.argv)-1]
-	
-	input_json = None
-	
-	contents = ''
-	
-	with open(input_json_path, 'r') as f:
-		input_json = rapidjson.loads(f.read())
-	
-	manager = CompoundFetchManager()
 
-	upload_set = None
+	try:
+		input_json_path = sys.argv[len(sys.argv)-2]
+		output_json_path = sys.argv[len(sys.argv)-1]
 
-	output_json = {}
-	
-	user = None
-	project = None
-	
-	if '_username' in input_json:
-		user = input_json['_username']
-		
-	if 'project' in input_json:
-		project = input_json['project']
-		
-	if user is not None and project is not None:
-		manager.configure_for_user(user, project)
-		
-	safe = True	
-		
-	if 'project' in input_json:
-		if type(input_json['project']) is list:
-			for project in input_json['project']:
-				if not manager.auth_manager.has_project(input_json['_username'], project):
+		input_json = None
+
+		contents = ''
+
+		with open(input_json_path, 'r') as f:
+			input_json = rapidjson.loads(f.read())
+
+		manager = CompoundFetchManager()
+
+		upload_set = None
+
+		output_json = {}
+
+		user = None
+		project = None
+
+		if '_username' in input_json:
+			user = input_json['_username']
+
+		if 'project' in input_json:
+			project = input_json['project']
+
+		if user is not None and project is not None:
+			manager.configure_for_user(user, project)
+
+		safe = True
+
+		if 'project' in input_json:
+			if type(input_json['project']) is list:
+				for project in input_json['project']:
+					if not manager.auth_manager.has_project(input_json['_username'], project):
+						safe = False
+			else:
+				if not manager.auth_manager.has_project(input_json['_username'], input_json['project']):
 					safe = False
-		else:
-			if not manager.auth_manager.has_project(input_json['_username'], input_json['project']):
+		elif 'project_name' in input_json:
+			if not manager.auth_manager.has_project(input_json['_username'], input_json['project_name']):
 				safe = False
-	elif 'project_name' in input_json:
-		if not manager.auth_manager.has_project(input_json['_username'], input_json['project_name']):
-			safe = False
-			
-	if 'project' in input_json and not 'project_name' in input_json:
-		input_json['project_name'] = input_json['project']
-		
-	if safe:
-		if 'find_terms' in input_json:
-				if input_json['find_terms'] == '':
-					output_json['terms'] = []
+
+		if 'project' in input_json and not 'project_name' in input_json:
+			input_json['project_name'] = input_json['project']
+
+		if safe:
+			if 'find_terms' in input_json:
+					if input_json['find_terms'] == '':
+						output_json['terms'] = []
+					else:
+						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+						terms = manager.fetch_terms(input_json['find_terms'], input_json['_username'], input_json['project'])
+						output_json['entities'] = terms
+			elif 'action' in input_json:
+					if input_json['action'] == 'search':
+						if input_json['task'] == 'fetch':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+							output_json['upload_set'] = upload_set
+						elif input_json['task'] == 'count':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							count = manager.fetch_ctab_set_count(input_json['ctab_content'], input_json['_username'], input_json['search_terms'], input_json['project'])
+							output_json['count'] = count
+						elif input_json['task'] == 'export_sdf':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+							sdf_file = manager.get_sdf(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
+						elif input_json['task'] == 'export_excel':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+							excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
+					elif input_json['action'] == 'search_all':
+						if input_json['task'] == 'fetch':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							output_json['upload_set'] = upload_set
+						elif input_json['task'] == 'count':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							count = manager.fetch_project_set_count(input_json['_username'], input_json['project'])
+							output_json['count'] = count
+						elif input_json['task'] == 'export_sdf':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							sdf_file = manager.get_sdf(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
+						elif input_json['task'] == 'export_excel':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							excel_file = manager.get_excel(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
+					elif input_json['action'] == 'search_user_all':
+						if input_json['task'] == 'fetch':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							output_json['upload_set'] = upload_set
+						elif input_json['task'] == 'count':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							count = manager.fetch_project_set_user_count(input_json['_username'], input_json['project'])
+							output_json['count'] = count
+						elif input_json['task'] == 'export_sdf':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							sdf_file = manager.get_sdf(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
+						elif input_json['task'] == 'export_excel':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
+							excel_file = manager.get_excel(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
+					elif input_json['action'] == 'as_svg':
+						#PROTECTION: no _username is provided to this call as this function only returns an SVG of the supplied ctab.
+						#            NodeJS protects this function from unauthenticated users
+						svg_content = manager.get_ctab_as_svg(input_json['ctab_content'])
+						output_json['svg_content'] = svg_content
+					elif input_json['action'] == 'as_png':
+						png_content = manager.get_ctab_as_png(input_json['ctab_content'])
+						output_json['png_content'] = png_content
+					elif input_json['action'] == 'fetch_prefixes':
+						#PROTECTION: no _username is provided to this function as the list of prefixes is currently not project specific.
+						#	     NodeJS protects this function from unathenticated users
+						output_json['prefixes'] = manager.get_prefixes()
+					elif input_json['action'] == 'fetch_upload':
+						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+						if input_json['task'] == 'fetch':
+							upload_set = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'], input_json['to_row'], input_json['_username'])
+							output_json['upload_set'] = upload_set
+						elif input_json['task'] == 'count':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							count = manager.fetch_upload_set_count(input_json['upload_id'], input_json['_username'])
+							output_json['count'] = count
+						elif input_json['task'] == 'export_sdf':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'],input_json['to_row'], input_json['_username'])
+							sdf_file = manager.get_sdf(objs,  input_json['out_file'], input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
+						elif input_json['task'] == 'export_excel':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'],input_json['to_row'], input_json['_username'])
+							excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
+					elif input_json['action'] == 'fetch_exact':
+						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+						if input_json['task'] == 'fetch':
+							upload_set = manager.fetch_exact_set(input_json['ids'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project_name'])
+							output_json['upload_set'] = upload_set
+						elif input_json['task'] == 'count':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							count = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
+							output_json['count'] = count
+						elif input_json['task'] == 'export_sdf':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_exact_set_count(input_json['ids'], input_json['from_row'],input_json['to_row'], input_json['_username'], input_json['project_name'])
+							sdf_file = manager.get_sdf(objs,  input_json['out_file'], input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
+						elif input_json['task'] == 'export_excel':
+							#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
+							objs = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
+							excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
+					elif input_json['action'] == 'update_instructions':
+						if input_json['task'] == 'generate_update_instruction_file':
+							log_file  = manager.generate_update_instructions(input_json['_username'], input_json['project'], input_json['since_transaction_id'],input_json['out_file'], input_json['no_records'])
+							output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(log_file)
+					elif input_json['action'] == 'convert_smiles_to_ctab':
+						output_json['ctab_content'] = manager.convert_smiles_to_ctab(input_json['smiles'])
+
+			if (('forget_search' in input_json and not input_json['forget_search']) or 'forget_search' not in input_json ) and 'task' in input_json and input_json['task'] == 'count':
+				obj = {
+					'terms': None,
+					'compound_sdf': None,
+					'description':'',
+					'json': json.dumps(input_json),
+					'result_count': None,
+					'upload_upload_id': None
+				}
+
+				if 'ctab_content' in input_json:
+					obj['compound_sdf'] = input_json['ctab_content']
+
+				id_field = None
+
+				if 'search_terms' in input_json:
+					id_field = 'search_terms'
+				elif 'ids' in input_json:
+					id_field = 'ids'
+
+				if id_field is not None:
+					search_terms = input_json[id_field]
+
+					if search_terms is not None:
+						any_terms = []
+						for term in search_terms:
+							if term == None or term == '':
+								continue
+								#term = 'k$FgAa8bx<.~#LkzcQ()SK['
+							any_terms.append(term)
+
+						search_terms = any_terms
+
+					obj['terms'] = ' '.join(input_json[id_field])
+
+				if 'upload_id' in input_json:
+					obj['upload_upload_id'] = input_json['upload_id']
+
+				if 'count' in output_json:
+					obj['result_count'] = output_json['count']
 				else:
-					#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-					terms = manager.fetch_terms(input_json['find_terms'], input_json['_username'], input_json['project'])
-					output_json['entities'] = terms
-		elif 'action' in input_json:
-				if input_json['action'] == 'search':
-					if input_json['task'] == 'fetch':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
-						output_json['upload_set'] = upload_set
-					elif input_json['task'] == 'count':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						count = manager.fetch_ctab_set_count(input_json['ctab_content'], input_json['_username'], input_json['search_terms'], input_json['project'])
-						output_json['count'] = count
-					elif input_json['task'] == 'export_sdf':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
-						sdf_file = manager.get_sdf(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
-					elif input_json['task'] == 'export_excel':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
-						excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
-				elif input_json['action'] == 'search_all':
-					if input_json['task'] == 'fetch':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						output_json['upload_set'] = upload_set
-					elif input_json['task'] == 'count':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						count = manager.fetch_project_set_count(input_json['_username'], input_json['project'])
-						output_json['count'] = count
-					elif input_json['task'] == 'export_sdf':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						sdf_file = manager.get_sdf(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
-					elif input_json['task'] == 'export_excel':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						excel_file = manager.get_excel(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
-				elif input_json['action'] == 'search_user_all':
-					if input_json['task'] == 'fetch':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						output_json['upload_set'] = upload_set
-					elif input_json['task'] == 'count':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						count = manager.fetch_project_set_user_count(input_json['_username'], input_json['project'])
-						output_json['count'] = count
-					elif input_json['task'] == 'export_sdf':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						sdf_file = manager.get_sdf(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
-					elif input_json['task'] == 'export_excel':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						upload_set = manager.fetch_project_set_user(input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project'])
-						excel_file = manager.get_excel(upload_set,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
-				elif input_json['action'] == 'as_svg':
-					#PROTECTION: no _username is provided to this call as this function only returns an SVG of the supplied ctab.
-					#            NodeJS protects this function from unauthenticated users
-					svg_content = manager.get_ctab_as_svg(input_json['ctab_content'])
-					output_json['svg_content'] = svg_content
-				elif input_json['action'] == 'fetch_prefixes':
-					#PROTECTION: no _username is provided to this function as the list of prefixes is currently not project specific.
-					#	     NodeJS protects this function from unathenticated users
-					output_json['prefixes'] = manager.get_prefixes()
-				elif input_json['action'] == 'fetch_upload':
-					#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-					if input_json['task'] == 'fetch':
-						upload_set = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'], input_json['to_row'], input_json['_username'])
-						output_json['upload_set'] = upload_set
-					elif input_json['task'] == 'count':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						count = manager.fetch_upload_set_count(input_json['upload_id'], input_json['_username'])
-						output_json['count'] = count
-					elif input_json['task'] == 'export_sdf':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'],input_json['to_row'], input_json['_username'])
-						sdf_file = manager.get_sdf(objs,  input_json['out_file'], input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
-					elif input_json['task'] == 'export_excel':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_upload_set(input_json['upload_id'], input_json['from_row'],input_json['to_row'], input_json['_username'])
-						excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
-				elif input_json['action'] == 'fetch_exact':
-					#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-					if input_json['task'] == 'fetch':
-						upload_set = manager.fetch_exact_set(input_json['ids'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['project_name'])
-						output_json['upload_set'] = upload_set
-					elif input_json['task'] == 'count':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						count = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
-						output_json['count'] = count
-					elif input_json['task'] == 'export_sdf':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['from_row'],input_json['to_row'], input_json['_username'], input_json['project_name'])
-						sdf_file = manager.get_sdf(objs,  input_json['out_file'], input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
-					elif input_json['task'] == 'export_excel':
-						#PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-						objs = manager.fetch_exact_set_count(input_json['ids'], input_json['_username'], input_json['project_name'])
-						excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
-				elif input_json['action'] == 'update_instructions':
-					if input_json['task'] == 'generate_update_instruction_file':
-						log_file  = manager.generate_update_instructions(input_json['_username'], input_json['project'], input_json['since_transaction_id'],input_json['out_file'], input_json['no_records'])
-						output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(log_file)
-				elif input_json['action'] == 'convert_smiles_to_ctab':
-					output_json['ctab_content'] = manager.convert_smiles_to_ctab(input_json['smiles'])
-					
-		if (('forget_search' in input_json and not input_json['forget_search']) or 'forget_search' not in input_json ) and 'task' in input_json and input_json['task'] == 'count':
-			obj = {
-				'terms': None,
-				'compound_sdf': None,
-				'description':'',
-				'json': json.dumps(input_json),
-				'result_count': None,
-				'upload_upload_id': None
-			}
-			
-			if 'ctab_content' in input_json:
-				obj['compound_sdf'] = input_json['ctab_content']
-				
-			id_field = None	
-			
-			if 'search_terms' in input_json:
-				id_field = 'search_terms'
-			elif 'ids' in input_json:
-				id_field = 'ids'
-				
-			if id_field is not None:
-				search_terms = input_json[id_field]
-				
-				if search_terms is not None:			
-					any_terms = []
-					for term in search_terms:
-						if term == None or term == '':
-							continue
-							#term = 'k$FgAa8bx<.~#LkzcQ()SK['
-						any_terms.append(term)
-						
-					search_terms = any_terms
-				
-				obj['terms'] = ' '.join(input_json[id_field])
-				
-			if 'upload_id' in input_json:
-				obj['upload_upload_id'] = input_json['upload_id']
-				
-			if 'count' in output_json:
-				obj['result_count'] = output_json['count']
-			else:
-				obj['result_count'] = 0
-			
-			manager.store_fetch(obj, input_json['project'], input_json['_username'])
-			
-		if 'store_id' in input_json and 'task' in input_json and input_json['task'] in ('export_sdf', 'export_excel'):
-			store_id = input_json['store_id']
-			
-			search_project = input_json['project'] + '/Search History'
-			
-			manager.auth_manager.has_compound_permission(input_json['_username'], store_id)
-			
-			if manager.auth_manager.crud_manager is None:
-				from sdf_register import CompoundManager
-					
-				crud_manager = CompoundManager(manager.conn, manager.auth_manager)
-			else:
-				crud_manager = manager.auth_manager.crud_manager
-				
-			extension = None
-			if input_json['task'] == 'export_sdf':
-				extension = '.sdf'
-			if input_json['task'] == 'export_excel':
-				extension = '.xlsx'
-			
-			file_name = 'Results_' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + extension
-			
-			uuid = crud_manager.attach_file(input_json['_username'], store_id, output_json['out_file'], file_name)
-			
-			output_json['uuid'] = uuid
-			output_json['file_name'] = file_name
-	else:
-		output_json['error'] = 'Invalid user action'
+					obj['result_count'] = 0
+
+				manager.store_fetch(obj, input_json['project'], input_json['_username'])
+
+			if 'store_id' in input_json and 'task' in input_json and input_json['task'] in ('export_sdf', 'export_excel'):
+				store_id = input_json['store_id']
+
+				search_project = input_json['project'] + '/Search History'
+
+				manager.auth_manager.has_compound_permission(input_json['_username'], store_id)
+
+				if manager.auth_manager.crud_manager is None:
+					from sdf_register import CompoundManager
+
+					crud_manager = CompoundManager(manager.conn, manager.auth_manager)
+				else:
+					crud_manager = manager.auth_manager.crud_manager
+
+				extension = None
+				if input_json['task'] == 'export_sdf':
+					extension = '.sdf'
+				if input_json['task'] == 'export_excel':
+					extension = '.xlsx'
+
+				file_name = 'Results_' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + extension
+
+				uuid = crud_manager.attach_file(input_json['_username'], store_id, output_json['out_file'], file_name)
+
+				output_json['uuid'] = uuid
+				output_json['file_name'] = file_name
+		else:
+			output_json['error'] = 'Invalid user action'
+
+	except Exception as e:
+		tb = traceback.format_exc()
+		error_uuid = manager.log_error(tb)
+
+		output_json['error'] = 'Internal error - please contact the system administrator'
 
 	with open(output_json_path, 'w') as fw:
     		fw.write(rapidjson.dumps(output_json))

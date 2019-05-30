@@ -18,6 +18,8 @@ import csv
 import datetime
 import shutil
 
+import traceback
+
 # lGPL
 import psycopg2
 
@@ -83,6 +85,7 @@ class CompoundManager(object):
 
 		self.conn.cursor().execute('BEGIN')
 
+		
 		self.cur = self.conn.cursor()
 		
 		self.cur.execute(
@@ -383,7 +386,17 @@ class CompoundManager(object):
 						changes[entity_pkey]['batchable_id'] = False
 						changes[entity_pkey]['project_id'] = new_project_id
 						changes[entity_pkey]['upload_id'] = str(uuid.uuid4())
-						
+
+						if new_project_name == 'Users' and not 'bypass' in changes[entity_pkey]:
+							self._create_user(changes, entity_pkey)
+
+							changes[entity_pkey]['password'] = '<HIDDEN>'
+
+						if new_project_name == 'User to Project' and not 'bypass' in changes[entity_pkey]:
+							self._create_user_to_project(changes, entity_pkey)
+
+						if new_project_name.endswith('/Custom Fields'):
+							self._create_custom_field(changes, entity_pkey,new_project_name)
 						
 						self.insert_entity(changes[entity_pkey], new_project_name, new_project_fields_by_type)
 						
@@ -391,6 +404,10 @@ class CompoundManager(object):
 			
 						if new_project_def['enable_structure_field']:
 							self.batch_insert_ss_table(new_project_name, changes[entity_pkey]['upload_id'] )
+
+						# Handle the special projects table
+						if new_project_name == 'Projects' and not 'bypass' in changes[entity_pkey]:
+							self._create_project(changes, entity_pkey)
 			
 						continue
 					
@@ -403,6 +420,16 @@ class CompoundManager(object):
 			#TODO: Bottle-neck if updating a lot compounds
 			self.fetch_project_name_cur.execute('execute fetch_project_name (%s)', (entity_pkey,))
 			project_name = self.fetch_project_name_cur.fetchone()[0]
+
+			# Update custom projects for real tables
+			if project_name == 'Projects' and not 'bypass' in changes[entity_pkey]:
+				self._update_project(changes, entity_pkey)
+			elif project_name == 'Users' and not 'bypass' in changes[entity_pkey]:
+				self._update_user(changes, entity_pkey)
+			elif project_name == 'User to Project' and not 'bypass' in changes[entity_pkey]:
+				self._update_user_to_project(changes, entity_pkey)
+			elif project_name.endswith('/Custom Fields') and not 'bypass' in changes[entity_pkey]:
+				self._update_custom_field(changes, entity_pkey, new_project_name)
 			
 			project_fields = self.auth_manager.get_custom_fields(project_name)
 			
@@ -460,10 +487,10 @@ class CompoundManager(object):
 					field_before_update_function = field['before_update_function']
 
 					# Handle custom functions
-					if field_before_update_function is not None:
-						func_parts = field_before_update_function.split('.')
-						function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-						getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
+					#if field_before_update_function is not None:
+				#		func_parts = field_before_update_function.split('.')
+			#			function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+		#				getattr(function_module, func_parts[-1:][0])(field_name, changes[entity_pkey], compound_id)
 
 					cur = self.custom_field_cursors[field_type]
 					
@@ -531,6 +558,265 @@ class CompoundManager(object):
 
 		return updated_rows
 
+	def _update_custom_field(self, changes, entity_pkey, project_name):
+		entry = changes[entity_pkey]
+
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		name = old_entity['compound_id']
+		required = old_entity['required']
+		visible = old_entity['visible']
+		human_name = old_entity['human_name']
+		calculated = old_entity['calculated']
+		foreign_key_project = old_entity['foreign_key_project']
+		field_type = old_entity['type']
+
+		parent_project_name = re.sub('/Custom Fields$', '', project_name)
+
+		if 'name' in entry:
+			name = entry['name']
+
+		if 'required' in entry:
+			required = entry['required']
+
+		if 'visible' in entry:
+			visible = entry['visible']
+
+		if 'human_name' in entry:
+			human_name = entry['human_name']
+
+		if 'calculated' in entry:
+			calculated = entry['calculated']
+
+		if 'foreign_key_project' in entry:
+			if foreign_key_project != entry['foreign_key_project']:
+				raise Exception('You aren\'t allowed to changed foreign keys')
+
+			#foreign_key_project = entry['foreign_key_project']
+
+		if 'type' in entry:
+			if field_type != entry['type']:
+				raise Exception('You aren\'t allowed to change column types')
+
+			#field_type = entry['type']
+
+		self.auth_manager.update_custom_field_definition(old_entity['compound_id'],parent_project_name, name, required, visible, human_name, calculated)
+
+	def _create_custom_field(self, changes, entity_pkey, project_name):
+		entity = changes[entity_pkey]
+
+		field_name = entity['compound_id']
+		type_name = entity['type']
+		human_name = entity['human_name']
+		required = entity['required']
+		visible = entity['visible']
+		calculated = entity['calculated']
+
+		if 'foreign_key_project' in entity:
+			foreign_key_project = entity['foreign_key_project']
+
+		parent_project_name = re.sub('/Custom Fields$','',project_name)
+
+		if type_name == 'foreign_key' and foreign_key_project is None:
+			raise Exception('You must set the point to project')
+
+		self.auth_manager.add_custom_field(parent_project_name, type_name, field_name, human_name, required, visible, calculated)
+
+		if 'foreign_key_project' in entity:
+			self.auth_manager.create_foreign_key(parent_project_name, field_name, foreign_key_project)
+
+	def _create_user_to_project(self, changes, entity_pkey):
+		entity = changes[entity_pkey]
+
+		username = entity['user_user_id']
+		project_name = entity['user_project_id']
+
+		entity['compound_id'] = username + ' to ' + project_name
+
+		self.auth_manager.add_user_to_project(username, project_name)
+
+	def _update_user_to_project(self, changes, entity_pkey):
+		entity = changes[entity_pkey]
+
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		username = old_entity['user_user_id']
+		project_name = old_entity['user_project_id']
+
+		update = False
+
+		if 'user_user_id' in entity:
+			update = True
+
+			username = entity['user_user_id']
+
+		if 'user_project_id' in entity:
+			update = True
+			project_name = entity['user_project_id']
+
+		if update:
+			entity['compound_id'] = username + ' to ' + project_name
+
+			self.auth_manager.remove_user_from_project(old_entity['user_user_id'], old_entity['user_project_id'])
+
+			self.auth_manager.add_user_to_project(username, project_name)
+
+
+
+	def _create_user(self, changes, entity_pkey):
+		first_name = None
+		last_name = None
+		email = None
+		username = None
+		password = None
+		account_type = None
+
+		skip_external_check = False
+
+		entity = changes[entity_pkey]
+
+		if 'first_name' in entity:
+			first_name = entity['first_name']
+
+		if 'last_name' in entity:
+			last_name = entity['last_name']
+
+		if 'email' in entity:
+			email = entity['email']
+
+		if 'compound_id' in entity:
+			entity['compound_id'] = entity['compound_id'].lower()
+			username = entity['compound_id']
+
+			if not self.auth_manager.validate_project_term(username):
+				raise Exception('Username ends with a reserved word!')
+
+		if 'password' in entity:
+			password = entity['password']
+
+		if 'account_type' in entity:
+			account_type = entity['account_type']
+
+		self.auth_manager.register_user(first_name, last_name, email, username, password, account_type, skip_external_check)
+
+		if 'enable' in entity:
+			if entity['enable']:
+				self.auth_manager.enable_user(username)
+			else:
+				self.auth_manager.disable_user(username)
+
+	def _create_project(self, changes, entity_pkey):
+		id_group_name = None
+
+		if 'id_group_name' in changes[entity_pkey]:
+			id_group_name = changes[entity_pkey]['id_group_name']
+
+		row_project_name = changes[entity_pkey]['compound_id']
+
+		if not self.auth_manager.validate_project_term(row_project_name):
+			raise Exception('Project name ends with a reserved word!')
+
+		self.auth_manager.create_project(row_project_name, id_group_name)
+
+		self._update_project_configuration(changes, entity_pkey)
+
+		self.auth_manager.add_user_to_project('administrator', changes[entity_pkey]['compound_id'])
+
+	def _update_project(self, changes, entity_pkey):
+		old_entity = self.fetch_manager.get_entity(entity_pkey, True)
+
+		old_project_name = old_entity['compound_id']
+
+		if 'compound_id' in changes[entity_pkey]:
+			new_project_name = changes[entity_pkey]['compound_id']
+
+			if not self.auth_manager.validate_project_term(new_project_name):
+				raise Exception('Project name ends with a reserved word!')
+
+			self.auth_manager.rename_project(new_project_name, old_project_name)
+
+		self._update_project_configuration(changes, entity_pkey)
+
+	def _update_user(self, changes, entity_pkey):
+		entry = changes[entity_pkey]
+		old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+
+		original_username = old_entity['compound_id']
+
+		first_name = old_entity['first_name']
+		last_name = old_entity['last_name']
+		email = old_entity['email']
+		username = old_entity['compound_id']
+		#password = old_entity['password']
+		password = None
+		account_type = old_entity['account_type']
+
+		if 'first_name' in entry:
+			first_name = entry['first_name']
+
+		if 'last_name' in entry:
+			last_name = entry['last_name']
+
+		if 'email' in entry:
+			email = entry['email']
+
+		if 'password' in entry:
+			password = entry['password']
+
+			entry['password'] = '<HIDDEN>'
+
+		if 'account_type' in entry:
+			account_type = entry['account_type']
+
+		if 'compound_id' in entry:
+			username = entry['compound_id'].lower()
+
+			if not self.auth_manager.validate_project_term(username):
+				raise Exception('Username ends with a reserved word!')
+
+		self.auth_manager.update_user(original_username, first_name, last_name, email, username, password, account_type)
+
+		if 'enable' in entry:
+			if entry['enable']:
+				self.auth_manager.enable_user(username)
+			else:
+				self.auth_manager.disable_user(username)
+
+
+	def _update_project_configuration(self, changes, entity_pkey):
+		row_project_name = None
+
+		enable_structure_field = False
+		enable_attachment_field = False
+		entity_name = None
+		enable_addition = False
+
+		if 'compound_id' in changes[entity_pkey]:
+			row_project_name = changes[entity_pkey]['compound_id']
+		else:
+			old_entity = self.fetch_manager.get_entity(entity_pkey, False)
+			row_project_name = old_entity['compound_id']
+
+			enable_structure_field = old_entity['enable_structure_field']
+			enable_attachment_field = old_entity['enable_attachment_field']
+			enable_addition = old_entity['enable_addition']
+			entity_name = old_entity['entity_name']
+
+		if 'enable_attachment_field' in changes[entity_pkey]:
+			enable_attachment_field = changes[entity_pkey]['enable_attachment_field']
+
+		if 'enable_structure_field' in changes[entity_pkey]:
+			enable_structure_field = changes[entity_pkey]['enable_structure_field']
+
+		if 'entity_name' in changes[entity_pkey]:
+			entity_name = changes[entity_pkey]['entity_name']
+
+		if 'enable_addition' in changes[entity_pkey]:
+			enable_addition = changes[entity_pkey]['enable_addition']
+
+		self.auth_manager.update_project_configuration(row_project_name, enable_structure_field, enable_attachment_field, entity_name, enable_addition)
+
+
 	def delete_file_upload(self, username, file_uuid):
 		self.fetch_compound_for_upload_cur.execute("execute fetch_compound_for_upload (%s)",(file_uuid,))
 		row = self.fetch_compound_for_upload_cur.fetchone()
@@ -552,31 +838,101 @@ class CompoundManager(object):
 
 	def delete_compound(self, username, id):
 		if self.auth_manager.has_compound_permission(username, id):
+			uuid_str = str(uuid.uuid4())
+
+			entity = self.fetch_manager.get_entity(id, False)
+
+
+			if entity['project_name'] == 'User to Project':
+				self.auth_manager.remove_user_from_project(entity['user_user_id'], entity['user_project_id'])
+
+			if entity['project_name'].endswith('/Custom Fields'):
+				# This should be archive custom fields
+				self.auth_manager.delete_custom_field(id)
+
 			file_objs = self.fetch_manager.get_file_uploads(id)
 			for file_obj in file_objs:
 				file_path = file_obj['file_path']
 				os.unlink(file_path)
 
-			self.archive_compound_cur.execute("execute archive_compound (%s,%s,%s)",(id,self.transaction_id,str(uuid.uuid4())))
+			if entity['project_name'] == 'Projects':
+				self.auth_manager.delete_project(entity['compound_id'], uuid_str)
+
+			if entity['project_name'] == 'Users':
+				self.conn.cursor().execute('''
+					update
+						compounds
+					set
+						archived_transaction_id = %s
+					where
+						id = %s
+				''',(self.transaction_id, id))
+			else:
+				self.archive_compound_cur.execute("execute archive_compound (%s,%s,%s)",(id,self.transaction_id,uuid_str))
 			
 			self.monotone_transaction_ids()
 			
 			self.conn.commit()
 		else:
-			raise authenticate.UnauthorisedException('User not authorised for compound ' + id)	
+			raise authenticate.UnauthorisedException('User not authorised for compound ' + id)
+
+	def archive_all(self, project_name, on_update_cascade = False, uuid_str = str(uuid.uuid4())):
+		# When a project gets deleted all pointers to that project need to be archived
+		self.conn.cursor().execute('''set constraints custom_foreign_key_field_parent_project_id_fkey1 deferred''')
+
+		# All rows in project project_name are archived
+		self.conn.cursor().execute('''
+			update
+				compounds
+			set
+				compound_id = compound_id || '_archived_' || %s,
+				archived_transaction_id = %s
+			where
+				project_id = (select id from projects where project_name=%s)
+		''',(uuid_str,self.transaction_id, project_name))
+
+		if on_update_cascade:
+			# All rows pointing at rows from project project_name are archived
+			self.conn.cursor().execute('''
+				update
+					custom_foreign_key_field
+				set
+					custom_field_value = custom_field_value || '_archived_' || %s,
+					archived_transaction_id = %s
+				where
+					parent_project_id = (select id from projects where project_name=%s)
+			''', (uuid_str, self.transaction_id, project_name))
+
+			# Remove custom fields which reference the removed project
+			self.conn.cursor().execute('''
+				update
+					compounds
+				set
+					compound_id = compound_id || '_archived_' || %s,
+					archived_transaction_id = %s
+				where
+					id = any(
+						select
+							entity_id
+						from
+							custom_foreign_key_field
+						where
+							parent_project_id = (select id from projects where project_name = %s)
+					) and
+					project_id = any(select id from projects where project_name like %s)
+			''',(uuid_str, self.transaction_id, project_name, '%/Custom Fields'))
+
+		self.monotone_transaction_ids()
 
 	def add_salt(self, salt_code, salt_mol, salt_description):
 		salt_str = codecs.encode(salt_mol, 'base64').decode('ascii').rstrip()
 		self.insert_salt_cur.execute("execute insert_salt (%s,%s,%s)", (salt_code, salt_str, salt_description))
-		
-	
+
 	def add_salts(self, salts):
 		for salt in salts:
 			self.add_salt(salt['salt_code'], salt['salt_mol'], salt['salt_description'])
 
 		self.conn.commit()
-
-	
 
 	def create_prefix(self, prefix_code, description):
 		self.insert_prefix_code_cur.execute("execute insert_prefix_code (%s, %s)",(prefix_code, description))
@@ -630,6 +986,27 @@ class CompoundManager(object):
 
 		for row in self.supplier_list_cur.fetchall():
 			self.supplier_list[row[0]] = 1
+
+	def log_error(self, error_description):
+		error_uuid = str(uuid.uuid1())
+
+		conn = ConnectionManager.get_new_connection()
+
+		error_cur = conn.cursor()
+		error_cur.execute('''
+			prepare insert_error as
+			insert into error_log (
+				error_uuid,
+				error_description
+			)
+			values($1,$2)
+		''')
+
+		error_cur.execute("execute insert_error (%s, %s)", (error_uuid, error_description))
+
+		conn.commit()
+
+		return error_uuid
 			
 	def get_next_id(self, id_prefix, project_name):
 		next_int = 1
@@ -688,10 +1065,13 @@ class CompoundManager(object):
 		
 		# Batch on a separate column
 		if batchable_defaults['map_column'] is not None:
+			# Name of column in user file to batch with
 			col_name = batchable_defaults['map_column']
-				
+
+			# Iterate upload defaults
 			for field_name in upload_defaults.keys():
-				if 'map_column' in upload_defaults[field_name]:
+				# Check if user is mapping column
+				if field_name != 'batchable' and 'map_column' in upload_defaults[field_name]:
 					if col_name == upload_defaults[field_name]['map_column']:
 						batch_on_field = field_name
 						break
@@ -1113,10 +1493,10 @@ class CompoundManager(object):
 				field_before_update_function = field['before_update_function']
 
 				# Handle custom functions
-				if field_before_update_function is not None:
-					func_parts = field_before_update_function.split('.')
-					function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
-					getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
+				#f field_before_update_function is not None:
+				#func_parts = field_before_update_function.split('.')
+				#function_module = __import__('.'.join(func_parts[:-1]), fromlist=[''])
+				#getattr(function_module, func_parts[-1:][0])(field_name, obj, obj['compound_id'])
 				
 				field_value = None
 				
@@ -1227,14 +1607,14 @@ class CompoundManager(object):
 				mol_str = sheet.cell_value(i, mol_column)
 			else:
 				mol_str = mol_default
-				
+
 			if mol_str.startswith('InChI'):
 				mol = Chem.MolFromInchi(mol_str)
 			else:
 				mol = Chem.MolFromSmiles(mol_str)
-			
+
 			if mol is None:
-				raise RegistrationException('Compound on row ' + str(j) + ' is invalid')
+				raise RegistrationException('Compound on row ' + str(i) + ' is invalid')
 				
 			for j in range(0, columns):
 				value = sheet.cell_value(i,j)
@@ -1700,6 +2080,20 @@ class CompoundManager(object):
 		cur.execute('update compounds set update_transaction_id=%s where update_transaction_id=%s', (new_transaction_id, self.transaction_id))
 		cur.execute('update compounds set archived_transaction_id=%s where archived_transaction_id=%s', (new_transaction_id, self.transaction_id))
 
+	#def import_core_projects(self):
+#		cur = self.conn.cursor()#
+		#cur.execute('''
+		#	select
+		#		project_name, entity_name, enable_structure_field, enable_attachment_field, id_group_name, enable_addition)
+		#	from
+		#		projects
+#
+#		''')
+
+
+
+
+
 class ValueToLongException(Exception):
 	def __init__(self, value):
 		self.value = value
@@ -1781,213 +2175,28 @@ if __name__ == '__main__':
 	
 	with open(input_json_path, 'r') as f:
 		input_json = json.load(f)
-	
+
+	output_json = {}
+
 	manager = CompoundManager()
 
-	if 'save_changes' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		changes = input_json['save_changes']
-		username = input_json['_username']
-		project_name = input_json['project_name']
-		output_json = {'error': None}
-		
-		error = None
-		
-		try:
-			output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-		except authenticate.UnauthorisedException as e:
-			error = e.value
-		except InvalidFieldNameException as e:
-			error = e.value
-		except RegistrationException as e:
-			error = e.value 
-		except MissingEntityException as e:
-			error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-			output_json['missing_entity'] = e.value
-		except NotNullException as e:
-			error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-			output_json['not_null_exception'] = e.value	
-		except InvalidValueException as e:
-			error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-			output_json['invalid_exception'] = e.value
-		except InvalidCustomFieldValue as e:
-			error = e.value
-			
-		output_json['error'] = error
-			
-	elif 'delete_file' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		file_uuid = input_json['delete_file']
-		username = input_json['_username']
+	try:
+		if 'save_changes' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			changes = input_json['save_changes']
+			username = input_json['_username']
+			project_name = input_json['project_name']
+			output_json = {'error': None}
 
-		output_json = {'error': None}
+			error = None
 
-		try:
-			manager.delete_file_upload(username, file_uuid)
-		except authenticate.UnauthorisedException as e:
-			ouput_json['error'] = str(e)
-		except InvalidFileUUIDException as e:
-			output_json['error'] = str(e)
-
-	elif 'delete_compound' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		id = input_json['delete_compound']
-		username = input_json['_username']
-
-		output_json = {'error' : None}	
-
-		try:
-			manager.delete_compound(username, id)
-		except authenticate.UnauthorisedException as e:
-			output_json['error'] = str(e) 	
-	elif 'delete_upload_set' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		upload_id = input_json['upload_id']
-		username = input_json['_username']
-		project_name = input_json['project_name']
-
-		output_json = {'error' : None}	
-
-		try:
-			manager.delete_upload_set(username, upload_id, project_name)
-			
-			manager.monotone_transaction_ids()
-			
-			manager.conn.commit()
-			
-		except authenticate.UnauthorisedException as e:
-			output_json['error'] = str(e) 	
-	elif 'register_supplier' in input_json:
-		#PROTECTION: _username is provided here as at the moment all users can create suppliers
-		#           NodeJS protects this function from unauthenticated users
-
-		supplier = input_json['register_supplier']
-		manager.register_supplier(supplier)
-
-		output_json = {'error': None}
-	elif 'upload_key_attach' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-		file_path = input_json['upload_key_attach']
-		compound_id = input_json['id']
-		file_name = input_json['file_name']
-		username = input_json['_username']
-
-		error = None
-		upload_uuid = None
-		try:
-			upload_uuid = manager.attach_file(username, compound_id, file_path, file_name)
-		except authenticate.UnauthorisedException as e:
-			error = str(e)
-
-		output_json = {'error': error, 'uuid': upload_uuid}
-	elif 'upload_key_sdf' in input_json:
-		#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
-
-		upload_id = None
-		error = None
-
-		username = input_json['_username']
-		project_name = input_json['project_name']
-
-		#TODO: Move this check into register_from_ctab as all the other methods check the username there self
-		if manager.auth_manager.has_project(username, project_name):
-			project_id = manager.auth_manager.get_project_id(project_name)
-			
-			output_json = {}
-			
 			try:
-				with open('/tmp/cmp_reg.log', 'w') as fw:
-					input_file = input_json['upload_key_sdf']
-					
-					username = input_json['_username']
-					project_name = input_json['project_name']
-					output_json = {'error': None}
-					
-					if '_update' in input_json['upload_defaults'] and input_json['upload_defaults']['_update']['default_value']:
-						if input_json['name'].endswith('.xlsx'):
-							changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name)	
-						elif input_json['name'].endswith('.csv'):
-							changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name)	
-						elif input_json['name'].endswith('.txt'):
-							changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name)	
-						elif input_json['name'].endswith('sdf'):
-							changes = manager.convert_ctab_to_changes(input_file,input_json['upload_defaults'],project_name)	
-						
-						error = None
-						
-						try:
-							output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-						except authenticate.UnauthorisedException as e:
-							error = e.value
-						except InvalidFieldNameException as e:
-							error = e.value
-						except RegistrationException as e:
-							error = e.value 
-						except MissingEntityException as e:
-							error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-							output_json['missing_entity'] = e.value
-						except NotNullException as e:
-							error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-							output_json['not_null_exception'] = e.value	
-						except InvalidValueException as e:
-							error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-							output_json['invalid_exception'] = e.value
-						except InvalidCustomFieldValue as e:
-							output_json['invalid_exception'] = e.value
-							
-						output_json['error'] = error
-					else:					
-						project_def = manager.auth_manager.get_project_configuration(project_name)
-						
-						if project_def['enable_structure_field']:	
-							original_file = None
-							if input_json['name'].endswith('.xlsx'):
-								original_file = input_file	
-								input_file = manager.convert_excel_to_sdf(input_file,input_json['upload_defaults'])	
-							elif input_json['name'].endswith('.csv'):
-								original_file = input_file	
-								input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],',')
-							elif input_json['name'].endswith('.txt'):
-								original_file = input_file	
-								input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],'\t')
-								
-							upload_id = manager.register_from_ctab(input_file, input_json['_username'], input_json['upload_defaults'],input_json['project_name'], fw, None, input_json['name'], original_file)['upload_id']
-						else:
-							if input_json['name'].endswith('.xlsx'):
-								changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name, True)	
-							elif input_json['name'].endswith('.csv'):
-								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name,True)	
-							elif input_json['name'].endswith('.txt'):
-								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name,True)	
-								
-							error = None
-						
-							try:
-								output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
-							except authenticate.UnauthorisedException as e:
-								error = e.value
-							except InvalidFieldNameException as e:
-								error = e.value
-							except RegistrationException as e:
-								error = e.value 
-							except MissingEntityException as e:
-								error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
-								output_json['missing_entity'] = e.value
-							except NotNullException as e:
-								error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
-								output_json['not_null_exception'] = e.value	
-							except InvalidValueException as e:
-								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
-								output_json['invalid_exception'] = e.value
-							except InvalidCustomFieldValue as e:
-								error = e.value
-								
-							output_json['error'] = error
-						
-						
-			except RegistrationException as e:
+				output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+			except authenticate.UnauthorisedException as e:
 				error = e.value
-			except InvalidPrefixException as e:
+			except InvalidFieldNameException as e:
+				error = e.value
+			except RegistrationException as e:
 				error = e.value
 			except MissingEntityException as e:
 				error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
@@ -1998,20 +2207,212 @@ if __name__ == '__main__':
 			except InvalidValueException as e:
 				error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
 				output_json['invalid_exception'] = e.value
-			except ValueToLongException as e:
-				error = 'Field ' + e.value['human_name'] + ' has value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id'] + ' larger than 4,000 characters'
-				output_json['invalid_exception'] = e.value
-			except InvalidCharacterException as e:
-				error = e.value
-				output_json['invalid_exception'] = e.value
 			except InvalidCustomFieldValue as e:
 				error = e.value
-				
-			output_json['upload_id'] = upload_id
+
 			output_json['error'] = error
-		else:
-			output_json = {'error': 'Not authorised for requested project'}	
+
+		elif 'delete_file' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			file_uuid = input_json['delete_file']
+			username = input_json['_username']
+
+			output_json = {'error': None}
+
+			try:
+				manager.delete_file_upload(username, file_uuid)
+			except authenticate.UnauthorisedException as e:
+				ouput_json['error'] = str(e)
+			except InvalidFileUUIDException as e:
+				output_json['error'] = str(e)
+
+		elif 'delete_compound' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			id = input_json['delete_compound']
+			username = input_json['_username']
+
+			output_json = {'error' : None}
+
+			try:
+				manager.delete_compound(username, id)
+			except authenticate.UnauthorisedException as e:
+				output_json['error'] = str(e)
+		elif 'delete_upload_set' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			upload_id = input_json['upload_id']
+			username = input_json['_username']
+			project_name = input_json['project_name']
+
+			output_json = {'error' : None}
+
+			try:
+				manager.delete_upload_set(username, upload_id, project_name)
+
+				manager.monotone_transaction_ids()
+
+				manager.conn.commit()
+
+			except authenticate.UnauthorisedException as e:
+				output_json['error'] = str(e)
+		elif 'register_supplier' in input_json:
+			#PROTECTION: _username is provided here as at the moment all users can create suppliers
+			#           NodeJS protects this function from unauthenticated users
+
+			supplier = input_json['register_supplier']
+			manager.register_supplier(supplier)
+
+			output_json = {'error': None}
+		elif 'upload_key_attach' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+			file_path = input_json['upload_key_attach']
+			compound_id = input_json['id']
+			file_name = input_json['file_name']
+			username = input_json['_username']
+
+			error = None
+			upload_uuid = None
+			try:
+				upload_uuid = manager.attach_file(username, compound_id, file_path, file_name)
+			except authenticate.UnauthorisedException as e:
+				error = str(e)
+
+			output_json = {'error': error, 'uuid': upload_uuid}
+		elif 'upload_key_sdf' in input_json:
+			#PROTECTION: _username is provided by NodeJS as the real username and can't be faked  by the client
+
+			upload_id = None
+			error = None
+
+			username = input_json['_username']
+			project_name = input_json['project_name']
+
+			#TODO: Move this check into register_from_ctab as all the other methods check the username there self
+			if manager.auth_manager.has_project(username, project_name):
+				project_id = manager.auth_manager.get_project_id(project_name)
+
+				output_json = {}
+
+				try:
+					with open('/tmp/cmp_reg.log', 'w') as fw:
+						input_file = input_json['upload_key_sdf']
+
+						username = input_json['_username']
+						project_name = input_json['project_name']
+						output_json = {'error': None}
+
+						if '_update' in input_json['upload_defaults'] and input_json['upload_defaults']['_update']['default_value']:
+							if input_json['name'].endswith('.xlsx'):
+								changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name)
+							elif input_json['name'].endswith('.csv'):
+								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name)
+							elif input_json['name'].endswith('.txt'):
+								changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name)
+							elif input_json['name'].endswith('sdf'):
+								changes = manager.convert_ctab_to_changes(input_file,input_json['upload_defaults'],project_name)
+
+							error = None
+
+							try:
+								output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+							except authenticate.UnauthorisedException as e:
+								error = e.value
+							except InvalidFieldNameException as e:
+								error = e.value
+							except RegistrationException as e:
+								error = e.value
+							except MissingEntityException as e:
+								error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+								output_json['missing_entity'] = e.value
+							except NotNullException as e:
+								error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+								output_json['not_null_exception'] = e.value
+							except InvalidValueException as e:
+								error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+								output_json['invalid_exception'] = e.value
+							except InvalidCustomFieldValue as e:
+								output_json['invalid_exception'] = e.value
+
+							output_json['error'] = error
+						else:
+							project_def = manager.auth_manager.get_project_configuration(project_name)
+
+							if project_def['enable_structure_field']:
+								original_file = None
+								if input_json['name'].endswith('.xlsx'):
+									original_file = input_file
+									input_file = manager.convert_excel_to_sdf(input_file,input_json['upload_defaults'])
+								elif input_json['name'].endswith('.csv'):
+									original_file = input_file
+									input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],',')
+								elif input_json['name'].endswith('.txt'):
+									original_file = input_file
+									input_file = manager.convert_csv_to_sdf(input_file,input_json['upload_defaults'],'\t')
+
+								upload_id = manager.register_from_ctab(input_file, input_json['_username'], input_json['upload_defaults'],input_json['project_name'], fw, None, input_json['name'], original_file)['upload_id']
+							else:
+								if input_json['name'].endswith('.xlsx'):
+									changes = manager.convert_excel_to_changes(input_file,input_json['upload_defaults'],project_name, True)
+								elif input_json['name'].endswith('.csv'):
+									changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],',',project_name,True)
+								elif input_json['name'].endswith('.txt'):
+									changes = manager.convert_csv_to_changes(input_file,input_json['upload_defaults'],'\t',project_name,True)
+
+								error = None
+
+								try:
+									output_json['refreshed_objects'] = manager.save_changes(username, changes, project_name)
+								except authenticate.UnauthorisedException as e:
+									error = e.value
+								except InvalidFieldNameException as e:
+									error = e.value
+								except RegistrationException as e:
+									error = e.value
+								except MissingEntityException as e:
+									error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+									output_json['missing_entity'] = e.value
+								except NotNullException as e:
+									error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+									output_json['not_null_exception'] = e.value
+								except InvalidValueException as e:
+									error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+									output_json['invalid_exception'] = e.value
+								except InvalidCustomFieldValue as e:
+									error = e.value
+
+								output_json['error'] = error
+
+
+				except RegistrationException as e:
+					error = e.value
+				except InvalidPrefixException as e:
+					error = e.value
+				except MissingEntityException as e:
+					error = 'Missing ' + e.value['project_name'] + ' ' + e.value['entity_id']
+					output_json['missing_entity'] = e.value
+				except NotNullException as e:
+					error = 'Field ' + e.value['human_name'] + ' can\'t be null ' + ' for ' + e.value['compound_id']
+					output_json['not_null_exception'] = e.value
+				except InvalidValueException as e:
+					error = 'Field ' + e.value['human_name'] + ' has incorrect value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id']
+					output_json['invalid_exception'] = e.value
+				except ValueToLongException as e:
+					error = 'Field ' + e.value['human_name'] + ' has value '  + ' ' + str(e.value['value']) + ' for ' + e.value['compound_id'] + ' larger than 4,000 characters'
+					output_json['invalid_exception'] = e.value
+				except InvalidCharacterException as e:
+					error = e.value
+					output_json['invalid_exception'] = e.value
+				except InvalidCustomFieldValue as e:
+					error = e.value
+
+				output_json['upload_id'] = upload_id
+				output_json['error'] = error
+			else:
+				output_json = {'error': 'Not authorised for requested project'}
+	except Exception as e:
+		tb = traceback.format_exc()
+		error_uuid = manager.log_error(tb)
+
+		output_json['error'] = 'Internal error - please contact the system administrator'
 
 	with open(output_json_path, 'w') as fw:
 		fw.write(json.dumps(output_json))
-		
