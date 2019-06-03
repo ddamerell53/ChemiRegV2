@@ -1826,6 +1826,9 @@ class CompoundFetchManager(object):
 
         mol = Chem.MolFromMolBlock(desalted_mol_block)
 
+        if ctab is not None and ctab != '' and mol is None or mol.GetNumAtoms() == 0:
+            mol = Chem.MolFromMolBlock(ctab)
+
         if mol is None or mol.GetNumAtoms() == 0:
             self.fetch_set_cur.execute('''
                 execute fetch_set (%s, %s,%s,%s)
@@ -1837,6 +1840,7 @@ class CompoundFetchManager(object):
         else:
             smiles = Chem.MolToSmiles(mol)
             if sim_threshold is None:
+                # If we get here then we are performing a substructure search
                 if terms is not None and len(terms) > 0:
                     self.fetch_ctab_set_cur.execute('''
                         execute fetch_ctab_set (%s,%s, %s,%s,%s)
@@ -1850,6 +1854,7 @@ class CompoundFetchManager(object):
 
                     rows = self.fetch_ctab_set_only_cur.fetchall()
             else:
+                #If we get here we are performing a similarity search
                 if terms is not None and len(terms) > 0:
                     self.fetch_sim_ctab_set_cur.execute('''
                         execute fetch_sim_ctab_set (%s,%s, %s,%s,%s,%s)
