@@ -495,6 +495,271 @@ class CompoundFetchManager(object):
 
         ''')
 
+        # Start of Similarity search
+
+        self.fetch_sim_ctab_set_only_count_cur = self.conn.cursor()
+        self.fetch_sim_ctab_set_only_count_cur.execute('''
+            prepare fetch_sim_ctab_set_only_count as
+            select
+                count(compounds.compound_id)
+            from
+            (
+                select
+                    custom_text_fields.entity_id
+                from
+                    custom_text_fields,
+                    custom_fields,
+                    compounds_idx
+                where
+                    compounds_idx.custom_field_id = custom_text_fields.id and
+                    tanimoto_sml(morganbv_fp(mol_from_ctab($1::cstring)),morgan_fingerprint) > $3 and
+                    custom_text_fields.custom_field_id = custom_fields.id and
+                    custom_fields.ss_field = true
+            ) a join
+            compounds on (compounds.id = a.entity_id) join
+            projects on (compounds.project_id = projects.id) join
+            users on (compounds.user_id = users.id) and
+            compounds.archived_transaction_id is null
+            where
+                projects.project_name = $2
+
+        ''')
+
+        self.fetch_sim_ctab_set_count_cur = self.conn.cursor()
+        self.fetch_sim_ctab_set_count_cur.execute('''
+            prepare fetch_sim_ctab_set_count as
+            select
+                count(distinct compound_id)
+            from (
+                select
+                    compounds.compound_id as compound_id
+                from
+                    compounds,
+                    users,
+                    projects
+                where
+                    (upper(compounds.compound_id) like any($3) or compounds.user_id = any(select id from users where upper(username) like any($3))) and
+                    projects.project_name = $2 and
+                    compounds.project_id = projects.id and
+                    compounds.user_id = users.id and
+                    compounds.archived_transaction_id is null
+                union
+                    select
+                        compounds.compound_id as compound_id
+                    from
+                        (
+                            select
+                                custom_varchar_fields.entity_id
+                            from
+                                custom_varchar_fields,
+                                custom_fields
+                            where
+                                upper(custom_varchar_fields.custom_field_value) like any($3) and
+                                custom_varchar_fields.custom_field_id = custom_fields.id and
+                                custom_fields.searchable = true
+                        ) a join
+                        compounds on (compounds.id = a.entity_id) join
+                        projects on (compounds.project_id = projects.id) join
+                        users on (compounds.user_id = users.id) and
+                        compounds.archived_transaction_id is null
+
+                    where
+                        projects.project_name = $2
+                union
+                    select
+                        compounds.compound_id as compound_id
+                    from
+                        (
+                            select
+                                custom_foreign_key_field.entity_id
+                            from
+                                custom_foreign_key_field,
+                                custom_fields
+                            where
+                                upper(custom_foreign_key_field.custom_field_value) like any($3) and
+                                custom_foreign_key_field.custom_field_id = custom_fields.id and
+                                custom_fields.searchable = true
+                        ) a join
+                        compounds on (compounds.id = a.entity_id) join
+                        projects on (compounds.project_id = projects.id) join
+                        users on (compounds.user_id = users.id) and
+                        compounds.archived_transaction_id is null
+
+                    where
+                        projects.project_name = $2
+                union
+                    select
+                        compounds.compound_id
+                    from
+                    (
+                        select
+                            custom_text_fields.entity_id
+                        from
+                            custom_text_fields,
+                            custom_fields,
+                            compounds_idx
+                        where
+                            compounds_idx.custom_field_id = custom_text_fields.id and
+                            tanimoto_sml(morganbv_fp(mol_from_ctab($1::cstring)),morgan_fingerprint) > $4 and
+                            custom_text_fields.custom_field_id = custom_fields.id and
+                            custom_fields.ss_field = true
+                    ) a join
+                    compounds on (compounds.id = a.entity_id) join
+                    projects on (compounds.project_id = projects.id) join
+                    users on (compounds.user_id = users.id) and
+                    compounds.archived_transaction_id is null
+                    where
+                        projects.project_name = $2
+            )  a
+        ''')
+
+        self.fetch_sim_ctab_set_only_cur = self.conn.cursor()
+        self.fetch_sim_ctab_set_only_cur.execute('''
+            prepare fetch_sim_ctab_set_only as
+            select
+                    compounds.compound_id,
+                    users.username,
+                    compounds.id,
+                    extract('epoch' from compounds.date_record_created) as date_record_created,
+                    compounds.batchable
+                from
+                (
+                    select
+                        custom_text_fields.entity_id
+                    from
+                        custom_text_fields,
+                        custom_fields,
+                        compounds_idx
+                    where
+                        compounds_idx.custom_field_id = custom_text_fields.id and
+                        tanimoto_sml(morganbv_fp(mol_from_ctab($1::cstring)),morgan_fingerprint) > $5 and
+                        custom_text_fields.custom_field_id = custom_fields.id and
+                        custom_fields.ss_field = true
+                ) a join
+                compounds on (compounds.id = a.entity_id) join
+                projects on (compounds.project_id = projects.id) join
+                users on (compounds.user_id = users.id) and
+                compounds.archived_transaction_id is null
+                where
+                    projects.project_name = $4
+            order by date_record_created desc, compound_id
+            limit $2 offset $3
+
+        ''')
+  
+        self.fetch_sim_ctab_set_cur = self.conn.cursor()
+        self.fetch_sim_ctab_set_cur.execute('''
+            prepare fetch_sim_ctab_set as
+            select
+                a.compound_id,
+                a.username,
+                a.id,
+                a.date_record_created,
+                a.batchable
+            from (
+                select
+                    compounds.compound_id as compound_id,
+                        users.username,
+                        compounds.id,
+                        extract('epoch' from compounds.date_record_created) as date_record_created,
+                        compounds.batchable
+                from
+                    compounds,
+                    users,
+                    projects
+                where
+                   (upper(compounds.compound_id) like any($5) or compounds.user_id = any(select id from users where upper(username) like any($5))) and
+                    projects.project_name = $4 and
+                    compounds.project_id = projects.id and
+                    compounds.user_id = users.id and
+                    compounds.archived_transaction_id is null
+                union
+                    select
+                        compounds.compound_id as compound_id,
+                        users.username,
+                        compounds.id,
+                        extract('epoch' from compounds.date_record_created) as date_record_created,
+                        compounds.batchable
+                    from
+                        (
+                            select
+                                custom_varchar_fields.entity_id
+                            from
+                                custom_varchar_fields,
+                                custom_fields
+                            where
+                                upper(custom_varchar_fields.custom_field_value) like any($5) and
+                                custom_varchar_fields.custom_field_id = custom_fields.id and
+                                custom_fields.searchable = true
+                        ) a join
+                        compounds on (compounds.id = a.entity_id) join
+                        projects on (compounds.project_id = projects.id) join
+                        users on (compounds.user_id = users.id) and
+                        compounds.archived_transaction_id is null
+
+                    where
+                        projects.project_name = $4
+                union
+                    select
+                        compounds.compound_id as compound_id,
+                        users.username,
+                        compounds.id,
+                        extract('epoch' from compounds.date_record_created) as date_record_created,
+                        compounds.batchable
+                    from
+                        (
+                            select
+                                custom_foreign_key_field.entity_id
+                            from
+                                custom_foreign_key_field,
+                                custom_fields
+                            where
+                                upper(custom_foreign_key_field.custom_field_value) like any($5) and
+                                custom_foreign_key_field.custom_field_id = custom_fields.id and
+                                custom_fields.searchable = true
+                        ) a join
+                        compounds on (compounds.id = a.entity_id) join
+                        projects on (compounds.project_id = projects.id) join
+                        users on (compounds.user_id = users.id) and
+                        compounds.archived_transaction_id is null
+
+                    where
+                        projects.project_name = $4
+                union
+                    select
+                        compounds.compound_id,
+                        users.username,
+                        compounds.id,
+                        extract('epoch' from compounds.date_record_created) as date_record_created,
+                        compounds.batchable
+                    from
+                    (
+                        select
+                            custom_text_fields.entity_id
+                        from
+                            custom_text_fields,
+                            custom_fields,
+                            compounds_idx
+                        where
+                            compounds_idx.custom_field_id = custom_text_fields.id and
+                            tanimoto_sml(morganbv_fp(mol_from_ctab($1::cstring)),morgan_fingerprint) > $6 and
+                            custom_text_fields.custom_field_id = custom_fields.id and
+                            custom_fields.ss_field = true
+                    ) a join
+                    compounds on (compounds.id = a.entity_id) join
+                    projects on (compounds.project_id = projects.id) join
+                    users on (compounds.user_id = users.id) and
+                    compounds.archived_transaction_id is null
+                    where
+                        projects.project_name = $4
+            )  a
+            order by a.date_record_created desc, a.compound_id
+            limit $2 offset $3
+
+        ''')
+
+        # End of Simliarity Search
+
         self.fetch_set_count_cur = self.conn.cursor()
         self.fetch_set_count_cur.execute('''
             prepare fetch_set_count as
@@ -1490,7 +1755,7 @@ class CompoundFetchManager(object):
         return desalted_mol_block
 
 
-    def fetch_ctab_set_count(self, ctab, username, terms, project):
+    def fetch_ctab_set_count(self, ctab, username, terms, project,sim_threshold=None):
         desalted_mol_block = self.ctab_to_desalted_ctab(ctab)
 
         any_terms = []
@@ -1511,17 +1776,31 @@ class CompoundFetchManager(object):
         else:
             smiles = Chem.MolToSmiles(mol)
 
-            if len(terms) > 0:
-                self.fetch_ctab_set_count_cur.execute('''
-                    execute fetch_ctab_set_count (%s,%s,%s)
-                ''',(smiles, project, any_terms))
+            if sim_threshold is None:
+                if len(terms) > 0:
+                    self.fetch_ctab_set_count_cur.execute('''
+                        execute fetch_ctab_set_count (%s,%s,%s)
+                    ''',(smiles, project, any_terms))
 
-                row = self.fetch_ctab_set_count_cur.fetchone()
+                    row = self.fetch_ctab_set_count_cur.fetchone()
+                else:
+                    self.fetch_ctab_set_only_count_cur.execute('''
+                        execute fetch_ctab_set_only_count (%s,%s)
+                    ''',(smiles, project))
+                    row = self.fetch_ctab_set_only_count_cur.fetchone()
             else:
-                self.fetch_ctab_set_only_count_cur.execute('''
-                    execute fetch_ctab_set_only_count (%s,%s)
-                ''',(smiles, project))
-                row = self.fetch_ctab_set_only_count_cur.fetchone()
+                if len(terms) > 0:
+                    self.fetch_sim_ctab_set_count_cur.execute('''
+                        execute fetch_sim_ctab_set_count (%s,%s,%s,%s)
+                    ''',(ctab, project, any_terms, sim_threshold))
+
+                    row = self.fetch_sim_ctab_set_count_cur.fetchone()
+                else:
+                    self.fetch_sim_ctab_set_only_count_cur.execute('''
+                        execute fetch_sim_ctab_set_only_count (%s,%s,%s)
+                    ''',(ctab, project, sim_threshold))
+                    row = self.fetch_sim_ctab_set_only_count_cur.fetchone()
+
 
         count = 0
 
@@ -1531,7 +1810,7 @@ class CompoundFetchManager(object):
         return count
 
 
-    def fetch_ctab_set(self, ctab, from_row, to_row, username, terms, project):
+    def fetch_ctab_set(self, ctab, from_row, to_row, username, terms, project, sim_threshold = None):
         if ctab == '' or ctab is None:
             desalted_mol_block = ''
         else:
@@ -1557,19 +1836,33 @@ class CompoundFetchManager(object):
             return self.process_results(rows, ctab)
         else:
             smiles = Chem.MolToSmiles(mol)
+            if sim_threshold is None:
+                if terms is not None and len(terms) > 0:
+                    self.fetch_ctab_set_cur.execute('''
+                        execute fetch_ctab_set (%s,%s, %s,%s,%s)
+                    ''', (smiles,to_row - from_row + 1,from_row, project, any_terms))
 
-            if terms is not None and len(terms) > 0:
-                self.fetch_ctab_set_cur.execute('''
-                    execute fetch_ctab_set (%s,%s, %s,%s,%s)
-                ''', (smiles,to_row - from_row + 1,from_row, project, any_terms))
+                    rows = self.fetch_ctab_set_cur.fetchall()
+                else:
+                    self.fetch_ctab_set_only_cur.execute('''
+                        execute fetch_ctab_set_only (%s,%s, %s,%s)
+                    ''', (smiles,to_row - from_row + 1,from_row, project))
 
-                rows = self.fetch_ctab_set_cur.fetchall()
+                    rows = self.fetch_ctab_set_only_cur.fetchall()
             else:
-                self.fetch_ctab_set_only_cur.execute('''
-                    execute fetch_ctab_set_only (%s,%s, %s,%s)
-                ''', (smiles,to_row - from_row + 1,from_row, project))
+                if terms is not None and len(terms) > 0:
+                    self.fetch_sim_ctab_set_cur.execute('''
+                        execute fetch_sim_ctab_set (%s,%s, %s,%s,%s,%s)
+                    ''', (ctab,to_row - from_row + 1,from_row, project, any_terms, sim_threshold))
 
-                rows = self.fetch_ctab_set_only_cur.fetchall()
+                    rows = self.fetch_sim_ctab_set_cur.fetchall()
+                else:
+                    self.fetch_sim_ctab_set_only_cur.execute('''
+                        execute fetch_sim_ctab_set_only (%s,%s, %s,%s,%s)
+                    ''', (ctab,to_row - from_row + 1,from_row, project, sim_threshold))
+
+                    rows = self.fetch_sim_ctab_set_only_cur.fetchall()
+
 
             return self.process_results(rows, ctab)
 
@@ -2291,24 +2584,31 @@ if __name__ == '__main__':
                         output_json['entities'] = terms
             elif 'action' in input_json:
                     if input_json['action'] == 'search':
+                        sim_threshold = None
+                        if 'sim_threshold' in input_json:
+                            sim_threshold = input_json['sim_threshold']
+
+                        if 'smiles' in input_json:
+                            input_json['ctab_content'] = Chem.MolToMolBlock(Chem.MolFromSmiles(input_json['smiles']))
+
                         if input_json['task'] == 'fetch_by_field':
                             output_json['result-set'] = manager.fetch_by_field(input_json['project_name'], input_json['field_name'], input_json['field_value'], 'JSON')
                         elif input_json['task'] == 'fetch':
                             #PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-                            upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+                            upload_set = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'], sim_threshold)
                             output_json['upload_set'] = upload_set
                         elif input_json['task'] == 'count':
                             #PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-                            count = manager.fetch_ctab_set_count(input_json['ctab_content'], input_json['_username'], input_json['search_terms'], input_json['project'])
+                            count = manager.fetch_ctab_set_count(input_json['ctab_content'], input_json['_username'], input_json['search_terms'], input_json['project'], sim_threshold)
                             output_json['count'] = count
                         elif input_json['task'] == 'export_sdf':
                             #PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-                            objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+                            objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'], sim_threshold)
                             sdf_file = manager.get_sdf(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
                             output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(sdf_file)
                         elif input_json['task'] == 'export_excel':
                             #PROTECTION: _username is filled in with the real username by NodeJS and can't be faked by the client. _username is used in all select statements
-                            objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'])
+                            objs = manager.fetch_ctab_set(input_json['ctab_content'], input_json['from_row'], input_json['to_row'], input_json['_username'], input_json['search_terms'], input_json['project'], sim_threshold)
                             excel_file = manager.get_excel(objs,  input_json['out_file'],  input_json['project'], input_json['tz'])
                             output_json['out_file'] = input_json['out_file'] + '/' + os.path.basename(excel_file)
                     elif input_json['action'] == 'search_all':

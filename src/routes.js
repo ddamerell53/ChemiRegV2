@@ -77,7 +77,7 @@ ChemiRegRoutes.fetch_compound = function(path, req, res, next, handle_function){
 	    json.ctab_content = req.params.molblock;
 	}else{
 	    ChemiRegRoutes.handle_invalid_request('Invalid request', res, next);
-        return;
+    	    return;
 	}
 
 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
@@ -253,32 +253,46 @@ ChemiRegRoutes.find_entities = function(path, req, res, next, handle_function){
         }
 
         json.task = 'fetch_by_field';
-	}else if(Reflect.hasField(req.params, 'mol_block')){
-	    json.task = 'fetch';
+	}else if(Reflect.hasField(req.params, 'mol_block') || Reflect.hasField(req.params, 'smiles')){
+		json.task = 'fetch';
+		var required_fields = ['from_row', 'to_row', 'search_terms','project_name'];
 
-        var required_fields = ['mol_block','from_row', 'to_row', 'search_terms','project_name'];
+		if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
+			return;
+		}
 
-	    if(ChemiRegRoutes.error_on_field_missing(required_fields, req, res, next)){
-            return;
-        }
+		if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
+			return;
+		}
 
-        if(ChemiRegRoutes.error_on_field_empty(required_fields, req, res, next)){
-            return;
-        }
+		if(Reflect.hasField(req.params, 'smiles')){
+			json.smiles = req.params.smiles;
+			if(ChemiRegRoutes.error_on_field_empty(['smiles'], req, res, next)){
+				return;
+			}
+		}else{
+			json.ctab_content = req.params.mol_block;
+			if(ChemiRegRoutes.error_on_field_empty(['mol_block'], req, res, next)){
+				return;
+			}
+		}
 
-	    json.ctab_content = req.params.mol_block;
-	    json.from_row = parseInt(req.params.from_row);
-	    json.to_row = parseInt(req.params.to_row);
-	    json.search_terms = req.params.search_terms;
-	    json.project = req.params.project_name;
+		json.from_row = parseInt(req.params.from_row);
+		json.to_row = parseInt(req.params.to_row);
+		json.search_terms = req.params.search_terms;
+		json.project = req.params.project_name;
+
+		if(Reflect.hasField(req.params, 'sim_threshold')){
+			json.sim_threshold = req.params.sim_threshold;
+		}
 	}else{
 	    ChemiRegRoutes.handle_invalid_request('Invalid request', res, next);
-        return;
+            return;
 	}
 
 	var d = {};
 
-    d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
+ 	d.queryId = 'saturn.db.provider.hooks.ExternalJsonHook:Fetch';
 
 	d.parameters = haxe.Serializer.run([json]);
 
