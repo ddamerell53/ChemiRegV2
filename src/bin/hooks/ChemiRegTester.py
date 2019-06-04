@@ -181,6 +181,81 @@ $$$$
         res = run_query(ChemiRegTester.base_url, command, args)
         print(res)
 
+    def test_compound_sim_search(self):
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'Test/Supplier List',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': { 
+              'id': '-1',
+              'compound_id': 'SimSearch',
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+
+        command = 'api/compounds'
+        args = {
+          'wait':'yes',
+          'project_name':'TestA',
+          'token': ChemiRegTester.token,
+          'compounds': json.dumps({
+            '-1': { 
+              'id': '-1',
+              'smiles': 'c1ccccc1',
+              'classification':'ZZ',
+              'supplier': 'SimSearch',
+              'supplier_id':'AA'
+            }
+          })
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args)
+        print(res)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'search_terms': [],
+            'from_row':0,
+            'to_row': 10,
+            'sim_threshold':'0.2',
+            'smiles': 'c1ccccc1'
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        print(res)
+
+        self._test_basic_res(res)
+
+        self.assertGreater(len(res['result-set'][0]), 0)
+
+        command = 'api/compounds'
+        args = {
+            'wait': 'yes',
+            'project_name': 'TestA',
+            'token': ChemiRegTester.token,
+            'search_terms': [],
+            'from_row':0,
+            'to_row': 10,
+            'sim_threshold':'0.9',
+            'smiles': 'C'
+        }
+
+        res = run_query(ChemiRegTester.base_url, command, args, method='GET')
+
+        print(res)
+
+        self._test_basic_res(res)
+
+        self.assertEquals(len(res['result-set']), 0)
+
     def test_compound_field_delete(self):
         command = 'api/compounds'
         args = {
