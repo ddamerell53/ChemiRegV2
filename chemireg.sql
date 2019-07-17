@@ -742,7 +742,8 @@ create index custom_foreign_fields_value_id7 on custom_foreign_key_field (entity
 create table compounds_idx (
 	id SERIAL primary key,
 	custom_field_id int references custom_text_fields(id) on delete cascade,
-	molecule mol
+	molecule mol,
+	morgan_fingerprint bfp
 );
 
 create index compound_idx_id on compounds_idx (custom_field_id);

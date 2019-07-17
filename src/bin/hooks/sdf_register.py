@@ -1035,7 +1035,8 @@ class CompoundManager(object):
 
 			upload_uuid += extension
 
-			os.rename(src_file_path, dst_file_path)
+			shutil.copy2(src_file_path, dst_file_path)
+			#os.rename(src_file_path, dst_file_path)
 
 			self.insert_file_attach_cur.execute("execute insert_file_attach (%s,%s,%s,%s,%s)", (id, upload_uuid, dst_file_path, file_name, self.transaction_id))
 			
@@ -1475,11 +1476,12 @@ class CompoundManager(object):
 			
 			self.insert_structure.execute('''
 				insert into compounds_idx
-				(id, molecule, custom_field_id)
+				(id, molecule, morgan_fingerprint,custom_field_id)
 				(
 					select 
 						a.id,
 						mol_from_ctab(b.custom_field_value::cstring) molecule,
+						morganbv_fp(mol_from_ctab(b.custom_field_value::cstring)) morgan_fingerprint,
 						b.id
 					from 
 						compounds a,
@@ -1502,12 +1504,14 @@ class CompoundManager(object):
 			self.insert_structure.execute('''
 				update compounds_idx
 				set 
-				    molecule=c.molecule
+				    molecule=c.molecule,
+				    morgan_fingerprint=c.morgan_fingerprint
 				from
 				(
 					select 
 						a.id,
 						mol_from_ctab(b.custom_field_value::cstring) molecule,
+						morganbv_fp(mol_from_ctab(b.custom_field_value::cstring)) morgan_fingerprint,
 						b.id as custom_field_id
 					from 
 						compounds a,

@@ -14,7 +14,7 @@ services:
      image: chemireg:latest
      restart: always
      ports: 
-       - "8080:80"
+       - "8080:8080"
        - "8888:8888"
      volumes:
        - "./container_directories/redis:/home/chemireg/redis"
