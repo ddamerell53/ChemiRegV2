@@ -642,6 +642,7 @@ class CompoundManager(object):
 		calculated = old_entity['calculated']
 		foreign_key_project = old_entity['foreign_key_project']
 		field_type = old_entity['type']
+		before_update_function = old_entity['before_update_function']
 
 		parent_project_name = re.sub('/Custom Fields$', '', project_name)
 
@@ -670,9 +671,12 @@ class CompoundManager(object):
 			if field_type != entry['type']:
 				raise Exception('You aren\'t allowed to change column types')
 
+		if 'before_update_function' in entry:
+			before_update_function = entry['before_update_function']
+
 			#field_type = entry['type']
 
-		self.auth_manager.update_custom_field_definition(old_entity['compound_id'],parent_project_name, name, required, visible, human_name, calculated)
+		self.auth_manager.update_custom_field_definition(old_entity['compound_id'],parent_project_name, name, required, visible, human_name, calculated, before_update_function)
 
 	def _create_custom_field(self, changes, entity_pkey, project_name):
 		entity = changes[entity_pkey]

@@ -1253,6 +1253,20 @@ class CompoundFetchManager(object):
             order by archived_transaction_id, compound_id
         ''')
 
+        # self.update_search_index_cur = self.conn.cursor()
+        # self.update_search_index_cur.execute('''
+        #     prepare update_search_index as
+        #     insert into compounds_substructure_cache
+        #     (inchi_key, custom_field_id, present)
+        #     (select
+        #         $2::varchar,a.custom_field_id,1
+        #     from
+        #         compounds_idx a
+        #     where
+        #         a.molecule@>$1  and
+        #         a.custom_field_id not in (select custom_field_id from compounds_substructure_cache where custom_field_id=a.custom_field_id and inchi_key = $2))
+        # ''')
+
     def generate_custom_field_selects(self):
         self.custom_field_cursors = {}
         self.custom_single_field_cursors = {}
@@ -1809,6 +1823,17 @@ class CompoundFetchManager(object):
 
         return count
 
+    # def update_search_index(self, search_ctab):
+    #     mol = Chem.MolFromMolBlock(search_ctab)
+    #
+    #     inchi = Chem.MolToInchi(mol, '-FixedH')
+    #     inchi_key = Chem.InchiToInchiKey(inchi)
+    #
+    #     self.update_search_index_cur.execute('execute update_search_index (%s,%s)',(Chem.MolToSmiles(mol), inchi_key))
+    #
+    #     self.conn.commit()
+
+
 
     def fetch_ctab_set(self, ctab, from_row, to_row, username, terms, project, sim_threshold = None):
         if ctab == '' or ctab is None:
@@ -1840,6 +1865,8 @@ class CompoundFetchManager(object):
         else:
             smiles = Chem.MolToSmiles(mol)
             if sim_threshold is None:
+                #self.update_search_index(Chem.MolToMolBlock(mol))
+
                 # If we get here then we are performing a substructure search
                 if terms is not None and len(terms) > 0:
                     self.fetch_ctab_set_cur.execute('''

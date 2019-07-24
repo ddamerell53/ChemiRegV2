@@ -3605,6 +3605,10 @@ function start(){
 	clientCore = saturn.client.core.ClientCore.getClientCore();
 	clientCore.setShowMessage(function(title, msg){
 		show_message(title,msg);
+
+		if(title == 'Login failed'){
+		    switch_screen('login');
+		}
 	});
 
 	clientCore.addUpdateListener(progress_listener);
@@ -5346,4 +5350,67 @@ function switch_table_view() {
 	}
 
     switchButton[0].style.display = 'block';
+}
+
+function add_user_to_sgc_projects(username, user_id){
+    add_user_to_projects(username, ['SGC','SGC/Compound Classifications','SGC/Salts','SGC/Supplier List','SGC/Compound Series']);
+}
+
+function add_user_to_sgc_toronto_projects(username, user_id){
+    add_user_to_projects(username, ['SGC - Toronto']);
+}
+
+function add_user_to_sgc_campinas_projects(username, user_id){
+    add_user_to_projects(username, ['SGC - Campinas']);
+}
+
+function add_user_to_sgc_frankfurt_projects(username, user_id){
+    add_user_to_projects(username, ['SGC - Frankfurt']);
+}
+
+function add_user_to_sgc_oxford_projects(username, user_id){
+    add_user_to_projects(username, ['SGC - Oxford']);
+}
+
+function add_user_to_sgc_oxxchem_projects(username, user_id){
+    add_user_to_projects(username, ['OxXChem']);
+}
+
+function add_user_to_projects(username, projects){
+    var id = -1;
+
+    var changes = {};
+
+    var is_default = true;
+
+    for(var i=0;i<projects.length;i++){
+        var project = projects[i];
+
+        Reflect.setField(changes, id.toString(), {
+            'id':id.toString(),
+            'compound_id': username + '/' + project,
+            'user_project_id': project,
+            'user_user_id': username,
+            'default_project': is_default,
+            'is_administrator': false
+        });
+
+        is_default = false;
+
+        id -= 1;
+    }
+
+    saturn.core.Util.getProvider().getByNamedQuery(
+        'saturn.db.provider.hooks.ExternalJsonHook:SDFRegister',
+        [{'save_changes': changes, '_username': null, 'project_name': 'User to Project'}],
+        null,
+        false,
+        function(objs, err){
+            if(err == null){
+                show_message('Granted',username + ' user granted access to requested projects')
+            }else{
+                show_message('Registration Failed',err);
+            }
+        }
+        );
 }

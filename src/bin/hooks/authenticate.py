@@ -358,7 +358,8 @@ class AuthenticationManager(object):
 				required=$4,
 				visible=$5,
 				human_name=$6,
-				calculated=$7
+				calculated=$7,
+				before_update_function=$8
 			where
 				project_id = (select id from projects where project_name = $2) and
 				name = $1
@@ -898,28 +899,28 @@ class AuthenticationManager(object):
 		self.set_user_default_project_cur.execute('execute set_user_default_project (%s, %s)', (user_id, project_id))
 
 	def remove_user_from_project(self, username, project_name):
-		#project_id = self.get_project_id(project_name)
+		project_id = self.get_project_id(project_name)
 
-		#if project_id is None:
-		#	raise ProjectAssociationException('Project ' + project_name + ' doesn\'t exist')
+		if project_id is None:
+			raise ProjectAssociationException('Project ' + project_name + ' doesn\'t exist')
 
 		user_id = self.get_user_id(username)
 
 		if user_id is None:
 			raise ProjectAssociationException('User ' + username + ' doesn\'t exist')
 
-		self.conn.cursor().execute('''
-			update
-				user_to_project
-			set
-				archive_date = localtimestamp
-			where
-				user_id = %s and
-				project_id = (select id from projects where project_name = %s) and
-				archive_date is null
-		''',(user_id, project_name))
+		#self.conn.cursor().execute('''
+		#	update
+		#		user_to_project
+		#	set
+		#		archive_date = localtimestamp
+		#	where
+		#		user_id = %s and
+		#		project_id = (select id from projects where project_name = %s) and
+		#		archive_date is null
+		#''',(user_id, project_name))
 
-		#self.remove_project_association_cur.execute('execute remove_project_association (%s, %s)', (user_id, project_id))
+		self.remove_project_association_cur.execute('execute remove_project_association (%s, %s)', (user_id, project_id))
 		#self.conn.commit()
 
 	def get_project_id(self, project_name):
@@ -1513,8 +1514,8 @@ class AuthenticationManager(object):
 		
 		#self.conn.commit()
 
-	def update_custom_field_definition(self, old_name, project_name, name, required, visible, human_name, calculated):
-		self.update_custom_field_cur.execute('execute update_custom_field (%s,%s,%s,%s,%s,%s,%s)',(old_name, project_name, name,required,visible, human_name,calculated))
+	def update_custom_field_definition(self, old_name, project_name, name, required, visible, human_name, calculated,before_update_function=None):
+		self.update_custom_field_cur.execute('execute update_custom_field (%s,%s,%s,%s,%s,%s,%s,%s)',(old_name, project_name, name,required,visible, human_name,calculated, before_update_function))
 
 		
 	def set_ss_search_field(self, project_name, field_name):

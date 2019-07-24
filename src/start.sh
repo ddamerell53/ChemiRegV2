@@ -1,6 +1,5 @@
 #!/bin/bash
 redis-server --port 6380 --appendonly yes --dir /home/chemireg/redis/&
-export DEBUG=*
 
 sleep 5
 
