@@ -749,6 +749,13 @@ create table compounds_idx (
 create index compound_idx_id on compounds_idx (custom_field_id);
 create index molecule_mol_idx on compounds_idx using gist(molecule);
 
+--create table compounds_substructure_cache (
+--    id SERIAL primary key,
+--    inchi_key varchar(200),
+--    custom_field_id int references custom_text_fields(id) on delete cascade,
+--    present int
+--);
+
 
 -- import string into the following
 -- sudo  vim /usr/local/anaconda_cos6/envs/sat_reg/lib/python2.7/site-packages/rdkit/sping/SVG/pidSVG.py
