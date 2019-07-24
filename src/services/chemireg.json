@@ -2,7 +2,7 @@
     "commands": {
 
     },
-    "port" : 80,
+    "port" : 8080,
     "redis_port" : 6380,
     "index_page":"/static/chemireg/theme/index.html",
     "origins" : "https://*:*/ https://localhost:*/ http://*:*/ http://localhost:*/",
@@ -83,66 +83,66 @@
 
                  ]
         },
-        {
-            "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
-            "connections" : [{
-        	    "driver": "saturn.db.DefaultProvider",
-		    "model_mapping": "saturn.db.mapping.templates.DefaultMapping",
-                    "named_queries": {
+      {
+        "clazz": "saturn.server.plugins.core.DefaultProviderPlugin",
+        "connections" : [{
+          "driver": "saturn.db.DefaultProvider",
+          "model_mapping": "saturn.db.mapping.templates.DefaultMapping",
+          "named_queries": {
 
-                    },
-                    "use_pool": false,
-                    "default_provider": true,
-                    "name": "python",
+          },
+          "use_pool": false,
+          "default_provider": true,
+          "name": "python",
+          "named_query_hooks": [
+            {
+              "name": "saturn.db.provider.hooks.ExternalJsonHook:SDFRegister",
+              "class": "saturn.db.provider.hooks.ExternalJsonHook",
+              "method": "run",
+              "program": "python",
+              "arguments": ["bin/hooks/sdf_register.py"]
+            },
+            {
+              "name": "saturn.db.provider.hooks.ExternalJsonHook:Fetch",
+              "class": "saturn.db.provider.hooks.ExternalJsonHook",
+              "method": "run",
+              "program": "python",
+              "arguments": ["bin/hooks/fetch.py"]
+            },
+            {
+              "name": "saturn.db.provider.hooks.ExternalJsonHook:FastFetch",
+              "class": "saturn.db.provider.hooks.ExternalJsonHook",
+              "method": "run",
+              "program": "python",
+              "arguments": ["bin/hooks/fast_fetch.py"]
+            },
+
+            {
+              "name": "saturn.db.provider.hooks.ExternalJsonHook:Register",
+              "class": "saturn.db.provider.hooks.ExternalJsonHook",
+              "method": "run",
+              "program": "python",
+              "arguments": ["bin/hooks/authenticate.py"]
+            },
+            {
+              "name": "saturn.server.plugins.core.ConfigurationPlugin:clientConfiguration",
+              "class": "saturn.server.plugins.core.ConfigurationPlugin",
+              "method": "getConfiguration",
+              "config":{
+                "connections":[
+                  {
+                    "driver" : "saturn.db.provider.NodeProvider",
+                    "name" : "DEFAULT",
                     "named_query_hooks": [
-                      {
-                        "name": "saturn.db.provider.hooks.ExternalJsonHook:SDFRegister",
-                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
-                        "method": "run",
-                        "program": "python",
-                        "arguments": ["bin/hooks/sdf_register.py"]
-                      },
-		      {
-                        "name": "saturn.db.provider.hooks.ExternalJsonHook:Fetch",
-                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
-                        "method": "run",
-                        "program": "python",
-                        "arguments": ["bin/hooks/fetch.py"]
-                      },
-		      {
-                        "name": "saturn.db.provider.hooks.ExternalJsonHook:FastFetch",
-                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
-                        "method": "run",
-                        "program": "python",
-                        "arguments": ["bin/hooks/fast_fetch.py"]
-                      },
 
-		      {
-                        "name": "saturn.db.provider.hooks.ExternalJsonHook:Register",
-                        "class": "saturn.db.provider.hooks.ExternalJsonHook",
-                        "method": "run",
-                        "program": "python",
-                        "arguments": ["bin/hooks/authenticate.py"]
-                      },
-			{
-                        "name": "saturn.server.plugins.core.ConfigurationPlugin:clientConfiguration",
-                        "class": "saturn.server.plugins.core.ConfigurationPlugin",
-                        "method": "getConfiguration",
-                        "config":{
-                          "connections":[
-                            {
-                              "driver" : "saturn.db.provider.NodeProvider",
-                              "name" : "DEFAULT",
-                              "named_query_hooks": [
-                              
-			      ]
-                            }
-                          ]
-                        }
-                      }
                     ]
-            }]
-        },
+                  }
+                ]
+              }
+            }
+          ]
+        }]
+      },
         {
                     "clazz": "saturn.server.plugins.core.SocketPlugin"
         },
